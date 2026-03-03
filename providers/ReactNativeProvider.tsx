@@ -7,6 +7,7 @@ import type {KeyStoreAPI, Key} from "@algorandfoundation/keystore";
 import {type LogMessage, WithLogStore, type LogStoreApi} from "@algorandfoundation/log-store";
 import type {keyStoreHooks} from "@/stores/before-after";
 import {WithAccountsKeystore} from "@/extensions/accounts-keystore";
+import {Passkey, PasskeyStoreApi} from "@/extensions/passkeys";
 
 
 export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXTENSIONS> {
@@ -19,11 +20,15 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
 
     keys!: Key[]
     accounts!: Account[]
+    passkeys!: Passkey[]
     logs!: LogMessage[]
     status!: string
 
     account!: {
         store: AccountStoreApi
+    }
+    passkey!: {
+        store: PasskeyStoreApi
     }
     // The generic Keystore Interface
     key!: {
