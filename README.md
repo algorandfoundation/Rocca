@@ -7,17 +7,19 @@ This project demonstrates an onboarding flow for a white-label identity solution
 The application is designed as a white-label solution. You can customize the branding and features by modifying the `extra.provider` section in `app.json`:
 
 ```json
-"extra": {
-  "provider": {
-    "name": "Aura",
-    "primaryColor": "#3B82F6",
-    "secondaryColor": "#E1EFFF",
-    "accentColor": "#10B981",
-    "welcomeMessage": "Your identity, rewarded.",
-    "showRewards": true,
-    "showFeeDelegation": true,
-    "showIdentityManagement": true
-  }
+{
+    "extra": {
+      "provider": {
+        "name": "Aura",
+        "primaryColor": "#3B82F6",
+        "secondaryColor": "#E1EFFF",
+        "accentColor": "#10B981",
+        "welcomeMessage": "Your identity, rewarded.",
+        "showRewards": true,
+        "showFeeDelegation": true,
+        "showIdentityManagement": true
+      }
+    }
 }
 ```
 
@@ -116,7 +118,13 @@ To further integrate with identity primitives, the following extensions are sugg
    npm install
    ```
 
-2. Start the app
+2. Start the app on Android
+
+   > [!IMPORTANT]
+   > This project contains native dependencies (like `react-native-quick-crypto` and `@algorandfoundation/react-native-keystore`) that require running on a physical Android device. It may not function correctly on an emulator.
+
+   Ensure you have your Android device connected and authorized via ADB, then run:
+
    ```bash
-   npx expo start
+   npm run android
    ```
