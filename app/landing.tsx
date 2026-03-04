@@ -4,21 +4,25 @@ import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
+import {useProvider} from "@/hooks/useProvider";
 
+// Extract provider configuration from expo-constants
+const config = Constants.expoConfig?.extra?.provider || {
+  name: 'Rocca',
+  primaryColor: '#3B82F6',
+  secondaryColor: '#E1EFFF',
+  accentColor: '#10B981',
+  welcomeMessage: 'Your identity, rewarded.',
+  showRewards: true,
+  showFeeDelegation: true,
+  showIdentityManagement: true,
+};
 export default function LandingScreen() {
   const router = useRouter();
+  const {key, identities, accounts} = useProvider()
 
-  // Extract provider configuration from expo-constants
-  const provider = Constants.expoConfig?.extra?.provider || {
-    name: 'Rocca',
-    primaryColor: '#3B82F6',
-    secondaryColor: '#E1EFFF',
-    accentColor: '#10B981',
-    welcomeMessage: 'Your identity, rewarded.',
-    showRewards: true,
-    showFeeDelegation: true,
-    showIdentityManagement: true,
-  };
+  const activeIdentity = identities[0];
+  const activeAccount = accounts[0];
 
   const {
     name,
@@ -29,7 +33,7 @@ export default function LandingScreen() {
     showRewards,
     showFeeDelegation,
     showIdentityManagement,
-  } = provider;
+  } = config;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
@@ -39,7 +43,7 @@ export default function LandingScreen() {
             <Logo size={40} />
             <View>
               <Text style={styles.welcomeText}>{welcomeMessage}</Text>
-              <Text style={styles.userName}>{name} Wallet</Text>
+              <Text style={styles.userName}>{activeAccount ? `${activeAccount.address.slice(0, 8)}...${activeAccount.address.replace('=', '').slice(-8)}` : `${name} Wallet`}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.profileButton}>
@@ -52,7 +56,7 @@ export default function LandingScreen() {
             <Text style={styles.balanceLabel}>Total Balance</Text>
             <MaterialIcons name="visibility" size={20} color="rgba(255, 255, 255, 0.6)" />
           </View>
-          <Text style={styles.balanceAmount}>$1,234.56</Text>
+          <Text style={styles.balanceAmount}>{activeAccount ? `$${activeAccount.balance.toString()}` : '$0.00'}</Text>
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton}>
               <MaterialIcons name="send" size={20} color="#FFFFFF" />
@@ -80,7 +84,7 @@ export default function LandingScreen() {
             <View style={styles.didInfo}>
               <MaterialIcons name="verified" size={20} color={accentColor} />
               <Text style={[styles.didText, { flex: 1 }]} numberOfLines={1} ellipsizeMode="middle">
-                did:key:z6MkpTHR8VNs2at7P7w7rCY3mXo4Luc1eFdXpm6wm9fY2i3a
+                {activeIdentity?.did || 'No identity found'}
               </Text>
             </View>
             <TouchableOpacity onPress={() => alert('DID copied!')}>
@@ -142,7 +146,11 @@ export default function LandingScreen() {
 
         <TouchableOpacity
           style={styles.resetButton}
-          onPress={() => router.replace('/onboarding')}
+          onPress={async () =>
+              {
+                await key.store.clear()
+                router.replace('/onboarding')
+              }}
         >
           <Text style={styles.resetButtonText}>Logout & Reset Onboarding</Text>
         </TouchableOpacity>

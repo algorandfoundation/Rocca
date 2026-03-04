@@ -15,6 +15,7 @@ import type {
 	AccountsKeystoreExtension,
 	AccountsKeystoreExtensionOptions,
 } from "./types.ts";
+import {base64} from "@scure/base";
 
 /**
  * Extension that bridges the account store and keystore.
@@ -79,13 +80,23 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 		console.log("Auto-populating accounts from keystore...");
 		const keys = [...((provider.keys as Key[]) ?? [])];
 		for (const key of keys) {
-			console.log(`Adding account for key ${key.id}-${key.type}...`);
-			if (key.type === "hd-derived-ed25519") {
+			if (
+				key.type === "hd-derived-ed25519" &&
+				key.publicKey &&
+				key.metadata?.context === 0
+			) {
+				console.log(`Checking key ${key.id}-${key.type}...`);
+				const address = base64.encode(key.publicKey);
+
+				// Skip if the account already exists
+				if (accountStore.state.accounts.some((a) => a.address === address)) {
+					continue;
+				}
+
 				provider.account.store.addAccount(
 					createKeyAccount(
 						key.id,
-						((key as XHDDerivedKeyData)?.metadata?.address
-							?.algorand as string) ?? "TODO: Add addresses to types",
+						address,
 						(key as XHDDerivedKeyData)?.metadata?.parentKeyId,
 					),
 				);
@@ -110,12 +121,17 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 
 			// Process only the newly added keys
 			addedKeys.forEach((k) => {
-				if (k.type === "hd-derived-ed25519") {
-					console.log(`Adding account for key ${k.id}-${k.type}...`);
-					const address = (k as XHDDerivedKeyData)?.metadata?.address
-						?.algorand as string;
+				if (k.type === "hd-derived-ed25519" && k.publicKey) {
+					console.log(`Checking account for key ${k.id}-${k.type}...`);
+					const address = base64.encode(k.publicKey)
 					const parentKeyId = (k as XHDDerivedKeyData)?.metadata?.parentKeyId;
-					if (address) {
+
+					// Skip if the account already exists
+					if (
+						!accountStore.state.accounts.some((a) => a.address === address) &&
+						k.metadata?.context === 0
+					) {
+						console.log(`Adding account for key ${k.id}-${k.type}...`);
 						provider.account.store.addAccount(
 							createKeyAccount(k.id, address, parentKeyId),
 						);
@@ -124,11 +140,11 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 			});
 			if (keys.some((k) => k.type === "hd-derived-ed25519"))
 				console.log(
-					`Found ${keys.length} keys, ${keys.filter((k) => k.type === "hd-derived-ed25519").length} HD keys`,
+					`Found ${keys.length} keys, ${keys.filter((k) => k.type === "hd-derived-ed25519" && k.metadata?.context === 0).length} HD Account keys`,
 				);
 			if (accounts.some((a) => a.type === "ed25519"))
 				console.log(
-					`Found ${accounts.length} accounts, ${accounts.filter((a) => a.type === "ed25519").length} non-accounts`,
+					`Found ${accounts.length} ed25519 accounts, ${accounts.filter((a) => a.type === "ed25519").length} others`,
 				);
 		});
 

@@ -287,7 +287,7 @@ export default function OnboardingScreen() {
                                 }
 
                                 // Import to the keystore
-                                await key.store.import(
+                                const seedId = await key.store.import(
                                   {
                                     type: 'hd-seed',
                                     algorithm: 'raw',
@@ -297,6 +297,47 @@ export default function OnboardingScreen() {
                                   },
                                   'bytes'
                                 );
+
+                                // Generate HD Root Key
+                                const rootKeyId = await key.store.generate({
+                                  type: 'hd-root-key',
+                                  algorithm: 'raw',
+                                  extractable: true,
+                                  keyUsages: ['deriveKey', 'deriveBits'],
+                                  params: {
+                                    parentKeyId: seedId
+                                  }
+                                })
+
+                                // Generate Ed25519 Account Key
+                                await key.store.generate({
+                                  type: 'hd-derived-ed25519',
+                                  algorithm: 'EdDSA',
+                                  extractable: true,
+                                  keyUsages: ['sign', "verify"],
+                                  params: {
+                                    parentKeyId: rootKeyId,
+                                    context: 0,
+                                    account: 0,
+                                    index: 0,
+                                    derivation: 9
+                                  }
+                                })
+
+                                // Generate Ed25519 Identity Key
+                                await key.store.generate({
+                                  type: 'hd-derived-ed25519',
+                                  algorithm: 'EdDSA',
+                                  extractable: true,
+                                  keyUsages: ['sign', "verify"],
+                                  params: {
+                                    parentKeyId: rootKeyId,
+                                    context: 1,
+                                    account: 0,
+                                    index: 0,
+                                    derivation: 9
+                                  }
+                                })
 
                                 router.replace('/landing');
 
