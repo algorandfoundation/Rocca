@@ -7,7 +7,6 @@ import type {
 	Key,
 	KeyStoreExtension,
 	KeyStoreState,
-	XHDDerivedKeyData,
 } from "@algorandfoundation/keystore";
 import type { Extension } from "@algorandfoundation/wallet-provider";
 import type { Store } from "@tanstack/store";
@@ -135,13 +134,6 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 					}
 				}
 			});
-		});
-
-		provider.identity.store.hooks.before("clear", async () => {
-			const keys = provider.keys.filter((k) => k.type === "hd-derived-ed25519" && k.metadata?.context === 1);
-			for (const k of keys) {
-				await provider.key.store.remove(k.id);
-			}
 		});
 	}
 

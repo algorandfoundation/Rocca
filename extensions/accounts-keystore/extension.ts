@@ -147,13 +147,6 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 					`Found ${accounts.length} ed25519 accounts, ${accounts.filter((a) => a.type === "ed25519").length} others`,
 				);
 		});
-
-		provider.account.store.hooks.before("clear", async () => {
-			const keys = provider.keys.filter((k) => k.type === "hd-derived-ed25519");
-			for (const k of keys) {
-				await provider.key.store.remove(k.id);
-			}
-		});
 	}
 
 	// This extension doesn't add new API methods, it just bridges existing ones.
