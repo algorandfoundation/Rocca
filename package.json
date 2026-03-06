@@ -33,8 +33,7 @@
     "@react-navigation/native": "^7.1.8",
     "@scure/base": "^2.0.0",
     "@scure/bip39": "^2.0.1",
-    "@tanstack/react-store": "0.8.1",
-    "@tanstack/store": "0.8.1",
+    "@tanstack/react-store": "0.9.1",
     "before-after-hook": "^4.0.0",
     "expo": "54.0.33",
     "expo-constants": "~18.0.13",
@@ -76,7 +75,8 @@
     "typescript": "~5.9.2"
   },
   "overrides": {
-    "lightningcss": "1.30.1"
+    "lightningcss": "1.30.1",
+    "@tanstack/store": "0.9.1"
   },
   "private": true
 }
