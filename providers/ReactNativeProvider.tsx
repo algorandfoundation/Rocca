@@ -2,12 +2,16 @@ import {createContext, type ReactNode} from 'react';
 import {Provider} from '@algorandfoundation/wallet-provider';
 
 import {WithKeyStore} from "@algorandfoundation/react-native-keystore";
-import {Account, AccountStoreApi, WithAccountStore} from "@/extensions/accounts";
+import {
+	Account,
+	AccountStoreExtension,
+	WithAccountStore,
+} from "@/extensions/accounts";
 import {Identity, IdentityStoreApi, WithIdentityStore} from "@/extensions/identities";
 import type {KeyStoreAPI, Key} from "@algorandfoundation/keystore";
 import {type LogMessage, WithLogStore, type LogStoreApi} from "@algorandfoundation/log-store";
 import type {keyStoreHooks} from "@/stores/before-after";
-import {WithAccountsKeystore} from "@/extensions/accounts-keystore";
+import {KeystoreAccount, WithAccountsKeystore} from "@/extensions/accounts-keystore";
 import {WithIdentitiesKeystore} from "@/extensions/identities-keystore";
 
 
@@ -27,9 +31,7 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     logs!: LogMessage[]
     status!: string
 
-    account!: {
-        store: AccountStoreApi
-    }
+    account!: AccountStoreExtension<Account | KeystoreAccount>["account"];
     identity!: {
         store: IdentityStoreApi
     }

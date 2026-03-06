@@ -5,9 +5,9 @@ import type { HookCollection } from "before-after-hook";
 /**
  * Options for the AccountStore extension.
  */
-export interface AccountStoreOptions extends ExtensionOptions {
+export interface AccountStoreOptions<T> extends ExtensionOptions {
 	accounts: {
-		store: Store<AccountStoreState>;
+		store: Store<AccountStoreState<T>>;
 		hooks: HookCollection<any>;
 	};
 }
@@ -20,7 +20,6 @@ export interface AccountAsset {
 	type: string;
 	balance: bigint;
 	metadata: Record<string, any>;
-	transfer?(amount: bigint, account: Account): void;
 }
 
 /**
@@ -46,55 +45,46 @@ export interface Account {
 	 * Type of account
 	 */
 	type: AccountType;
-	/**
-	 * A method to sign a transaction or a set of transactions.
-	 *
-	 * @param txns - The transactions to sign.
-	 * @returns The signed transactions.
-	 */
-	sign?: (txns: Uint8Array[]) => Promise<Uint8Array[]>;
 
 	/**
 	 * Subclass via the metadata
 	 */
 	metadata?: Record<string, any>;
-
-	transfer?(amount: bigint, account: Account): void;
 }
 
 /**
  * The state of the account store.
  */
-export interface AccountStoreState {
+export interface AccountStoreState<T> {
 	/**
 	 * The list of accounts in the store.
 	 */
-	accounts: Account[];
+	accounts: T[];
 }
 
 /**
  * Represents an account store interface for managing accounts.
  */
-export interface AccountStoreExtension extends AccountStoreState {
+export interface AccountStoreExtension<T> extends AccountStoreState<T> {
 	/**
 	 * An object that represents additional functionality provided by this extension.
 	 */
 	account: {
-		store: AccountStoreApi;
+		store: AccountStoreApi<T>;
 	};
 }
 
 /**
  * Interface representing an AccountStore extension API.
  */
-export interface AccountStoreApi {
+export interface AccountStoreApi<T> {
 	/**
 	 * Adds an account to the store.
 	 *
 	 * @param account - The account to add.
 	 * @returns The added account.
 	 */
-	addAccount: (account: Account) => Promise<Account>;
+	addAccount: (account: T) => Promise<T>;
 	/**
 	 * Removes an account from the store by its address.
 	 *
@@ -108,7 +98,7 @@ export interface AccountStoreApi {
 	 * @param address - The address of the account to retrieve.
 	 * @returns The account if found, otherwise undefined.
 	 */
-	getAccount: (address: string) => Promise<Account | undefined>;
+	getAccount: (address: string) => Promise<T | undefined>;
 	/**
 	 * Clears all accounts from the store.
 	 *

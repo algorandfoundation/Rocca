@@ -1,4 +1,4 @@
-import type { Extension } from "@algorandfoundation/wallet-provider";
+import type {Extension, ExtensionOptions, Provider} from "@algorandfoundation/wallet-provider";
 import { Store } from "@tanstack/store";
 import Hook from "before-after-hook";
 import {
@@ -10,6 +10,7 @@ import {
 import type {
 	Account,
 	AccountStoreExtension,
+	AccountStoreOptions,
 	AccountStoreState,
 } from "./types";
 
@@ -20,11 +21,13 @@ import type {
  * @param options - Configuration options for the extension.
  * @returns The account store extension.
  */
-export const WithAccountStore: Extension<AccountStoreExtension> = (
-	provider,
-	options,
+export const WithAccountStore: Extension<AccountStoreExtension<Account>> = (
+	provider: Provider<any> & AccountStoreExtension<Account>,
+	options: ExtensionOptions & AccountStoreOptions<Account>,
 ) => {
-	const store = options?.accounts?.store ?? new Store<AccountStoreState>({accounts: []});
+	const store =
+		options?.accounts?.store ??
+		new Store<AccountStoreState<Account>>({ accounts: [] });
 	const hooks = options?.accounts?.hooks ?? new Hook.Collection<any>();
 
 	return {
@@ -33,20 +36,20 @@ export const WithAccountStore: Extension<AccountStoreExtension> = (
 		},
 		account: {
 			store: provider.account?.store || {
-				async addAccount(account: Account) {
+				async addAccount(account: Account): Promise<void> {
 					return hooks("add", addAccount, { store, account });
 				},
-				async removeAccount(address: string) {
+				async removeAccount(address: string): Promise<void> {
 					return hooks("remove", removeAccount, { store, address });
 				},
-				async getAccount(address: string) {
+				async getAccount(address: string): Promise<Account | undefined> {
 					return hooks("get", getAccount, { store, address });
 				},
-				async clear() {
+				async clear(): Promise<void> {
 					return hooks("clear", clearAccounts, { store });
 				},
 				hooks,
 			},
 		},
-	} as AccountStoreExtension;
+	} as AccountStoreExtension<Account>;
 };

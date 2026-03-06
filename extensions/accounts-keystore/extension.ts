@@ -14,8 +14,13 @@ import type { Store } from "@tanstack/store";
 import type {
 	AccountsKeystoreExtension,
 	AccountsKeystoreExtensionOptions,
+	KeystoreAccount,
 } from "./types.ts";
-import {base64} from "@scure/base";
+import { base64 } from "@scure/base";
+
+export function isKeystoreAccount(account: Account): account is KeystoreAccount {
+	return account.type === "keystore-account";
+}
 
 /**
  * Extension that bridges the account store and keystore.
@@ -24,7 +29,7 @@ import {base64} from "@scure/base";
  * in the keystore, providing a sign method that leverages the keystore backend.
  */
 export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
-	provider: KeyStoreExtension & AccountStoreExtension,
+	provider: KeyStoreExtension & AccountStoreExtension<KeystoreAccount>,
 	options: AccountsKeystoreExtensionOptions,
 ) => {
 	// Ensure dependencies are present
@@ -40,7 +45,8 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 	}
 
 	const keyStore: Store<KeyStoreState> = options.keystore.store;
-	const accountStore: Store<AccountStoreState> = options.accounts.store;
+	const accountStore: Store<AccountStoreState<KeystoreAccount>> =
+		options.accounts.store;
 	const { autoPopulate = true } = options.accounts.keystore ?? {};
 
 	/**
@@ -50,19 +56,12 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 		keyId: string,
 		address: string,
 		parentKeyId?: string,
-	): Account => ({
+	): KeystoreAccount => ({
 		address,
-		type: "ed25519",
+		type: "keystore-account",
 		assets: [],
 		metadata: { keyId, parentKeyId },
 		balance: BigInt(0),
-
-		// TODO: Transfer helper
-		transfer(amount: bigint, account: Account) {
-			console.log(
-				`Transferring ${amount} from ${address} to ${account.address}`,
-			);
-		},
 		// TODO: TransactionSigners
 		sign: async (txns: Uint8Array[]) => {
 			// Sign each transaction using the keystore
@@ -141,7 +140,7 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 				}
 			});
 
-			const accounts = [...accountStore.state.accounts] as unknown as Account[];
+			const accounts = [...accountStore.state.accounts];
 
 			// Process only the newly added keys
 			addedKeys.forEach((k) => {
@@ -166,9 +165,9 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 				console.log(
 					`Found ${keys.length} keys, ${keys.filter((k) => k.type === "hd-derived-ed25519" && k.metadata?.context === 0).length} HD Account keys`,
 				);
-			if (accounts.some((a) => a.type === "ed25519"))
+			if (accounts.some((a) => isKeystoreAccount(a)))
 				console.log(
-					`Found ${accounts.length} ed25519 accounts, ${accounts.filter((a) => a.type === "ed25519").length} others`,
+					`Found ${accounts.length} ed25519 accounts, ${accounts.filter((a) => !isKeystoreAccount(a)).length} others`,
 				);
 		});
 	}
