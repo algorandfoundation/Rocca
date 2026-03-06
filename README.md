@@ -1,6 +1,6 @@
 # Rocca Wallet Sample
 
-This project demonstrates an onboarding flow for a white-label identity solution providing rewards and fee delegation.
+This project demonstrates an onboarding flow for a white-label identity solution.
 
 ## White-Label Configuration
 
@@ -14,10 +14,7 @@ The application is designed as a white-label solution. You can customize the bra
         "primaryColor": "#3B82F6",
         "secondaryColor": "#E1EFFF",
         "accentColor": "#10B981",
-        "welcomeMessage": "Your identity, rewarded.",
-        "showRewards": true,
-        "showFeeDelegation": true,
-        "showIdentityManagement": true
+        "welcomeMessage": "Your identity, rewarded."
       }
     }
 }
@@ -36,8 +33,6 @@ The application uses `expo-router` for navigation. The flow is automatically det
    - **Verify**: Verification step to ensure the user has correctly backed up their phrase.
 3. **Landing (`/landing`)**: The main dashboard for onboarded users, featuring:
    - Identity (DID) management.
-   - Balance and transaction actions (Send, Receive, Swap).
-   - Integrated Provider services (Rewards, Fee Delegation).
 
    > [!NOTE]
    > The landing dashboard currently contains placeholder data and UI components as a mock for future implementation.

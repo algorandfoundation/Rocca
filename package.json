@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@algorandfoundation/log-store": "^1.0.0-canary.2",
-    "@algorandfoundation/react-native-keystore": "^1.0.0-canary.3",
+    "@algorandfoundation/react-native-keystore": "^1.0.0-canary.5",
     "@expo/vector-icons": "^15.0.3",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",

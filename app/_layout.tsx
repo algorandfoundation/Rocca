@@ -7,6 +7,7 @@ import { initializeKeyStore, Key, KeyData, KeyStoreState, setStatus } from '@alg
 import { Store } from '@tanstack/store'
 import { accountsStore } from '@/stores/accounts'
 import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider'
+import {identitiesStore} from "@/stores/identities";
 
 install()
 
@@ -37,6 +38,12 @@ export default function RootLayout() {
               keystore: {
                 autoPopulate: true,
               },
+            },
+            identities: {
+              store: identitiesStore,
+              keystore: {
+                autoPopulate: true,
+              }
             },
             keystore: {
               store: keyStore,
