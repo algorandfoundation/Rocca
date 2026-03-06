@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
+import { DidDocumentModal } from '@/dialogs/DidDocumentModal';
 import {useProvider} from "@/hooks/useProvider";
 
 // Extract provider configuration from expo-constants
@@ -17,9 +18,11 @@ const config = Constants.expoConfig?.extra?.provider || {
   showFeeDelegation: true,
   showIdentityManagement: true,
 };
+
 export default function LandingScreen() {
   const router = useRouter();
   const {key, identity, account, identities, accounts} = useProvider()
+  const [modalVisible, setModalVisible] = useState(false);
 
   const activeIdentity = identities[0];
   const activeAccount = accounts[0];
@@ -76,7 +79,7 @@ export default function LandingScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Your Identity (DID)</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => setModalVisible(true)}>
               <Text style={[styles.seeAll, { color: primaryColor }]}>View Doc</Text>
             </TouchableOpacity>
           </View>
@@ -157,6 +160,12 @@ export default function LandingScreen() {
           <Text style={styles.resetButtonText}>Logout & Reset Onboarding</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <DidDocumentModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        didDocument={activeIdentity?.didDocument}
+      />
     </SafeAreaView>
   );
 }
@@ -362,5 +371,5 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontSize: 14,
     fontWeight: '500',
-  }
+  },
 });

@@ -1,5 +1,5 @@
-import React, { useReducer, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert, Image } from 'react-native';
+import React, { useReducer, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert, Image, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -88,6 +88,7 @@ function getIndicatorStep (step: OnboardingStep) {
        return 'Your recovery phrase is the only way to recover your wallet. Keep it secret and never share it.'
    }
  }
+
 export default function OnboardingScreen() {
   // UI Elements
   const { primaryColor, secondaryColor, name } = config
@@ -177,7 +178,10 @@ export default function OnboardingScreen() {
                 <Text style={styles.primaryButtonText}>Create Wallet</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.secondaryButton}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => router.push('/import')}
+              >
                 <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>Import Existing Wallet</Text>
               </TouchableOpacity>
             </View>
@@ -245,12 +249,20 @@ export default function OnboardingScreen() {
                   switch (step) {
                     case 'generate':
                       return (
-                        <TouchableOpacity
-                          style={[styles.primaryButton, { backgroundColor: primaryColor }]}
-                          onPress={() => dispatch({ type: 'SHOW_PHRASE' })}
-                        >
-                          <Text style={styles.primaryButtonText}>View Secret</Text>
-                        </TouchableOpacity>
+                        <>
+                          <TouchableOpacity
+                            style={styles.secondaryButton}
+                            onPress={() => dispatch({ type: 'RESET' })}
+                          >
+                            <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>Go Back</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.primaryButton, { backgroundColor: primaryColor }]}
+                            onPress={() => dispatch({ type: 'SHOW_PHRASE' })}
+                          >
+                            <Text style={styles.primaryButtonText}>View Secret</Text>
+                          </TouchableOpacity>
+                        </>
                       );
                     case 'backup':
                       return (

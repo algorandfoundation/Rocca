@@ -16,6 +16,27 @@ export type IdentityType = "xhd" | "did:key" | string;
 
 
 /**
+ * W3C DID Document structure
+ */
+export interface DIDDocument {
+	"@context": string[];
+	id: string;
+	verificationMethod: VerificationMethod[];
+	authentication: string[];
+	assertionMethod: string[];
+}
+
+/**
+ * Verification Method for DID Document
+ */
+export interface VerificationMethod {
+	id: string;
+	type: string;
+	controller: string;
+	publicKeyMultibase: string;
+}
+
+/**
  * Represents an identity that can sign transactions.
  */
 export interface Identity {
@@ -28,6 +49,11 @@ export interface Identity {
 	 * The DID:key format if available.
 	 */
 	did?: string;
+
+	/**
+	 * The W3C DID Document.
+	 */
+	didDocument?: DIDDocument;
 
 	/**
 	 * Type of identity

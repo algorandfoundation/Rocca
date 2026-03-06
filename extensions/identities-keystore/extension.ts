@@ -14,7 +14,43 @@ import type {
 	IdentitiesKeystoreExtension,
 	IdentitiesKeystoreExtensionOptions,
 } from "./types.ts";
-import {base64} from "@scure/base";
+import { generateDidKey, generateDidDocument, type DIDDocument } from "@/extensions/identities/did-document";
+import { localStorage } from "@/stores/mmkv-local";
+
+const DID_DOCUMENT_KEY_PREFIX = "did:document:";
+
+/**
+ * Save DID Document to MMKV storage
+ */
+function saveDidDocument(did: string, document: DIDDocument): void {
+	const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
+	localStorage.set(key, JSON.stringify(document));
+}
+
+/**
+ * Load DID Document from MMKV storage
+ */
+function loadDidDocument(did: string): DIDDocument | null {
+	const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
+	const json = localStorage.getString(key);
+	if (json) {
+		try {
+			return JSON.parse(json) as DIDDocument;
+		} catch (e) {
+			console.error("Failed to parse DID Document from storage:", e);
+			return null;
+		}
+	}
+	return null;
+}
+
+/**
+ * Remove DID Document from MMKV storage
+ */
+function removeDidDocument(did: string): void {
+	const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
+	localStorage.remove(key);
+}
 
 /**
  * Extension that bridges the identity store and keystore.
@@ -49,34 +85,32 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 		keyId: string,
 		address: string,
 		did: string,
-	): Identity => ({
-		address,
-		did,
-		type: "did:key",
-		metadata: { keyId },
+		publicKey: Uint8Array,
+	): Identity => {
+		// Generate the DID Document
+		const didDocument = generateDidDocument(did, publicKey);
+		
+		// Save to MMKV storage
+		saveDidDocument(did, didDocument);
 
-		// TODO: TransactionSigners
-		sign: async (txns: Uint8Array[]) => {
-			// Sign each transaction using the keystore
-			const signedTxns: Uint8Array[] = [];
-			for (const txn of txns) {
-				const signed = await provider.key.store.sign(keyId, txn);
-				signedTxns.push(signed);
-			}
-			return signedTxns;
-		},
-	});
+		return {
+			address,
+			did,
+			didDocument,
+			type: "did:key",
+			metadata: { keyId },
 
-	const getDidKey = (publicKey: Uint8Array): string => {
-		// Simple DID:key implementation for ed25519 (multicodec 0xed)
-		// Prefix with 0xed01 (varint for 0xed is 0xed01)
-		const prefix = new Uint8Array([0xed, 0x01]);
-		const didBytes = new Uint8Array(prefix.length + publicKey.length);
-		didBytes.set(prefix);
-		didBytes.set(publicKey, prefix.length);
-		return `did:key:z${base64.encode(didBytes)}`; // z is for base58btc, but here we use base64 for simplicity as per previous pattern or should we use base58?
-		// The previous issue used base64.encode(key.publicKey) for algorand address (which is actually not correct for algorand but it's what was requested/implemented)
-		// Let's stick to base64 for now as it seems to be the project's utility.
+			// TODO: TransactionSigners
+			sign: async (txns: Uint8Array[]) => {
+				// Sign each transaction using the keystore
+				const signedTxns: Uint8Array[] = [];
+				for (const txn of txns) {
+					const signed = await provider.key.store.sign(keyId, txn);
+					signedTxns.push(signed);
+				}
+				return signedTxns;
+			},
+		};
 	};
 
 	// Initial population if enabled
@@ -90,8 +124,8 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 				key.metadata?.context === 1
 			) {
 				console.log(`Checking key ${key.id}-${key.type} for identity...`);
-				const did = getDidKey(key.publicKey);
-				const address = did; // Using DID as address for now
+				const did = generateDidKey(key.publicKey);
+				const address = did;
 
 				// Skip if the identity already exists
 				if (identityStore.state.identities.some((i) => i.address === address)) {
@@ -99,7 +133,7 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 				}
 
 				provider.identity.store.addIdentity(
-					createKeyIdentity(key.id, address, did),
+					createKeyIdentity(key.id, address, did, key.publicKey),
 				);
 			}
 		}
@@ -133,10 +167,14 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 			// Remove identities for removed keys
 			removedKeys.forEach((k) => {
 				if (k.type === "hd-derived-ed25519" && k.publicKey) {
-					const address = getDidKey(k.publicKey);
+					const address = generateDidKey(k.publicKey);
 					const identity = identityStore.state.identities.find((i) => i.address === address);
 					if (identity && identity.metadata?.keyId === k.id) {
 						console.log(`Removing identity for key ${k.id}-${k.type}...`);
+						// Remove DID Document from storage
+						if (identity.did) {
+							removeDidDocument(identity.did);
+						}
 						provider.identity.store.removeIdentity(address);
 					}
 				}
@@ -146,14 +184,14 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 			addedKeys.forEach((k) => {
 				if (k.type === "hd-derived-ed25519" && k.publicKey && k.metadata?.context === 1) {
 					console.log(`Checking identity for key ${k.id}-${k.type}...`);
-					const did = getDidKey(k.publicKey);
+					const did = generateDidKey(k.publicKey);
 					const address = did;
 
 					// Skip if the identity already exists
 					if (!identityStore.state.identities.some((i) => i.address === address)) {
 						console.log(`Adding identity for key ${k.id}-${k.type}...`);
 						provider.identity.store.addIdentity(
-							createKeyIdentity(k.id, address, did),
+							createKeyIdentity(k.id, address, did, k.publicKey),
 						);
 					}
 				}
