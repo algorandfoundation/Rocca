@@ -1,5 +1,5 @@
 import type { Store } from "@tanstack/store";
-import type { Account, AccountStoreState } from "./types.ts";
+import type { AccountStoreState } from "./types.ts";
 
 /**
  * Adds an account to the store.
@@ -9,14 +9,14 @@ import type { Account, AccountStoreState } from "./types.ts";
  * @param params.account - The {@link Account} to add.
  * @returns The added {@link Account}.
  */
-export function addAccount({
+export function addAccount<T>({
 	store,
 	account,
 }: {
-	store: Store<AccountStoreState>;
-	account: Account;
-}): Account {
-	store.setState((state) => {
+	store: Store<AccountStoreState<T>>;
+	account: T;
+}): T {
+	store.setState((state: AccountStoreState<T>) => {
 		return {
 			...state,
 			accounts: [account, ...state.accounts],
@@ -32,17 +32,19 @@ export function addAccount({
  * @param params.store - The TanStack store instance for {@link AccountStoreState}.
  * @param params.address - The address of the account to remove.
  */
-export function removeAccount({
+export function removeAccount<T>({
 	store,
 	address,
 }: {
-	store: Store<AccountStoreState>;
+	store: Store<AccountStoreState<T>>;
 	address: string;
 }): void {
-	store.setState((state) => {
+	store.setState((state: AccountStoreState<T>) => {
 		return {
 			...state,
-			accounts: state.accounts.filter((account) => account.address !== address),
+			accounts: state.accounts.filter(
+				(account) => (account as any).address !== address,
+			),
 		};
 	});
 }
@@ -55,14 +57,16 @@ export function removeAccount({
  * @param params.address - The address of the account to retrieve.
  * @returns The {@link Account} if found, otherwise undefined.
  */
-export function getAccount({
+export function getAccount<T>({
 	store,
 	address,
 }: {
-	store: Store<AccountStoreState>;
+	store: Store<AccountStoreState<T>>;
 	address: string;
-}): Account | undefined {
-	return store.state.accounts.find((account) => account.address === address);
+}): T | undefined {
+	return store.state.accounts.find(
+		(account) => (account as any).address === address,
+	);
 }
 
 /**
@@ -71,12 +75,12 @@ export function getAccount({
  * @param params - The store parameters.
  * @param params.store - The TanStack store instance for {@link AccountStoreState}.
  */
-export function clearAccounts({
+export function clearAccounts<T>({
 	store,
 }: {
-	store: Store<AccountStoreState>;
+	store: Store<AccountStoreState<T>>;
 }): void {
-	store.setState((state) => {
+	store.setState((state: AccountStoreState<T>) => {
 		return {
 			...state,
 			accounts: [],
