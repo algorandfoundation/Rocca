@@ -21,7 +21,7 @@ const config = Constants.expoConfig?.extra?.provider || {
 
 export default function LandingScreen() {
   const router = useRouter();
-  const {key, identity, account, identities, accounts} = useProvider()
+  const {key, identity, account, identities, accounts, passkey} = useProvider()
   const [modalVisible, setModalVisible] = useState(false);
 
   const activeIdentity = identities[0];
@@ -49,6 +49,12 @@ export default function LandingScreen() {
               <Text style={styles.userName}>{activeAccount ? `${activeAccount.address.slice(0, 8)}...${activeAccount.address.replace('=', '').slice(-8)}` : `${name} Wallet`}</Text>
             </View>
           </View>
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => router.push('/scan')}
+          >
+            <MaterialIcons name="qr-code-scanner" size={28} color={primaryColor} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.profileButton}>
             <MaterialIcons name="account-circle" size={32} color={primaryColor} />
           </TouchableOpacity>
@@ -147,6 +153,7 @@ export default function LandingScreen() {
           </View>
         </View>
 
+
         <TouchableOpacity
           style={styles.resetButton}
           onPress={async () =>
@@ -154,6 +161,7 @@ export default function LandingScreen() {
                 await key.store.clear()
                 await account.store.clear()
                 await identity.store.clear()
+                await passkey.store.clear()
                 router.replace('/onboarding')
               }}
         >
@@ -184,6 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
     marginTop: 10,
+    gap: 12,
   },
   welcomeText: {
     fontSize: 14,
@@ -366,6 +375,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 16,
     alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    marginVertical: 4,
   },
   resetButtonText: {
     color: '#94A3B8',

@@ -102,9 +102,7 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 			}
 		}
 
-		keyStore.subscribe((state) => {
-			const newKeys = (state as unknown as KeyStoreState).keys;
-
+		const processUpdates = (newKeys: Key[]) => {
 			// Find added keys
 			const addedKeys = newKeys.filter(
 				(newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
@@ -140,8 +138,6 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 				}
 			});
 
-			const accounts = [...accountStore.state.accounts];
-
 			// Process only the newly added keys
 			addedKeys.forEach((k) => {
 				if (k.type === "hd-derived-ed25519" && k.publicKey) {
@@ -161,14 +157,13 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 					}
 				}
 			});
-			if (keys.some((k) => k.type === "hd-derived-ed25519"))
-				console.log(
-					`Found ${keys.length} keys, ${keys.filter((k) => k.type === "hd-derived-ed25519" && k.metadata?.context === 0).length} HD Account keys`,
-				);
-			if (accounts.some((a) => isKeystoreAccount(a)))
-				console.log(
-					`Found ${accounts.length} ed25519 accounts, ${accounts.filter((a) => !isKeystoreAccount(a)).length} others`,
-				);
+		};
+
+		processUpdates(keyStore.state.keys as unknown as Key[]);
+
+		keyStore.subscribe((state) => {
+			if (state.status !== 'ready' && state.status !== 'idle') return;
+			processUpdates(state.keys as unknown as Key[]);
 		});
 	}
 

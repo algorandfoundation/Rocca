@@ -4,6 +4,7 @@ import {useStore} from "@tanstack/react-store";
 import {WalletProviderContext} from "@/providers/ReactNativeProvider";
 import {keyStore} from "@/stores/keystore";
 import { accountsStore } from '@/stores/accounts'
+import { passkeysStore } from '@/stores/passkeys'
 
 export function useProvider(){
     const provider = useContext(WalletProviderContext)
@@ -13,6 +14,7 @@ export function useProvider(){
     const keys = useStore(keyStore, (state)=>state.keys);
     const status = useStore(keyStore, (state)=>state.status)
     const accounts = useStore(accountsStore, (state)=>state.accounts)
+    const passkeys = useStore(passkeysStore, (state)=>state.passkeys)
 
-    return {...provider, keys, status, accounts};
+    return {...provider, keys, status, accounts, passkeys};
 }

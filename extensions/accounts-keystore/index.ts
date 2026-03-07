@@ -1,6 +1,6 @@
-import { WithAccountsKeystore } from "./extension.ts";
+import { WithAccountsKeystore } from "./extension";
 
-export * from "./extension.ts";
-export * from "./types.ts";
+export * from "./extension";
+export * from "./types";
 
 export default WithAccountsKeystore;

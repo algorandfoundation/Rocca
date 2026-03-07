@@ -138,9 +138,7 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 			}
 		}
 
-		keyStore.subscribe((state) => {
-			const newKeys = (state as unknown as KeyStoreState).keys;
-
+		const processUpdates = (newKeys: Key[]) => {
 			// Find added keys
 			const addedKeys = newKeys.filter(
 				(newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
@@ -196,6 +194,14 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 					}
 				}
 			});
+		};
+
+		processUpdates(keyStore.state.keys as unknown as Key[]);
+
+
+		keyStore.subscribe((state) => {
+			if (state.status !== 'ready' && state.status !== 'idle') return;
+			processUpdates(state.keys as unknown as Key[]);
 		});
 	}
 
