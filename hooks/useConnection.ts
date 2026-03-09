@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { NativeModules, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useStore } from '@tanstack/react-store';
-import { SignalClient, toBase64URL } from "@algorandfoundation/liquid-client";
+import {SignalClient, toBase64URL} from "@algorandfoundation/liquid-client";
 import { encodeAddress } from "@algorandfoundation/keystore";
 import { useProvider } from '@/hooks/useProvider';
 import { addMessage } from '@/stores/messages';
@@ -147,24 +147,14 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
         console.log("Found key for attestation:", foundKey.id, foundKey.type);
 
-        await client.attestation(async (challenge) => {
-          console.log("Attestation challenge received:", toBase64URL(challenge));
-          try {
-            const signature = await key.store.sign(foundKey.id, challenge);
-            console.log("Attestation signature generated successfully");
-            return {
-              requestId,
-              origin,
-              type: 'algorand',
-              address: encodeAddress(foundKey.publicKey!!),
-              signature: toBase64URL(signature),
-              device: 'Rocca Wallet'
-            };
-          } catch (signError) {
-            console.error("Error during attestation signing:", signError);
-            throw signError;
-          }
-        });
+        await client.attestation(async (challenge: Uint8Array) => ({
+          requestId,
+          origin: origin,
+          type: 'algorand',
+          address: encodeAddress(foundKey?.publicKey!),
+          signature: toBase64URL(await key.store.sign(foundKey.id, challenge)),
+          device: 'Demo Web Wallet'
+        }));
 
         const datachannel = await client.peer(requestId, "answer");
         dataChannelRef.current = datachannel;
