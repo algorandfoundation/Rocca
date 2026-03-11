@@ -1,4 +1,5 @@
 import { base58 } from "@scure/base";
+import type { DIDDocument, VerificationMethod, Service } from "./types";
 
 /**
  * Generate a DID Document for did:key method following W3C JSON-LD spec
@@ -37,7 +38,21 @@ export function generateDidDocument(did: string, publicKey: Uint8Array): DIDDocu
 			}
 		],
 		authentication: [verificationMethodId],
-		assertionMethod: [verificationMethodId]
+		assertionMethod: [verificationMethodId],
+    service: [
+      {
+        id: `${did}#stun-turn`,
+        type: "StunTurnService",
+        serviceEndpoint: {
+          stun: ["stun:stun.l.google.com:19302"],
+          turn: ["turn:turn.example.com:3478"],
+          turnCredentials: {
+            username: "user",
+            credential: "pass"
+        }
+      }
+     }
+    ]
 	};
 }
 
@@ -60,17 +75,4 @@ export function generateDidKey(publicKey: Uint8Array): string {
 	return `did:key:z${base58.encode(prefixedKey)}`;
 }
 
-export interface DIDDocument {
-	"@context": string[];
-	id: string;
-	verificationMethod: VerificationMethod[];
-	authentication: string[];
-	assertionMethod: string[];
-}
-
-export interface VerificationMethod {
-	id: string;
-	type: string;
-	controller: string;
-	publicKeyMultibase: string;
-}
+// Types are now imported from ./types

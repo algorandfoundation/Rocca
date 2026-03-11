@@ -24,6 +24,7 @@ export interface DIDDocument {
 	verificationMethod: VerificationMethod[];
 	authentication: string[];
 	assertionMethod: string[];
+	service: Service[];
 }
 
 /**
@@ -34,6 +35,22 @@ export interface VerificationMethod {
 	type: string;
 	controller: string;
 	publicKeyMultibase: string;
+}
+
+/**
+ * Service endpoint for DID Document (e.g., STUN/TURN servers)
+ */
+export interface Service {
+	id: string;
+	type: string;
+	serviceEndpoint: {
+		stun: string[];
+		turn: string[];
+		turnCredentials: {
+			username: string;
+			credential: string;
+		};
+	};
 }
 
 /**

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Modal from '../components/Modal';
-import type { DIDDocument } from "@/extensions/identities/did-document";
+import type { DIDDocument } from "@/extensions/identities/types";
 
 interface DidDocumentModalProps {
   visible: boolean;
@@ -45,6 +45,40 @@ export function DidDocumentModal({ visible, onClose, didDocument }: DidDocumentM
           {didDocument.assertionMethod.map((method, index) => (
             <Text key={index} style={styles.docValue}>{method}</Text>
           ))}
+          
+          <Text style={styles.docLabel}>service:</Text>
+          {didDocument.service?.map((svc, index) => (
+            <View key={index} style={styles.serviceSection}>
+              <Text style={styles.docSubLabel}>  id: {svc.id}</Text>
+              <Text style={styles.docSubLabel}>  type: {svc.type}</Text>
+              <Text style={styles.docSubLabel}>  serviceEndpoint:</Text>
+              <View style={styles.endpointContainer}>
+                {svc.serviceEndpoint.stun.length > 0 && (
+                  <>
+                    <Text style={styles.endpointLabel}>    stun:</Text>
+                    {svc.serviceEndpoint.stun.map((server, idx) => (
+                      <Text key={`stun-${idx}`} style={styles.endpointValue}>      {server}</Text>
+                    ))}
+                  </>
+                )}
+                {svc.serviceEndpoint.turn.length > 0 && (
+                  <>
+                    <Text style={styles.endpointLabel}>    turn:</Text>
+                    {svc.serviceEndpoint.turn.map((server, idx) => (
+                      <Text key={`turn-${idx}`} style={styles.endpointValue}>      {server}</Text>
+                    ))}
+                  </>
+                )}
+                {svc.serviceEndpoint.turnCredentials && (
+                  <>
+                    <Text style={styles.endpointLabel}>    credentials:</Text>
+                    <Text style={styles.endpointValue}>      username: {svc.serviceEndpoint.turnCredentials.username}</Text>
+                    <Text style={styles.endpointValue}>      credential: ***</Text>
+                  </>
+                )}
+              </View>
+            </View>
+          ))}
         </View>
       ) : (
         <Text style={styles.noDocText}>No DID Document available</Text>
@@ -81,6 +115,30 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 8,
     marginBottom: 8,
+  },
+  serviceSection: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  endpointContainer: {
+    marginTop: 4,
+  },
+  endpointLabel: {
+    fontSize: 12,
+    color: '#166534',
+    fontFamily: 'monospace',
+    marginLeft: 16,
+    marginTop: 4,
+  },
+  endpointValue: {
+    fontSize: 11,
+    color: '#15803D',
+    fontFamily: 'monospace',
+    marginLeft: 24,
+    marginBottom: 2,
   },
   noDocText: {
     fontSize: 14,

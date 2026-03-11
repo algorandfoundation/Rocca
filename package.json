@@ -37,7 +37,7 @@
     "@scure/bip39": "^2.0.1",
     "@tanstack/react-store": "0.9.1",
     "before-after-hook": "^4.0.0",
-    "expo": "54.0.33",
+    "expo": "^54.0.33",
     "expo-camera": "~17.0.10",
     "expo-constants": "~18.0.13",
     "expo-dev-client": "~6.0.20",
