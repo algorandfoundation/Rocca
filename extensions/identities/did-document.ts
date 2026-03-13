@@ -1,4 +1,22 @@
 import { base58 } from "@scure/base";
+import type { DIDDocument, VerificationMethod, Service, RTCIceServer } from "./types";
+
+/**
+ * Default ICE servers configuration for WebRTC connections
+ */
+const defaultIceServers: RTCIceServer[] = [
+	{
+		urls: "stun:stun.l.google.com:19302",
+	},
+	{
+		urls: [
+			"turn:turn.example.com:3478",
+			"turn:turn.example.com:3479",
+		],
+		username: "user",
+		credential: "pass",
+	},
+];
 
 /**
  * Generate a DID Document for did:key method following W3C JSON-LD spec
@@ -10,22 +28,22 @@ export function generateDidDocument(did: string, publicKey: Uint8Array): DIDDocu
 	// Create the multicodec prefix for Ed25519 public key: 0xed
 	// The varint encoding of 0xed is [0xed, 0x01]
 	const multicodecPrefix = new Uint8Array([0xed, 0x01]);
-	
+
 	// Combine prefix + public key
 	const prefixedKey = new Uint8Array(multicodecPrefix.length + publicKey.length);
 	prefixedKey.set(multicodecPrefix);
 	prefixedKey.set(publicKey, multicodecPrefix.length);
-	
+
 	// Encode to base58btc with 'z' prefix
 	const publicKeyMultibase = `z${base58.encode(prefixedKey)}`;
-	
+
 	// The verification method ID is the DID + key reference
 	const verificationMethodId = `${did}#${publicKeyMultibase}`;
-	
+
 	return {
 		"@context": [
 			"https://www.w3.org/ns/did/v1",
-			"https://w3id.org/security/suites/ed25519-2020/v1"
+			"https://w3id.org/security/suites/ed25519-2020/v1",
 		],
 		id: did,
 		verificationMethod: [
@@ -33,11 +51,18 @@ export function generateDidDocument(did: string, publicKey: Uint8Array): DIDDocu
 				id: verificationMethodId,
 				type: "Ed25519VerificationKey2020",
 				controller: did,
-				publicKeyMultibase: publicKeyMultibase
-			}
+				publicKeyMultibase: publicKeyMultibase,
+			},
 		],
 		authentication: [verificationMethodId],
-		assertionMethod: [verificationMethodId]
+		assertionMethod: [verificationMethodId],
+		service: [
+			{
+				id: `${did}#webrtc-ice-servers`,
+				type: "WebRTCICECredentials",
+				iceServers: defaultIceServers,
+			},
+		],
 	};
 }
 
@@ -60,17 +85,4 @@ export function generateDidKey(publicKey: Uint8Array): string {
 	return `did:key:z${base58.encode(prefixedKey)}`;
 }
 
-export interface DIDDocument {
-	"@context": string[];
-	id: string;
-	verificationMethod: VerificationMethod[];
-	authentication: string[];
-	assertionMethod: string[];
-}
-
-export interface VerificationMethod {
-	id: string;
-	type: string;
-	controller: string;
-	publicKeyMultibase: string;
-}
+// Types are now imported from ./types

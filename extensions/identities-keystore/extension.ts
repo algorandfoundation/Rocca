@@ -14,7 +14,8 @@ import type {
 	IdentitiesKeystoreExtension,
 	IdentitiesKeystoreExtensionOptions,
 } from "./types.ts";
-import { generateDidKey, generateDidDocument, type DIDDocument } from "@/extensions/identities/did-document";
+import { generateDidKey, generateDidDocument } from "@/extensions/identities/did-document";
+import type { DIDDocument } from "@/extensions/identities/types";
 import { localStorage } from "@/stores/mmkv-local";
 
 const DID_DOCUMENT_KEY_PREFIX = "did:document:";
