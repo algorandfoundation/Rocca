@@ -38,19 +38,37 @@ export interface VerificationMethod {
 }
 
 /**
+ * RTCIceServer configuration compatible with WebRTC RTCConfiguration.iceServers
+ * See: https://udn.realityripple.com/docs/Web/API/RTCIceServer
+ */
+export interface RTCIceServer {
+	/**
+	 * STUN or TURN server URLs - can be a single URL string or array of URLs
+	 * Examples: "stun:stun.example.com" or ["stun:stun1.example.com", "stun:stun2.example.com"]
+	 */
+	urls: string | string[];
+	/**
+	 * Username for TURN server authentication (optional)
+	 */
+	username?: string;
+	/**
+	 * Credential (password) for TURN server authentication (optional)
+	 */
+	credential?: string;
+}
+
+/**
  * Service endpoint for DID Document (e.g., STUN/TURN servers)
+ * Contains iceServers array compatible with WebRTC RTCPeerConnection
+ * See: https://udn.realityripple.com/docs/Web/API/RTCConfiguration/iceServers
  */
 export interface Service {
 	id: string;
 	type: string;
-	serviceEndpoint: {
-		stun: string[];
-		turn: string[];
-		turnCredentials: {
-			username: string;
-			credential: string;
-		};
-	};
+	/**
+	 * WebRTC compatible iceServers configuration
+	 */
+	iceServers: RTCIceServer[];
 }
 
 /**

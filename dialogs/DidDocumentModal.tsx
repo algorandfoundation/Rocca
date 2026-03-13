@@ -51,31 +51,26 @@ export function DidDocumentModal({ visible, onClose, didDocument }: DidDocumentM
             <View key={index} style={styles.serviceSection}>
               <Text style={styles.docSubLabel}>  id: {svc.id}</Text>
               <Text style={styles.docSubLabel}>  type: {svc.type}</Text>
-              <Text style={styles.docSubLabel}>  serviceEndpoint:</Text>
+              <Text style={styles.docSubLabel}>  iceServers:</Text>
               <View style={styles.endpointContainer}>
-                {svc.serviceEndpoint.stun.length > 0 && (
-                  <>
-                    <Text style={styles.endpointLabel}>    stun:</Text>
-                    {svc.serviceEndpoint.stun.map((server, idx) => (
-                      <Text key={`stun-${idx}`} style={styles.endpointValue}>      {server}</Text>
-                    ))}
-                  </>
-                )}
-                {svc.serviceEndpoint.turn.length > 0 && (
-                  <>
-                    <Text style={styles.endpointLabel}>    turn:</Text>
-                    {svc.serviceEndpoint.turn.map((server, idx) => (
-                      <Text key={`turn-${idx}`} style={styles.endpointValue}>      {server}</Text>
-                    ))}
-                  </>
-                )}
-                {svc.serviceEndpoint.turnCredentials && (
-                  <>
-                    <Text style={styles.endpointLabel}>    credentials:</Text>
-                    <Text style={styles.endpointValue}>      username: {svc.serviceEndpoint.turnCredentials.username}</Text>
-                    <Text style={styles.endpointValue}>      credential: ***</Text>
-                  </>
-                )}
+                {svc.iceServers.map((iceServer, idx) => (
+                  <View key={`ice-${idx}`}>
+                    <Text style={styles.endpointLabel}>    - urls:</Text>
+                    {Array.isArray(iceServer.urls) ? (
+                      iceServer.urls.map((url, urlIdx) => (
+                        <Text key={`url-${urlIdx}`} style={styles.endpointValue}>        - {url}</Text>
+                      ))
+                    ) : (
+                      <Text style={styles.endpointValue}>        - {iceServer.urls}</Text>
+                    )}
+                    {iceServer.username && (
+                      <Text style={styles.endpointValue}>      username: {iceServer.username}</Text>
+                    )}
+                    {iceServer.credential && (
+                      <Text style={styles.endpointValue}>      credential: ***</Text>
+                    )}
+                  </View>
+                ))}
               </View>
             </View>
           ))}
