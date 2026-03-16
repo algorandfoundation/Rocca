@@ -151,7 +151,7 @@ export default function OnboardingScreen() {
                 <Logo style={styles.logoContainer} size={80} />
                 <Text style={styles.title}>Welcome to {name}</Text>
                 <Text style={styles.subtitle}>
-                  Your secure, decentralized identity for accessing rewards and managing digital assets.
+                  Your secure, decentralized identity for connecting and managing your digital life.
                 </Text>
               </View>
 
