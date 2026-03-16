@@ -1,18 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, SafeAreaView, KeyboardAvoidingView, Platform, Keyboard,
+  StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, Keyboard,
   TouchableWithoutFeedback
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useStore } from '@tanstack/react-store';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { messagesStore, Message, clearMessages } from '@/stores/messages';
 import { useConnection } from '@/hooks/useConnection';
 
 export default function ChatScreen() {
   const router = useRouter();
-  const headerHeight = useHeaderHeight();
   const params = useLocalSearchParams<{ origin: string; requestId: string }>();
   const [inputText, setInputText] = useState('');
   const { messages } = useStore(messagesStore, (state) => state);
@@ -22,7 +21,6 @@ export default function ChatScreen() {
     isConnected,
     isLoading,
     isError,
-    error,
     send,
     lastHeartbeat,
     reset

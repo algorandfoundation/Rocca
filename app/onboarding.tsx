@@ -1,5 +1,6 @@
-import React, { useReducer, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert, Image } from 'react-native';
+import React, { useReducer, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -102,6 +103,12 @@ export default function OnboardingScreen() {
   // State reducer
   const [{ step, recoveryPhrase, testInput }, dispatch] =
     useReducer(onboardingReducer, initialState)
+
+  useEffect(() => {
+    if (keys.length > 0 && step === 'welcome') {
+      router.replace('/landing')
+    }
+  }, [keys, step])
 
   // Helpers for state
   const currentIndicatorStep = getIndicatorStep(step)
@@ -323,10 +330,10 @@ export default function OnboardingScreen() {
                                 })
 
                                 try {
+                                  // Use the rootKeyId we just generated
                                   await ReactNativePasskeyAutofill.setHdRootKeyId(rootKeyId);
-                                  console.log('[DEBUG_LOG] HD Root Key ID set to ReactNativePasskeyAutofill:', rootKeyId);
                                 } catch (e) {
-                                  console.error('[DEBUG_LOG] Failed to set HD Root Key ID:', e);
+                                  console.error('Failed to set HD Root Key ID:', e);
                                 }
 
                                 // Generate Ed25519 Account Key

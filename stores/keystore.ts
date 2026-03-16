@@ -3,5 +3,5 @@ import {KeyStoreState} from "@algorandfoundation/keystore";
 
 export const keyStore = new Store<KeyStoreState>({
     keys: [],
-    status: 'idle'
+    status: 'loading'
 })

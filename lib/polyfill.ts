@@ -79,11 +79,11 @@ export function globalPolyfill() {
 export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
   // We are monkey-patching the globals for consistency
   if (!global.navigator) {
-    // @ts-ignore
+    // @ts-expect-error, we are overriding this on purpose
     global.navigator = {};
   }
 
-  // @ts-ignore
+  // @ts-expect-error, we are overriding this on purpose
   global.navigator.credentials = {
     async get(obj: { publicKey?: PublicKeyCredentialRequestOptions }) {
       const publicKey = obj?.publicKey;
@@ -96,10 +96,8 @@ export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
           id: typeof cred.id === 'string' ? cred.id : toBase64URL(toUint8Array(cred.id)),
         })),
       };
-      console.log('[DEBUG_LOG] navigator.credentials.get request:', JSON.stringify(request, null, 2));
       try {
         const result = await Passkey.get(request as any);
-        console.log('[DEBUG_LOG] navigator.credentials.get result:', JSON.stringify(result, null, 2));
         if (!result) return null;
 
         const clientDataJSON = toArrayBuffer(result.response.clientDataJSON);
@@ -136,7 +134,6 @@ export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
           type: result.type,
         };
       } catch (error) {
-        console.error('[DEBUG_LOG] navigator.credentials.get error:', error);
         throw error;
       }
     },
@@ -163,13 +160,8 @@ export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
       };
       // Android Credential Manager is very strict about the RP ID.
       // It must match the domain where the assetlinks.json is hosted.
-      if (request.rp && request.rp.id === 'liquid-auth.onrender.com') {
-        console.log('[DEBUG_LOG] RP ID is liquid-auth.onrender.com. Ensure assetlinks.json is correctly configured on this domain.');
-      }
-      console.log('[DEBUG_LOG] navigator.credentials.create request:', JSON.stringify(request, null, 2));
       try {
         const result = await Passkey.create(request as any);
-        console.log('[DEBUG_LOG] navigator.credentials.create result:', JSON.stringify(result, null, 2));
         if (!result) return null;
 
         const clientDataJSON = toArrayBuffer(result.response.clientDataJSON);
@@ -205,7 +197,6 @@ export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
           type: result.type,
         };
       } catch (error) {
-        console.error('[DEBUG_LOG] navigator.credentials.create error:', error);
         throw error;
       }
     },

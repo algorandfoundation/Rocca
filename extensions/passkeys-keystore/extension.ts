@@ -39,6 +39,8 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 	const keyStore: Store<KeyStoreState> = options.keystore.store;
 	const { autoPopulate = true } = options.passkeys.keystore ?? {};
 
+	const keys = [...((keyStore.state.keys as Key[]) ?? [])];
+
 	/**
 	 * Creates a passkey object from a keystore key.
 	 */
@@ -60,15 +62,6 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 
 	// Initial population if enabled
 	if (autoPopulate) {
-		const keys = [...((provider.keys as Key[]) ?? [])];
-		for (const key of keys) {
-			if (key.type === "hd-derived-passkey" || key.type === "xhd-derived-p256") {
-				provider.passkey.store.addPasskey(
-					createPasskeyFromKey(key as XHDDomainP256KeyData),
-				);
-			}
-		}
-
 		let isProcessing = false;
 		let nextKeys: Key[] | null = null;
 
@@ -80,7 +73,7 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 			isProcessing = true;
 			nextKeys = null;
 
-			// Find keys that are in newKeys but not in our local keys list
+			// Find added keys
 			const addedKeys = newKeys.filter(
 				(newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
 			);
@@ -92,22 +85,13 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 
 			if (addedKeys.length === 0 && removedKeys.length === 0) {
 				isProcessing = false;
-				if (nextKeys) {
-					processUpdates(nextKeys);
-				}
+
 				return;
 			}
 
 			// Update the local cache of keys
-			addedKeys.forEach((k) => {
-				keys.push(k);
-			});
-			removedKeys.forEach((k) => {
-				const index = keys.findIndex((existingKey) => existingKey.id === k.id);
-				if (index !== -1) {
-					keys.splice(index, 1);
-				}
-			});
+			keys.length = 0;
+			newKeys.forEach(k => keys.push(k));
 
 			// Remove passkeys for removed keys
 			removedKeys.forEach((k) => {
@@ -126,9 +110,7 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 			}
 
 			isProcessing = false;
-			if (nextKeys) {
-				processUpdates(nextKeys);
-			}
+
 		};
 
 		processUpdates(keyStore.state.keys as unknown as Key[]);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import SeedPhrase from '../components/SeedPhrase';
 
 // Mocking Reanimated because it often has issues in Jest environments
@@ -8,6 +8,10 @@ jest.mock('react-native-reanimated', () => {
   Reanimated.default.call = () => {};
   return Reanimated;
 });
+
+jest.mock('@expo/vector-icons', () => ({
+  MaterialIcons: 'MaterialIcons',
+}));
 
 describe('<SeedPhrase />', () => {
   const mockPhrase = ['apple', 'banana', 'cherry', 'date', 'elderberry', 'fig', 'grape', 'honeydew', 'iceberg', 'jackfruit', 'kiwi', 'lemon'];
@@ -71,7 +75,9 @@ describe('<SeedPhrase />', () => {
     );
 
     const input = getByPlaceholderText('Word #1');
-    fireEvent.changeText(input, 'test');
+    act(() => {
+      fireEvent.changeText(input, 'test');
+    });
     
     expect(onInputChange).toHaveBeenCalledWith(0, 'test');
   });
