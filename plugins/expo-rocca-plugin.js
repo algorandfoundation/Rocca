@@ -1,227 +1,139 @@
-const { withMainApplication, withMainActivity, withDangerousMod, withAndroidManifest, withStringsXml } = require('@expo/config-plugins');
+const { withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
 /**
- * Expo Config Plugin to move custom Android modifications into the build process.
+ * Expo Config Plugin to handle Rocca specific fixes not covered by upstream.
  */
 
-const withAndroidCookieModule = (config) => {
+const withRoccaResolutionStrategy = (config) => {
   return withDangerousMod(config, [
     'android',
     async (config) => {
       const projectRoot = config.modRequest.projectRoot;
-      const packagePath = 'com/anonymous/rocca'; // Replace with dynamic package if needed
-      const targetDir = path.join(projectRoot, 'android/app/src/main/java', packagePath);
+      const buildGradlePath = path.join(projectRoot, 'android/build.gradle');
 
-      // Ensure the directory exists
-      fs.mkdirSync(targetDir, { recursive: true });
+      if (fs.existsSync(buildGradlePath)) {
+        let content = fs.readFileSync(buildGradlePath, 'utf8');
 
-      // Copy CookieModule.kt and CookiePackage.kt if they exist in a source folder
-      // For simplicity, we'll assume they are kept in a local 'plugins/android' folder or we define them here.
-      // Since they are small, we can also just write them directly.
+        const aarPath = 'node_modules/@algorandfoundation/react-native-passkey-autofill/android/libs';
+        const resolutionStrategy = `
+    configurations.all {
+      resolutionStrategy {
+        force 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+        force 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
+        force 'org.bouncycastle:bcutil-jdk18on:1.78.1'
+        force 'io.github.zhongwuzw:mmkv:2.3.0'
 
-      const cookieModuleContent = `package com.anonymous.rocca
-
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.Promise
-import android.webkit.CookieManager
-
-class CookieModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
-    override fun getName(): String {
-        return "CookieModule"
-    }
-
-    @ReactMethod
-    fun getCookie(url: String, promise: Promise) {
-        try {
-            val cookieManager = CookieManager.getInstance()
-            val cookie = cookieManager.getCookie(url)
-            promise.resolve(cookie)
-        } catch (e: Exception) {
-            promise.reject("E_COOKIE_MANAGER", e.message)
+        dependencySubstitution {
+            substitute(module("org.bouncycastle:bcprov-jdk15to18")).using(module("org.bouncycastle:bcprov-jdk18on:1.78.1"))
+            substitute(module("org.bouncycastle:bcutil-jdk15to18")).using(module("org.bouncycastle:bcutil-jdk18on:1.78.1"))
+            substitute(module("org.bouncycastle:bcpkix-jdk15to18")).using(module("org.bouncycastle:bcpkix-jdk18on:1.78.1"))
+            substitute(module("com.tencent:mmkv")).using(module("io.github.zhongwuzw:mmkv:2.3.0"))
         }
+      }
     }
-
-    @ReactMethod
-    fun setCookie(url: String, cookie: String, promise: Promise) {
-        try {
-            val cookieManager = CookieManager.getInstance()
-            cookieManager.setCookie(url, cookie)
-            promise.resolve(null)
-        } catch (e: Exception) {
-            promise.reject("E_COOKIE_MANAGER", e.message)
-        }
-    }
-}
 `;
 
-      const cookiePackageContent = `package com.anonymous.rocca
-
-import android.view.View
-import com.facebook.react.ReactPackage
-import com.facebook.react.bridge.NativeModule
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.uimanager.ViewManager
-import java.util.Collections
-
-class CookiePackage : ReactPackage {
-    override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(CookieModule(reactContext))
+        if (!content.includes('io.github.zhongwuzw:mmkv')) {
+          const newAllProjectsBlock = `allprojects {
+    repositories {
+        flatDir {
+            dirs "\${rootProject.projectDir}/../${aarPath}"
+        }
+        google()
+        mavenCentral()
+        maven { url 'https://www.jitpack.io' }
     }
-
-    override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
-        return emptyList()
-    }
-}
-`;
-
-      fs.writeFileSync(path.join(targetDir, 'CookieModule.kt'), cookieModuleContent);
-      fs.writeFileSync(path.join(targetDir, 'CookiePackage.kt'), cookiePackageContent);
-
+${resolutionStrategy}
+}`;
+          // Replace the whole allprojects block to avoid duplication and syntax issues
+          const allProjectsBlockRegex = /allprojects\s*\{[\s\S]*?\n}/;
+          if (allProjectsBlockRegex.test(content)) {
+            content = content.replace(allProjectsBlockRegex, newAllProjectsBlock);
+          }
+          fs.writeFileSync(buildGradlePath, content);
+        }
+      }
       return config;
     },
   ]);
 };
 
-const withAndroidMainApplicationMod = (config) => {
-  return withMainApplication(config, (config) => {
-    let content = config.modResults.contents;
+const withPackagingOptions = (config) => {
+  return withDangerousMod(config, [
+    'android',
+    async (config) => {
+      const projectRoot = config.modRequest.projectRoot;
+      const appBuildGradlePath = path.join(projectRoot, 'android/app/build.gradle');
 
-    // Add imports
-    const imports = [
-      'import android.webkit.CookieManager',
-      'import com.facebook.react.modules.network.OkHttpClientProvider',
-      'import com.facebook.react.modules.network.ForwardingCookieHandler',
-      'import com.facebook.react.modules.network.ReactCookieJarContainer',
-      'import okhttp3.Interceptor',
-      'import okhttp3.JavaNetCookieJar',
-      'import java.net.CookieHandler',
-      'import android.os.Build'
-    ];
-
-    imports.forEach(imp => {
-      if (!content.includes(imp)) {
-        content = content.replace(/package .*\n/, (match) => `${match}${imp}\n`);
-      }
-    });
-
-    // Fix imports to use local BuildConfig
-    content = content.replace('import com.facebook.react.BuildConfig', 'import com.anonymous.rocca.BuildConfig');
-
-    // Register CookiePackage
-    if (!content.includes('add(CookiePackage())')) {
-        content = content.replace(
-            /PackageList\(this\)\.packages\.apply \{/,
-            `PackageList(this).packages.apply {\n              add(CookiePackage())`
-        );
-    }
-
-    // Add OkHttpClient customization in onCreate
-    const okHttpClientCode = `
-    CookieManager.getInstance().setAcceptCookie(true)
-    CookieManager.setAcceptFileSchemeCookies(true)
-
-    OkHttpClientProvider.setOkHttpClientFactory {
-      val userAgent = "\${BuildConfig.APPLICATION_ID}/\${BuildConfig.VERSION_NAME} " +
-          "(Android \${Build.VERSION.RELEASE}; \${Build.MODEL}; \${Build.BRAND})"
-
-      val cookieHandler = ForwardingCookieHandler()
-      CookieHandler.setDefault(cookieHandler)
-
-      val cookieJarContainer = ReactCookieJarContainer()
-      cookieJarContainer.setCookieJar(JavaNetCookieJar(cookieHandler))
-
-      OkHttpClientProvider.createClientBuilder()
-        .cookieJar(cookieJarContainer)
-        .addInterceptor(Interceptor { chain ->
-          val request = chain.request().newBuilder().header("User-Agent", userAgent).build()
-          chain.proceed(request)
-        })
-        .build()
+      if (fs.existsSync(appBuildGradlePath)) {
+        let content = fs.readFileSync(appBuildGradlePath, 'utf8');
+        const packagingItems = `
+    packaging {
+        pickFirst 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
+        pickFirst '**/libmmkv.so'
+        pickFirst '**/libmmkv.a'
+        exclude 'META-INF/LICENSE*'
+        exclude 'META-INF/NOTICE*'
+        exclude 'META-INF/DEPENDENCIES'
     }
 `;
 
-    if (!content.includes('OkHttpClientProvider.setOkHttpClientFactory')) {
-      content = content.replace(
-        /super\.onCreate\(\)/,
-        `super.onCreate()${okHttpClientCode}`
-      );
-    }
-
-    config.modResults.contents = content;
-    return config;
-  });
-};
-
-const withAndroidPasskeyConfig = (config) => {
-  config = withAndroidManifest(config, (config) => {
-    const mainActivity = config.modResults.manifest.application?.[0]?.activity?.find(
-      (activity) => activity['$']['android:name'] === '.MainActivity'
-    );
-
-    if (mainActivity) {
-      if (!mainActivity['meta-data']) {
-        mainActivity['meta-data'] = [];
-      }
-      
-      const hasAssetLinks = mainActivity['meta-data'].some(
-        (meta) => meta['$']['android:name'] === 'asset_statements'
-      );
-
-      if (!hasAssetLinks) {
-        mainActivity['meta-data'].push({
-          $: {
-            'android:name': 'asset_statements',
-            'android:resource': '@string/asset_statements',
-          },
-        });
-      }
-    }
-
-    // Ensure android:usesCleartextTraffic="true" for development/internal testing if needed
-    // or specifically for communicating with non-https local dev servers if any.
-    // However, it's generally better to stick with defaults unless requested.
-    // But since this is a common "missing" edit for some WebRTC/SignalClient setups:
-    if (config.modResults.manifest.application?.[0]) {
-      config.modResults.manifest.application[0]['$']['android:usesCleartextTraffic'] = 'true';
-    }
-
-    return config;
-  });
-
-  config = withStringsXml(config, (config) => {
-    const assetStatements = JSON.stringify([
-      {
-        relation: ["delegate_permission/common.handle_all_urls", "delegate_permission/common.get_login_creds"],
-        target: {
-          namespace: "android_app",
-          package_name: "com.anonymous.rocca",
-          sha256_cert_fingerprints: ["*"] // In production this should be the actual fingerprint
+        if (!content.includes("pickFirst 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'")) {
+          // Inject at the beginning of the android block
+          content = content.replace(/android\s*\{/, `android {\n${packagingItems}`);
+          fs.writeFileSync(appBuildGradlePath, content);
         }
       }
-    ]);
+      return config;
+    },
+  ]);
+};
 
-    const strings = config.modResults.resources.string || [];
-    if (!strings.some(s => s['$'].name === 'asset_statements')) {
-      strings.push({
-        $: { name: 'asset_statements', translatable: 'false' },
-        _: assetStatements
-      });
-      config.modResults.resources.string = strings;
-    }
+const withMMKVProguard = (config) => {
+  return withDangerousMod(config, [
+    'android',
+    async (config) => {
+      const projectRoot = config.modRequest.projectRoot;
+      const proguardPath = path.join(projectRoot, 'android/app/proguard-rules.pro');
 
-    return config;
-  });
-
-  return config;
+      if (fs.existsSync(proguardPath)) {
+        let content = fs.readFileSync(proguardPath, 'utf8');
+        const mmkvRules = `
+# MMKV
+-keep class com.tencent.mmkv.** { *; }
+-keep interface com.tencent.mmkv.** { *; }
+-keep class io.github.zhongwuzw.mmkv.** { *; }
+-keep interface io.github.zhongwuzw.mmkv.** { *; }
+-keep class com.tencent.mmkv.MMKV { *; }
+-keepclassmembers class com.tencent.mmkv.MMKV {
+    native <methods>;
+}
+-keep class io.github.zhongwuzw.mmkv.MMKV { *; }
+-keepclassmembers class io.github.zhongwuzw.mmkv.MMKV {
+    native <methods>;
+}
+-keep class com.tencent.mmkv.MMKVHandler { *; }
+-keep class com.tencent.mmkv.MMKVLogLevel { *; }
+-keep class com.tencent.mmkv.MMKV$LibLoader { *; }
+-keep class io.github.zhongwuzw.mmkv.MMKVHandler { *; }
+-keep class io.github.zhongwuzw.mmkv.MMKVLogLevel { *; }
+-keep class io.github.zhongwuzw.mmkv.MMKV$LibLoader { *; }
+`;
+        if (!content.includes('io.github.zhongwuzw.mmkv')) {
+          content += mmkvRules;
+          fs.writeFileSync(proguardPath, content);
+        }
+      }
+      return config;
+    },
+  ]);
 };
 
 module.exports = (config) => {
-  config = withAndroidCookieModule(config);
-  config = withAndroidMainApplicationMod(config);
-  config = withAndroidPasskeyConfig(config);
+  config = withRoccaResolutionStrategy(config);
+  config = withPackagingOptions(config);
+  config = withMMKVProguard(config);
   return config;
 };

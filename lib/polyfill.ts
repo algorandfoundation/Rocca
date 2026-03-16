@@ -1,4 +1,4 @@
-import { create, get } from "react-native-passkeys";
+import { Passkey } from "react-native-passkey";
 import { fromBase64Url, toBase64URL } from "@algorandfoundation/liquid-client";
 import { ReactNativeProvider } from "@/providers/ReactNativeProvider";
 
@@ -98,7 +98,7 @@ export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
       };
       console.log('[DEBUG_LOG] navigator.credentials.get request:', JSON.stringify(request, null, 2));
       try {
-        const result = await get(request as any);
+        const result = await Passkey.get(request as any);
         console.log('[DEBUG_LOG] navigator.credentials.get result:', JSON.stringify(result, null, 2));
         if (!result) return null;
 
@@ -168,7 +168,7 @@ export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
       }
       console.log('[DEBUG_LOG] navigator.credentials.create request:', JSON.stringify(request, null, 2));
       try {
-        const result = await create(request as any);
+        const result = await Passkey.create(request as any);
         console.log('[DEBUG_LOG] navigator.credentials.create result:', JSON.stringify(result, null, 2));
         if (!result) return null;
 

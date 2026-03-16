@@ -11,6 +11,7 @@ import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as bip39 from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider'
 import { mnemonicToSeed } from '@scure/bip39'
+import ReactNativePasskeyAutofill from "@algorandfoundation/react-native-passkey-autofill";
 
 
 // Extract provider configuration from expo-constants
@@ -320,6 +321,13 @@ export default function OnboardingScreen() {
                                     parentKeyId: seedId
                                   }
                                 })
+
+                                try {
+                                  await ReactNativePasskeyAutofill.setHdRootKeyId(rootKeyId);
+                                  console.log('[DEBUG_LOG] HD Root Key ID set to ReactNativePasskeyAutofill:', rootKeyId);
+                                } catch (e) {
+                                  console.error('[DEBUG_LOG] Failed to set HD Root Key ID:', e);
+                                }
 
                                 // Generate Ed25519 Account Key
                                 await key.store.generate({

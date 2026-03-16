@@ -56,7 +56,7 @@ export default function ScanScreen() {
       if(!url.searchParams.get("requestId")){
         throw new Error("Invalid URL")
       }
-      const requestId = url.searchParams.get("requestId")!!;
+      const requestId = url.searchParams.get("requestId")!;
       const origin = `https://${url.hostname}`
 
       router.replace({

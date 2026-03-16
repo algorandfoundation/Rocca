@@ -50,7 +50,14 @@
           }
         }
       ],
-      "@config-plugins/react-native-webrtc"
+      "@config-plugins/react-native-webrtc",
+      [
+        "@algorandfoundation/react-native-passkey-autofill",
+        {
+          "site": "https://fido.shore-tech.net",
+          "label": "Rocca Wallet"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

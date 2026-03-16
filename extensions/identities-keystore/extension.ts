@@ -139,7 +139,17 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 			}
 		}
 
+		let isProcessing = false;
+		let nextKeys: Key[] | null = null;
+
 		const processUpdates = (newKeys: Key[]) => {
+			if (isProcessing) {
+				nextKeys = newKeys;
+				return;
+			}
+			isProcessing = true;
+			nextKeys = null;
+
 			// Find added keys
 			const addedKeys = newKeys.filter(
 				(newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
@@ -150,7 +160,13 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 				(existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
 			);
 
-			if (addedKeys.length === 0 && removedKeys.length === 0) return;
+			if (addedKeys.length === 0 && removedKeys.length === 0) {
+				isProcessing = false;
+				if (nextKeys) {
+					processUpdates(nextKeys);
+				}
+				return;
+			}
 
 			// Update the local cache of keys
 			addedKeys.forEach((k) => {
@@ -195,14 +211,20 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 					}
 				}
 			});
+
+			isProcessing = false;
+			if (nextKeys) {
+				processUpdates(nextKeys);
+			}
 		};
 
 		processUpdates(keyStore.state.keys as unknown as Key[]);
 
-
 		keyStore.subscribe((state) => {
 			if (state.status !== 'ready' && state.status !== 'idle') return;
-			processUpdates(state.keys as unknown as Key[]);
+			setTimeout(() => {
+				processUpdates(state.keys as unknown as Key[]);
+			}, 0);
 		});
 	}
 
