@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     alignSelf: 'flex-start',
-    marginTop: 40,
+    marginTop: 10,
     padding: 10,
   },
   scanAreaContainer: {

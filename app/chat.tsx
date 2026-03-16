@@ -83,7 +83,7 @@ export default function ChatScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <Stack.Screen options={{ 
         title: isConnected ? 'Connected' : (isLoading ? 'Connecting...' : (isError ? 'Error' : 'Disconnected')),
         headerShown: true,

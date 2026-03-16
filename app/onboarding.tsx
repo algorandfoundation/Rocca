@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerIndicator: {
-    paddingTop: 10,
+    paddingTop: 4,
   },
   stepDot: {
     width: 8,
@@ -442,7 +442,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
     flex: 1,
   },
   welcomeContainer: {
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
   },
   welcomeHeader: {
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
   logoContainer: {
     marginBottom: 24,
@@ -475,7 +476,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 0,
     marginBottom: 20,
   },
   illustrationContainer: {

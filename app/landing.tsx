@@ -112,7 +112,10 @@ export default function LandingScreen() {
             </View>
             <View style={styles.serviceGrid}>
               {showAccounts && (
-                <TouchableOpacity style={styles.serviceItem}>
+                <TouchableOpacity 
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/accounts')}
+                >
                   <View style={[styles.serviceIcon, { backgroundColor: secondaryColor }]}>
                     <MaterialIcons name="account-balance-wallet" size={28} color={primaryColor} />
                   </View>
@@ -121,7 +124,10 @@ export default function LandingScreen() {
                 </TouchableOpacity>
               )}
               {showPasskeys && (
-                <TouchableOpacity style={styles.serviceItem}>
+                <TouchableOpacity 
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/passkeys')}
+                >
                   <View style={[styles.serviceIcon, { backgroundColor: '#ECFDF5' }]}>
                     <MaterialIcons name="fingerprint" size={28} color="#10B981" />
                   </View>
@@ -130,7 +136,10 @@ export default function LandingScreen() {
                 </TouchableOpacity>
               )}
               {showIdentities && (
-                <TouchableOpacity style={styles.serviceItem}>
+                <TouchableOpacity 
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/identities')}
+                >
                   <View style={[styles.serviceIcon, { backgroundColor: '#FDF2F2' }]}>
                     <MaterialIcons name="person" size={28} color="#EF4444" />
                   </View>
@@ -139,7 +148,10 @@ export default function LandingScreen() {
                 </TouchableOpacity>
               )}
               {showConnections && (
-                <TouchableOpacity style={styles.serviceItem}>
+                <TouchableOpacity 
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/connections')}
+                >
                   <View style={[styles.serviceIcon, { backgroundColor: '#F1F5F9' }]}>
                     <MaterialIcons name="link" size={28} color="#64748B" />
                   </View>
@@ -199,7 +211,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 40,
   },
   header: {
@@ -207,7 +220,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
-    marginTop: 10,
     gap: 12,
   },
   welcomeText: {

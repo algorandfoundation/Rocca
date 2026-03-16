@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
   importHeader: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 10,
     marginBottom: 30,
   },
   importTitle: {
