@@ -14,7 +14,8 @@ import type {
 	IdentitiesKeystoreExtension,
 	IdentitiesKeystoreExtensionOptions,
 } from "./types.ts";
-import { generateDidKey, generateDidDocument, type DIDDocument } from "@/extensions/identities/did-document";
+import { generateDidKey, generateDidDocument } from "@/extensions/identities/did-document";
+import type { DIDDocument } from "@/extensions/identities/types";
 import { localStorage } from "@/stores/mmkv-local";
 
 const DID_DOCUMENT_KEY_PREFIX = "did:document:";
@@ -78,6 +79,8 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 	const identityStore: Store<IdentityStoreState> = options.identities.store;
 	const { autoPopulate = true } = options.identities.keystore ?? {};
 
+	const keys = [...((keyStore.state.keys as Key[]) ?? [])];
+
 	/**
 	 * Creates an identity object for a given key ID and address.
 	 */
@@ -115,31 +118,16 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 
 	// Initial population if enabled
 	if (autoPopulate) {
-		console.log("Auto-populating identities from keystore...");
-		const keys = [...((provider.keys as Key[]) ?? [])];
-		for (const key of keys) {
-			if (
-				key.type === "hd-derived-ed25519" &&
-				key.publicKey &&
-				key.metadata?.context === 1
-			) {
-				console.log(`Checking key ${key.id}-${key.type} for identity...`);
-				const did = generateDidKey(key.publicKey);
-				const address = did;
+		let isProcessing = false;
+		let nextKeys: Key[] | null = null;
 
-				// Skip if the identity already exists
-				if (identityStore.state.identities.some((i) => i.address === address)) {
-					continue;
-				}
-
-				provider.identity.store.addIdentity(
-					createKeyIdentity(key.id, address, did, key.publicKey),
-				);
+		const processUpdates = (newKeys: Key[]) => {
+			if (isProcessing) {
+				nextKeys = newKeys;
+				return;
 			}
-		}
-
-		keyStore.subscribe((state) => {
-			const newKeys = (state as unknown as KeyStoreState).keys;
+			isProcessing = true;
+			nextKeys = null;
 
 			// Find added keys
 			const addedKeys = newKeys.filter(
@@ -151,18 +139,14 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 				(existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
 			);
 
-			if (addedKeys.length === 0 && removedKeys.length === 0) return;
+			if (addedKeys.length === 0 && removedKeys.length === 0) {
+				isProcessing = false;
+				return;
+			}
 
 			// Update the local cache of keys
-			addedKeys.forEach((k) => {
-				keys.push(k);
-			});
-			removedKeys.forEach((k) => {
-				const index = keys.findIndex((existingKey) => existingKey.id === k.id);
-				if (index !== -1) {
-					keys.splice(index, 1);
-				}
-			});
+			keys.length = 0;
+			newKeys.forEach(k => keys.push(k));
 
 			// Remove identities for removed keys
 			removedKeys.forEach((k) => {
@@ -196,6 +180,18 @@ export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
 					}
 				}
 			});
+
+			isProcessing = false;
+
+		};
+
+		processUpdates(keyStore.state.keys as unknown as Key[]);
+
+		keyStore.subscribe((state) => {
+			if (state.status !== 'ready' && state.status !== 'idle') return;
+			setTimeout(() => {
+				processUpdates(state.keys as unknown as Key[]);
+			}, 0);
 		});
 	}
 

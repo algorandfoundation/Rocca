@@ -49,6 +49,8 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 		options.accounts.store;
 	const { autoPopulate = true } = options.accounts.keystore ?? {};
 
+	const keys = [...((keyStore.state.keys as Key[]) ?? [])];
+
 	/**
 	 * Creates an account object for a given key ID and address.
 	 */
@@ -76,34 +78,16 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 
 	// Initial population if enabled
 	if (autoPopulate) {
-		console.log("Auto-populating accounts from keystore...");
-		const keys = [...((provider.keys as Key[]) ?? [])];
-		for (const key of keys) {
-			if (
-				key.type === "hd-derived-ed25519" &&
-				key.publicKey &&
-				key.metadata?.context === 0
-			) {
-				console.log(`Checking key ${key.id}-${key.type}...`);
-				const address = base64.encode(key.publicKey);
+		let isProcessing = false;
+		let nextKeys: Key[] | null = null;
 
-				// Skip if the account already exists
-				if (accountStore.state.accounts.some((a) => a.address === address)) {
-					continue;
-				}
-
-				provider.account.store.addAccount(
-					createKeyAccount(
-						key.id,
-						address,
-						(key as XHDDerivedKeyData)?.metadata?.parentKeyId,
-					),
-				);
+		const processUpdates = (newKeys: Key[]) => {
+			if (isProcessing) {
+				nextKeys = newKeys;
+				return;
 			}
-		}
-
-		keyStore.subscribe((state) => {
-			const newKeys = (state as unknown as KeyStoreState).keys;
+			isProcessing = true;
+			nextKeys = null;
 
 			// Find added keys
 			const addedKeys = newKeys.filter(
@@ -115,18 +99,15 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 				(existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
 			);
 
-			if (addedKeys.length === 0 && removedKeys.length === 0) return;
+			if (addedKeys.length === 0 && removedKeys.length === 0) {
+				isProcessing = false;
+
+				return;
+			}
 
 			// Update the local cache of keys
-			addedKeys.forEach((k) => {
-				keys.push(k);
-			});
-			removedKeys.forEach((k) => {
-				const index = keys.findIndex((existingKey) => existingKey.id === k.id);
-				if (index !== -1) {
-					keys.splice(index, 1);
-				}
-			});
+			keys.length = 0;
+			newKeys.forEach(k => keys.push(k));
 
 			// Remove accounts for removed keys
 			removedKeys.forEach((k) => {
@@ -139,8 +120,6 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 					}
 				}
 			});
-
-			const accounts = [...accountStore.state.accounts];
 
 			// Process only the newly added keys
 			addedKeys.forEach((k) => {
@@ -161,14 +140,18 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
 					}
 				}
 			});
-			if (keys.some((k) => k.type === "hd-derived-ed25519"))
-				console.log(
-					`Found ${keys.length} keys, ${keys.filter((k) => k.type === "hd-derived-ed25519" && k.metadata?.context === 0).length} HD Account keys`,
-				);
-			if (accounts.some((a) => isKeystoreAccount(a)))
-				console.log(
-					`Found ${accounts.length} ed25519 accounts, ${accounts.filter((a) => !isKeystoreAccount(a)).length} others`,
-				);
+
+			isProcessing = false;
+
+		};
+
+		processUpdates(keyStore.state.keys as unknown as Key[]);
+
+		keyStore.subscribe((state) => {
+			if (state.status !== 'ready' && state.status !== 'idle') return;
+			setTimeout(() => {
+				processUpdates(state.keys as unknown as Key[]);
+			}, 0);
 		});
 	}
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,15 +14,16 @@ const config = Constants.expoConfig?.extra?.provider || {
   primaryColor: '#3B82F6',
   secondaryColor: '#E1EFFF',
   accentColor: '#10B981',
-  welcomeMessage: 'Your identity, rewarded.',
-  showRewards: true,
-  showFeeDelegation: true,
-  showIdentityManagement: true,
+  welcomeMessage: 'Your identity, connected.',
+  showAccounts: true,
+  showPasskeys: true,
+  showIdentities: true,
+  showConnections: true,
 };
 
 export default function LandingScreen() {
   const router = useRouter();
-  const {key, identity, account, identities, accounts} = useProvider()
+  const {key, identity, account, identities, accounts, passkey, passkeys, sessions} = useProvider()
   const [modalVisible, setModalVisible] = useState(false);
 
   const activeIdentity = identities[0];
@@ -33,22 +35,29 @@ export default function LandingScreen() {
     secondaryColor,
     accentColor,
     welcomeMessage,
-    showRewards,
-    showFeeDelegation,
-    showIdentityManagement,
+    showAccounts,
+    showPasskeys,
+    showIdentities,
+    showConnections,
   } = config;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
             <Logo size={40} />
-            <View>
-              <Text style={styles.welcomeText}>{welcomeMessage}</Text>
-              <Text style={styles.userName}>{activeAccount ? `${activeAccount.address.slice(0, 8)}...${activeAccount.address.replace('=', '').slice(-8)}` : `${name} Wallet`}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.welcomeText} numberOfLines={1}>{welcomeMessage}</Text>
+              <Text style={styles.userName} numberOfLines={1}>{activeAccount ? `${activeAccount.address.slice(0, 8)}...${activeAccount.address.replace('=', '').slice(-8)}` : `${name} Wallet`}</Text>
             </View>
           </View>
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => router.push('/scan')}
+          >
+            <MaterialIcons name="qr-code-scanner" size={28} color={primaryColor} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.profileButton}>
             <MaterialIcons name="account-circle" size={32} color={primaryColor} />
           </TouchableOpacity>
@@ -96,35 +105,58 @@ export default function LandingScreen() {
           </View>
         </View>
 
-        {(showRewards || showFeeDelegation || showIdentityManagement) && (
+        {(showAccounts || showPasskeys || showIdentities || showConnections) && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Provider Services</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Provider Services</Text>
+            </View>
             <View style={styles.serviceGrid}>
-              {showRewards && (
-                <TouchableOpacity style={styles.serviceItem}>
+              {showAccounts && (
+                <TouchableOpacity 
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/accounts')}
+                >
                   <View style={[styles.serviceIcon, { backgroundColor: secondaryColor }]}>
-                    <MaterialIcons name="card-giftcard" size={28} color={primaryColor} />
+                    <MaterialIcons name="account-balance-wallet" size={28} color={primaryColor} />
                   </View>
-                  <Text style={styles.serviceLabel}>Rewards</Text>
-                  <Text style={styles.serviceSubLabel}>340 pts</Text>
+                  <Text style={styles.serviceLabel}>Accounts</Text>
+                  <Text style={styles.serviceSubLabel}>{accounts.length} Total</Text>
                 </TouchableOpacity>
               )}
-              {showFeeDelegation && (
-                <TouchableOpacity style={styles.serviceItem}>
+              {showPasskeys && (
+                <TouchableOpacity 
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/passkeys')}
+                >
                   <View style={[styles.serviceIcon, { backgroundColor: '#ECFDF5' }]}>
-                    <MaterialIcons name="local-gas-station" size={28} color="#10B981" />
+                    <MaterialIcons name="fingerprint" size={28} color="#10B981" />
                   </View>
-                  <Text style={styles.serviceLabel}>Free Fees</Text>
-                  <Text style={styles.serviceSubLabel}>Enabled</Text>
+                  <Text style={styles.serviceLabel}>Passkeys</Text>
+                  <Text style={styles.serviceSubLabel}>{passkeys.length} Total</Text>
                 </TouchableOpacity>
               )}
-              {showIdentityManagement && (
-                <TouchableOpacity style={styles.serviceItem}>
+              {showIdentities && (
+                <TouchableOpacity 
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/identities')}
+                >
                   <View style={[styles.serviceIcon, { backgroundColor: '#FDF2F2' }]}>
-                    <MaterialIcons name="security" size={28} color="#EF4444" />
+                    <MaterialIcons name="person" size={28} color="#EF4444" />
                   </View>
-                  <Text style={styles.serviceLabel}>Security</Text>
-                  <Text style={styles.serviceSubLabel}>Shielded</Text>
+                  <Text style={styles.serviceLabel}>Identities</Text>
+                  <Text style={styles.serviceSubLabel}>{identities.length} Total</Text>
+                </TouchableOpacity>
+              )}
+              {showConnections && (
+                <TouchableOpacity 
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/connections')}
+                >
+                  <View style={[styles.serviceIcon, { backgroundColor: '#F1F5F9' }]}>
+                    <MaterialIcons name="link" size={28} color="#64748B" />
+                  </View>
+                  <Text style={styles.serviceLabel}>Connections</Text>
+                  <Text style={styles.serviceSubLabel}>{sessions.length} Total</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -132,7 +164,9 @@ export default function LandingScreen() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Activity</Text>
+          </View>
           <View style={styles.activityCard}>
             <View style={styles.activityItem}>
               <View style={[styles.activityIcon, { backgroundColor: '#F1F5F9' }]}>
@@ -147,6 +181,7 @@ export default function LandingScreen() {
           </View>
         </View>
 
+
         <TouchableOpacity
           style={styles.resetButton}
           onPress={async () =>
@@ -154,6 +189,7 @@ export default function LandingScreen() {
                 await key.store.clear()
                 await account.store.clear()
                 await identity.store.clear()
+                await passkey.store.clear()
                 router.replace('/onboarding')
               }}
         >
@@ -175,7 +211,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 24,
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 40,
   },
   header: {
@@ -183,7 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
-    marginTop: 10,
+    gap: 12,
   },
   welcomeText: {
     fontSize: 14,
@@ -212,11 +249,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     marginBottom: 32,
-    elevation: 8,
+    elevation: 4,
     shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -231,7 +268,7 @@ const styles = StyleSheet.create({
   },
   balanceAmount: {
     color: '#FFFFFF',
-    fontSize: 38,
+    fontSize: 34,
     fontWeight: '800',
     marginBottom: 24,
   },
@@ -241,7 +278,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingVertical: 12,
     borderRadius: 16,
     alignItems: 'center',
@@ -267,7 +304,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 16,
   },
   seeAll: {
     fontSize: 14,
@@ -297,10 +333,11 @@ const styles = StyleSheet.create({
   },
   serviceGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
   serviceItem: {
-    flex: 1,
+    width: '48%',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
@@ -366,9 +403,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 16,
     alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    marginVertical: 4,
   },
   resetButtonText: {
-    color: '#94A3B8',
+    color: '#64748B',
     fontSize: 14,
     fontWeight: '500',
   },

@@ -1,5 +1,6 @@
-import React, { useReducer, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert, Image } from 'react-native';
+import React, { useReducer, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,6 +12,7 @@ import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as bip39 from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider'
 import { mnemonicToSeed } from '@scure/bip39'
+import ReactNativePasskeyAutofill from "@algorandfoundation/react-native-passkey-autofill";
 
 
 // Extract provider configuration from expo-constants
@@ -102,6 +104,12 @@ export default function OnboardingScreen() {
   const [{ step, recoveryPhrase, testInput }, dispatch] =
     useReducer(onboardingReducer, initialState)
 
+  useEffect(() => {
+    if (keys.length > 0 && step === 'welcome') {
+      router.replace('/landing')
+    }
+  }, [keys, step])
+
   // Helpers for state
   const currentIndicatorStep = getIndicatorStep(step)
   const securityMessage = getSecurityMessage(step)
@@ -143,7 +151,7 @@ export default function OnboardingScreen() {
                 <Logo style={styles.logoContainer} size={80} />
                 <Text style={styles.title}>Welcome to {name}</Text>
                 <Text style={styles.subtitle}>
-                  Your secure, decentralized identity for accessing rewards and managing digital assets.
+                  Your secure, decentralized identity for connecting and managing your digital life.
                 </Text>
               </View>
 
@@ -321,6 +329,13 @@ export default function OnboardingScreen() {
                                   }
                                 })
 
+                                try {
+                                  // Use the rootKeyId we just generated
+                                  await ReactNativePasskeyAutofill.setHdRootKeyId(rootKeyId);
+                                } catch (e) {
+                                  console.error('Failed to set HD Root Key ID:', e);
+                                }
+
                                 // Generate Ed25519 Account Key
                                 await key.store.generate({
                                   type: 'hd-derived-ed25519',
@@ -405,7 +420,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerIndicator: {
-    paddingTop: 10,
+    paddingTop: 4,
   },
   stepDot: {
     width: 8,
@@ -427,7 +442,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
     flex: 1,
   },
   welcomeContainer: {
@@ -435,7 +451,7 @@ const styles = StyleSheet.create({
   },
   welcomeHeader: {
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
   logoContainer: {
     marginBottom: 24,
@@ -460,7 +476,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 0,
     marginBottom: 20,
   },
   illustrationContainer: {

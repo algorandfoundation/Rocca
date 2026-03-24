@@ -20,10 +20,11 @@ jest.mock('expo-constants', () => ({
         primaryColor: '#3B82F6',
         secondaryColor: '#E1EFFF',
         accentColor: '#10B981',
-        welcomeMessage: 'Your identity, rewarded.',
-        showRewards: true,
-        showFeeDelegation: true,
-        showIdentityManagement: true,
+        welcomeMessage: 'Your identity, connected.',
+        showAccounts: true,
+        showPasskeys: true,
+        showIdentities: true,
+        showConnections: true,
       },
     },
   },
@@ -32,11 +33,14 @@ jest.mock('expo-constants', () => ({
 // Mock useProvider hook
 jest.mock('@/hooks/useProvider', () => ({
   useProvider: () => ({
-    key: null,
-    identity: null,
-    account: null,
+    key: { store: { clear: jest.fn() } },
+    identity: { store: { clear: jest.fn() } },
+    account: { store: { clear: jest.fn() } },
+    passkey: { store: { clear: jest.fn() } },
     identities: [{ did: 'did:key:z6Mkh...' }],
     accounts: [{ address: 'ADDR123...', balance: 100 }],
+    passkeys: [],
+    sessions: [],
   }),
 }));
 
@@ -50,7 +54,7 @@ describe('<LandingScreen />', () => {
     const { getByText } = render(<LandingScreen />);
     
     // Check for welcome message
-    expect(getByText('Your identity, rewarded.')).toBeTruthy();
+    expect(getByText('Your identity, connected.')).toBeTruthy();
     
     // Check for balance (mocked as 100)
     expect(getByText('$100')).toBeTruthy();
@@ -61,10 +65,12 @@ describe('<LandingScreen />', () => {
   });
 
   it('renders provider services when enabled', () => {
-    const { getByText } = render(<LandingScreen />);
+    const { getByText, getAllByText } = render(<LandingScreen />);
     
-    expect(getByText('Rewards')).toBeTruthy();
-    expect(getByText('Free Fees')).toBeTruthy();
-    expect(getByText('Security')).toBeTruthy();
+    expect(getByText('Accounts')).toBeTruthy();
+    expect(getByText('Passkeys')).toBeTruthy();
+    expect(getByText('Identities')).toBeTruthy();
+    expect(getByText('Connections')).toBeTruthy();
+    expect(getAllByText('0 Total').length).toBeGreaterThanOrEqual(1);
   });
 });

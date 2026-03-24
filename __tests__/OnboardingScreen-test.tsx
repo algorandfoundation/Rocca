@@ -48,6 +48,12 @@ jest.mock('@scure/bip39', () => ({
   wordlist: { english: [] },
 }));
 
+// Mock react-native-passkey-autofill
+jest.mock('@algorandfoundation/react-native-passkey-autofill', () => ({
+  setHdRootKeyId: jest.fn().mockResolvedValue(undefined),
+  setMasterKey: jest.fn().mockResolvedValue(undefined),
+}));
+
 // Mock Reanimated
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
