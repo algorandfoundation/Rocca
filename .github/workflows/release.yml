@@ -14,6 +14,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - run: sudo apt-get update
+      - run: sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev -y
       - name: Setup Expo and EAS
         uses: expo/expo-github-action@v8
         with:
