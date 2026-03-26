@@ -1,0 +1,46 @@
+import * as ScreenCapture from "expo-screen-capture";
+
+class ScreenshotManager {
+  private count = 0;
+  private enabled = false;
+  private queue: Promise<void> = Promise.resolve();
+
+  private async update() {
+    const shouldEnable = this.count > 0;
+
+    if (shouldEnable === this.enabled) return;
+
+    const currentCount = this.count; // Capture the current count for logging
+
+    this.enabled = shouldEnable;
+
+    if (shouldEnable) {
+      await ScreenCapture.preventScreenCaptureAsync();
+      console.debug("Screenshot prevention enabled. Count:", currentCount);
+    } else {
+      await ScreenCapture.allowScreenCaptureAsync();
+      console.debug("Screenshot prevention disabled. Count:", currentCount);
+    }
+  }
+
+  private enqueueUpdate() {
+    this.queue = this.queue
+      .then(() => this.update())
+      .catch((error) => {
+        console.error("Failed to update screenshot capture state:", error);
+        // Swallow the error so that subsequent operations are not blocked.
+      });
+  }
+
+  enable() {
+    this.count++;
+    this.enqueueUpdate();
+  }
+
+  disable() {
+    this.count = Math.max(0, this.count - 1);
+    this.enqueueUpdate();
+  }
+}
+
+export const screenshotManager = new ScreenshotManager();
