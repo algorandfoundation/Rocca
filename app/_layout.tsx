@@ -1,4 +1,5 @@
 import { Alert, Platform } from "react-native";
+import { useEventListener } from "expo";
 import { Stack } from "expo-router";
 import { install } from 'react-native-quick-crypto'
 import { keyStore } from '@/stores/keystore'
@@ -14,6 +15,7 @@ import {registerGlobals} from "react-native-webrtc";
 import { globalPolyfill, setupNavigatorPolyfill } from "@/lib/polyfill";
 import ReactNativePasskeyAutofill from "@algorandfoundation/react-native-passkey-autofill";
 import { CredentialProviderService } from "@/lib/credentialProvider";
+import React from "react";
 
 globalPolyfill()
 registerGlobals()
@@ -122,6 +124,20 @@ async function bootstrap() {
 bootstrap().catch(e => console.error('Bootstrap promise error:', e))
 
 export default function RootLayout() {
+  useEventListener(ReactNativePasskeyAutofill, 'onPasskeyAdded', (event) => {
+    console.log('Passkey added via autofill:', event);
+    if (event.success) {
+      bootstrap().catch(e => console.error('Failed to reload keys after passkey added:', e));
+    }
+  });
+
+  useEventListener(ReactNativePasskeyAutofill, 'onPasskeyAuthenticated', (event) => {
+    console.log('Passkey authenticated via autofill:', event);
+    if (event.success) {
+      bootstrap().catch(e => console.error('Failed to reload keys after passkey authenticated:', e));
+    }
+  });
+
   return (
     <WalletProvider
       provider={provider}

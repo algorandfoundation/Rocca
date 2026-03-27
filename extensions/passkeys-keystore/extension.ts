@@ -39,6 +39,18 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 	const keyStore: Store<KeyStoreState> = options.keystore.store;
 	const { autoPopulate = true } = options.passkeys.keystore ?? {};
 
+	// Hook into passkey removal to also remove from keystore
+	provider.passkey.store.hooks.before("remove", async ({ id }) => {
+		const keyExists = (keyStore.state.keys as Key[]).some((k) => k.id === id);
+		if (keyExists) {
+			try {
+				await provider.key.store.remove(id);
+			} catch (error) {
+				console.error(`Failed to remove key ${id} from keystore:`, error);
+			}
+		}
+	});
+
 	const keys = [...((keyStore.state.keys as Key[]) ?? [])];
 
 	/**
@@ -96,14 +108,14 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 
 			// Remove passkeys for removed keys
 			removedKeys.forEach((k) => {
-				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256") {
+				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256" || k.type === "hd-derived-p256") {
 					provider.passkey.store.removePasskey(k.id);
 				}
 			});
 
 			// Add passkeys for added keys
 			for (const k of addedKeys) {
-				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256") {
+				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256" || k.type === "hd-derived-p256") {
 					provider.passkey.store.addPasskey(
 						createPasskeyFromKey(k as XHDDomainP256KeyData),
 					);
