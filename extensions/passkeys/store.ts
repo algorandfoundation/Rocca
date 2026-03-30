@@ -82,6 +82,26 @@ export function getPasskey({
 }
 
 /**
+ * Retrieves all passkeys from the store.
+ *
+ * @param params - The retrieval parameters.
+ * @param params.store - The TanStack store instance for {@link PasskeyStoreState}.
+ * @returns An array of all {@link Passkey}s.
+ *
+ * @example
+ * ```typescript
+ * getPasskeys({ store });
+ * ```
+ */
+export function getPasskeys({
+	store,
+}: {
+	store: Store<PasskeyStoreState>;
+}): Passkey[] {
+	return store.state.passkeys;
+}
+
+/**
  * Clears all passkeys from the store.
  *
  * @param params - The store parameters.

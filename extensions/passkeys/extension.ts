@@ -5,6 +5,7 @@ import {
 	addPasskey,
 	clearPasskeys,
 	getPasskey,
+	getPasskeys,
 	removePasskey,
 } from "./store";
 import type {
@@ -60,6 +61,11 @@ export const WithPasskeyStore: Extension<PasskeyStoreExtension> = (
 					return passkeyHooks("get", getPasskey, {
 						store: passkeyStore,
 						id,
+					});
+				},
+				getPasskeys: async () => {
+					return passkeyHooks("list", getPasskeys, {
+						store: passkeyStore,
 					});
 				},
 				clear: async () => {

@@ -28,7 +28,7 @@
     "@algorandfoundation/liquid-client": "1.0.0-canary.3",
     "@algorandfoundation/log-store": "^1.0.0-canary.2",
     "@algorandfoundation/react-native-keystore": "^1.0.0-canary.6",
-    "@algorandfoundation/react-native-passkey-autofill": "^1.0.0-canary.7",
+    "@algorandfoundation/react-native-passkey-autofill": "^1.0.0-canary.8",
     "@config-plugins/react-native-webrtc": "^13.0.0",
     "@expo/vector-icons": "^15.0.3",
     "@react-navigation/bottom-tabs": "^7.4.0",

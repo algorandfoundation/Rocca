@@ -1,32 +1,10 @@
 import { Passkey } from "react-native-passkey";
 import { fromBase64Url, toBase64URL } from "@algorandfoundation/liquid-client";
-import { ReactNativeProvider } from "@/providers/ReactNativeProvider";
 
 function toUint8Array(buf: BufferSource): Uint8Array {
   if (buf instanceof Uint8Array) return buf;
   if (buf instanceof ArrayBuffer) return new Uint8Array(buf);
   return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
-}
-
-function parseClientDataJSON(clientDataJSON: ArrayBuffer): { origin: string, challenge: string, type: string } {
-  const jsonStr = new TextDecoder().decode(clientDataJSON);
-  return JSON.parse(jsonStr);
-}
-
-function parseAuthenticatorData(authData: ArrayBuffer): { rpIdHash: Uint8Array, flags: number, counter: number } {
-  const data = new Uint8Array(authData);
-  const rpIdHash = data.slice(0, 32);
-  const flags = data[32];
-  const counter = (data[33] << 24) | (data[34] << 16) | (data[35] << 8) | data[36];
-  return { rpIdHash, flags, counter };
-}
-
-function formatOrigin(rpId?: string): string {
-  if (!rpId) return "";
-  if (rpId.startsWith('http://') || rpId.startsWith('https://')) {
-    return rpId;
-  }
-  return `https://${rpId}`;
 }
 
 function toArrayBuffer(base64url: string): ArrayBuffer {
@@ -84,7 +62,7 @@ export function globalPolyfill() {
   }
 }
 
-export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
+export function setupNavigatorPolyfill() {
   // @ts-ignore
   if (!global.AuthenticatorAssertionResponse) {
     // @ts-ignore
@@ -133,26 +111,7 @@ export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
 
         const clientDataJSON = toArrayBuffer(result.response.clientDataJSON);
         const authData = toArrayBuffer(result.response.authenticatorData);
-        const parsedClientData = parseClientDataJSON(clientDataJSON);
-        const parsedAuthData = parseAuthenticatorData(authData);
 
-        if (typeof await provider.passkey.store.getPasskey(result.id) === "undefined") {
-          await provider.passkey.store.addPasskey({
-            algorithm: "ES256",
-            name: "Passkey",
-            publicKey: new Uint8Array(0),
-            id: result.id,
-            createdAt: Date.now(),
-            metadata: {
-              origin: formatOrigin(request.rpId || (parsedClientData.origin?.startsWith('android:apk-key-hash') ? "" : parsedClientData.origin)),
-              userHandle: result.response.userHandle ? toUint8Array(toArrayBuffer(result.response.userHandle)) : null,
-              challenge: parsedClientData.challenge,
-              rpIdHash: toBase64URL(parsedAuthData.rpIdHash),
-              counter: parsedAuthData.counter,
-              flags: parsedAuthData.flags,
-            },
-          });
-        }
         return {
           id: result.id,
           rawId: toArrayBuffer(result.id),
@@ -199,23 +158,6 @@ export function setupNavigatorPolyfill(provider: ReactNativeProvider) {
         if (!result) return null;
 
         const clientDataJSON = toArrayBuffer(result.response.clientDataJSON);
-        const parsedClientData = parseClientDataJSON(clientDataJSON);
-
-        if (typeof await provider.passkey.store.getPasskey(result.id) === "undefined") {
-          const publicKey = result.response.publicKey ? toUint8Array(toArrayBuffer(result.response.publicKey)) : new Uint8Array(0);
-          await provider.passkey.store.addPasskey({
-            algorithm: "ES256",
-            name: publicKey.length > 0 ? `Passkey ${result.id.slice(0, 8)}` : "Passkey",
-            publicKey,
-            id: result.id,
-            createdAt: Date.now(),
-            metadata: {
-              origin: formatOrigin(request.rp.id || (parsedClientData.origin?.startsWith('android:apk-key-hash') ? "" : parsedClientData.origin)),
-              userHandle: request.user.id ? toUint8Array(toArrayBuffer(request.user.id as string)) : null,
-              challenge: parsedClientData.challenge,
-            },
-          });
-        }
 
         return {
           id: result.id,

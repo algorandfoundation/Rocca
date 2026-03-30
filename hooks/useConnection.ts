@@ -11,6 +11,11 @@ import {
   encodeCredential,
 } from "@algorandfoundation/liquid-client";
 import { encodeAddress } from "@algorandfoundation/keystore";
+import type { KeyData, KeyStoreState } from "@algorandfoundation/keystore";
+import { fetchSecret, getMasterKey, commit } from '@algorandfoundation/react-native-keystore';
+import { keyStore } from '@/stores/keystore';
+import { accountsStore } from '@/stores/accounts';
+import { passkeysStore } from '@/stores/passkeys';
 import { useProvider } from '@/hooks/useProvider';
 import { addMessage } from '@/stores/messages';
 import { sessionsStore, addSession, updateSessionStatus, updateSessionActivity, Session } from '@/stores/sessions';
@@ -29,7 +34,7 @@ interface UseConnectionResult {
 
 export function useConnection(origin: string, requestId: string): UseConnectionResult {
   const router = useRouter();
-  const { accounts, keys, key, passkeys, sessions } = useProvider();
+  const { accounts, keys, key, passkey, sessions } = useProvider();
   
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
@@ -46,18 +51,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
   const clientRef = useRef<SignalClient | null>(null);
   const lastUserActivityRef = useRef<number>(Date.now());
-
-  useEffect(() => {
-    if (accounts.length > 0 && keys.length > 0 && !address) {
-      let foundKey = keys.find((k) => k.id === accounts[0]?.metadata?.keyId);
-      if (!foundKey && keys.length > 0) {
-        foundKey = keys[0];
-      }
-      if (foundKey?.publicKey) {
-        setAddress(encodeAddress(foundKey.publicKey));
-      }
-    }
-  }, [accounts, keys, address]);
+  const authFlowInProgressRef = useRef<boolean>(false);
 
   const session = useStore(sessionsStore, (state) => 
     state.sessions.find(s => s.id === requestId && s.origin === origin)
@@ -130,13 +124,19 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
     let active = true;
 
     async function setupConnection() {
+      const toUrlSafe = (id: string) => id.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
       if (!origin || !requestId) {
         console.error("Missing origin or requestId");
         setIsLoading(false);
         return;
       }
 
-      if (accounts.length === 0 || keys.length === 0) {
+      if (authFlowInProgressRef.current) {
+        console.log("Auth flow already in progress, skipping duplicate setup");
+        return;
+      }
+
+      if (accountsStore.state.accounts.length === 0 || keyStore.state.keys.length === 0) {
         console.log("Waiting for accounts and keys to load...");
         // If it's been loading for more than a few seconds, it might really be empty
         // but typically it's better to wait for them to be non-empty.
@@ -152,7 +152,11 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
       setError(null);
 
       try {
-        const existingSession = sessions.find(s => s.id === requestId && s.origin === origin);
+        const currentSessions = sessionsStore.state.sessions;
+        const currentKeys = keyStore.state.keys;
+        const currentAccounts = accountsStore.state.accounts;
+
+        const existingSession = currentSessions.find(s => s.id === requestId && s.origin === origin);
         if (!existingSession) {
           addSession({ id: requestId, origin, status: 'active', ttl: 60000 });
         } else if (existingSession.status !== 'active') {
@@ -160,15 +164,15 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         }
         
         // Try to find the key associated with the first account, but fall back to the first available key
-        let foundKey = keys.find((k) => k.id === accounts[0]?.metadata?.keyId);
-        if (!foundKey && keys.length > 0) {
-          foundKey = keys[0];
+        let foundKey = currentKeys.find((k) => k.id === currentAccounts[0]?.metadata?.keyId);
+        if (!foundKey && currentKeys.length > 0) {
+          foundKey = currentKeys[0];
           console.log("Falling back to the first available key for attestation");
         }
 
         if (!foundKey || !foundKey.publicKey) {
-          console.error("No key found for attestation. Keys:", JSON.stringify(keys.map(k => ({id: k.id, type: k.type})), null, 2));
-          console.error("Accounts:", JSON.stringify(accounts.map(a => ({address: a.address, keyId: a.metadata?.keyId})), null, 2));
+          console.error("No key found for attestation. Keys:", JSON.stringify(currentKeys.map(k => ({id: k.id, type: k.type})), null, 2));
+          console.error("Accounts:", JSON.stringify(currentAccounts.map(a => ({address: a.address, keyId: a.metadata?.keyId})), null, 2));
           throw new Error("No key found for attestation");
         }
 
@@ -177,8 +181,10 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         const sessionCheck = await fetch(`${origin}/auth/session`);
         if (!active) return;
         console.log("Initial session status:", sessionCheck.ok);
+        authFlowInProgressRef.current = true;
         
-        const relevantPasskeys = passkeys.filter(p => {
+        const currentPasskeys = await passkey.store.getPasskeys();
+        const relevantPasskeys = currentPasskeys.filter(p => {
           const storedOrigin = p.metadata?.origin;
           if (!storedOrigin) return false;
           try {
@@ -256,7 +262,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           }
 
           if (!selectedAddress) {
-            const matchedPasskey = relevantPasskeys.find(p => p.id === credential.id) || passkeys.find(p => p.id === credential.id);
+            const matchedPasskey = relevantPasskeys.find(p => p.id === credential.id) || currentPasskeys.find(p => p.id === credential.id);
             const userHandle = matchedPasskey?.metadata?.userHandle;
             if (userHandle) {
               try {
@@ -280,7 +286,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
             // Re-sign the challenge if the address changed to match the selected passkey
             const selectedPublicKey = decodeAddress(selectedAddress);
-            const selectedKey = keys.find(k => 
+            const selectedKey = keyStore.state.keys.find(k => 
               k.publicKey && k.publicKey.length === selectedPublicKey.length && 
               k.publicKey.every((v, i) => v === selectedPublicKey[i])
             );
@@ -309,6 +315,24 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
           if (!submitResponse.ok) {
             throw new Error(`Failed to submit assertion response: ${submitResponse.status} ${submitResponse.statusText}`);
+          }
+
+          const currentPasskeys = await passkey.store.getPasskeys();
+          const matchedPasskey = currentPasskeys.find(p => p.id === credential.id);
+          const matchedKey = keyStore.state.keys.find(k => k.id === matchedPasskey?.metadata?.keyId) || 
+                             keyStore.state.keys.find((k) => toUrlSafe(k.id) === credential.id);
+
+          if (matchedKey) {
+            try {
+              const masterKey = await getMasterKey();
+              const keyData = await fetchSecret<KeyData>({ keyId: matchedKey.id, masterKey });
+              if (keyData) {
+                keyData.metadata = { ...keyData.metadata, registered: true };
+                await commit({ store: keyStore as any, keyData });
+              }
+            } catch (error) {
+              console.error('Failed to update key metadata after assertion:', error);
+            }
           }
         } else {
           console.log("No existing passkey for origin, using attestation");
@@ -400,6 +424,24 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           if (!submitResponse.ok) {
             throw new Error(`Failed to submit attestation response: ${submitResponse.status} ${submitResponse.statusText}`);
           }
+
+          const currentPasskeys = await passkey.store.getPasskeys();
+          const matchedPasskey = currentPasskeys.find(p => p.id === credential.id);
+          const matchedKey = keyStore.state.keys.find(k => k.id === matchedPasskey?.metadata?.keyId) || 
+                             keyStore.state.keys.find((k) => toUrlSafe(k.id) === credential.id);
+
+          if (matchedKey) {
+            try {
+              const masterKey = await getMasterKey();
+              const keyData = await fetchSecret<KeyData>({ keyId: matchedKey.id, masterKey });
+              if (keyData) {
+                keyData.metadata = { ...keyData.metadata, registered: true };
+                await commit({ store: keyStore as any, keyData });
+              }
+            } catch (error) {
+              console.error('Failed to update key metadata after attestation:', error);
+            }
+          }
         }
       
         // Final validation of the session before connecting
@@ -439,7 +481,24 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         //@ts-ignore
         client.authenticated = true;
 
-        const datachannel = await client.peer(requestId, "answer");
+        const datachannel = await client.peer(requestId, "answer", {
+          iceServers: [
+            {
+              urls: [
+                "stun:geo.turn.algonode.xyz:80",
+                "stun:global.turn.nodely.io:443"
+              ]
+            },
+            {
+              urls: [
+                "turn:geo.turn.algonode.xyz:80?transport=tcp",
+                "turns:global.turn.nodely.io:443?transport=tcp"
+              ],
+              "username": "liquid-auth",
+              "credential": "sqmcP4MiTKMT4TGEDSk9jgHY"
+            },
+          ],
+        });
         
         if (!active) {
           client.close();
@@ -500,6 +559,8 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             [{ text: "OK", onPress: () => router.back() }]
           );
         }
+      } finally {
+        authFlowInProgressRef.current = false;
       }
     }
 
@@ -516,7 +577,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         clientRef.current = null;
       }
     };
-  }, [origin, requestId, accounts, keys, key.store, router]);
+  }, [origin, requestId, router, key, passkey, accounts.length > 0, keys.length > 0]);
 
   return {
     session,

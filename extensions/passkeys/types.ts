@@ -95,6 +95,12 @@ export interface PasskeyStoreApi {
 	 */
 	getPasskey: (id: string) => Promise<Passkey | undefined>;
 	/**
+	 * Retrieves all passkeys from the store.
+	 *
+	 * @returns A promise that resolves to an array of all passkeys.
+	 */
+	getPasskeys: () => Promise<Passkey[]>;
+	/**
 	 * Clears all passkeys from the store.
 	 *
 	 * @returns A promise that resolves when the store is cleared.

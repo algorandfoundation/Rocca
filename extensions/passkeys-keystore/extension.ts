@@ -39,6 +39,20 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 	const keyStore: Store<KeyStoreState> = options.keystore.store;
 	const { autoPopulate = true } = options.passkeys.keystore ?? {};
 
+	const toUrlSafe = (id: string) => id.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+
+	// Hook into passkey removal to also remove from keystore
+	provider.passkey.store.hooks.before("remove", async ({ id }) => {
+		const foundKey = (keyStore.state.keys as Key[]).find((k) => toUrlSafe(k.id) === id);
+		if (foundKey) {
+			try {
+				await provider.key.store.remove(foundKey.id);
+			} catch (error) {
+				console.error(`Failed to remove key ${foundKey.id} from keystore:`, error);
+			}
+		}
+	});
+
 	const keys = [...((keyStore.state.keys as Key[]) ?? [])];
 
 	/**
@@ -49,14 +63,15 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 			throw new Error(`Key ${key.id} is missing public key`);
 		}
 		return {
-			id: key.id,
+			id: toUrlSafe(key.id),
 			name: key.metadata.origin || "Unnamed Passkey",
 			publicKey: key.publicKey,
 			algorithm: key.algorithm || "ES256",
-			createdAt: Date.now(),
+			createdAt: key.metadata.createdAt || Date.now(),
 			metadata: {
 				...key.metadata,
 				keyId: key.id,
+				registered: key.metadata.registered ?? false,
 			},
 		};
 	};
@@ -84,7 +99,13 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 				(existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
 			);
 
-			if (addedKeys.length === 0 && removedKeys.length === 0) {
+			// Find updated keys
+			const updatedKeys = newKeys.filter((nk) => {
+				const existing = keys.find(k => k.id === nk.id);
+				return existing && JSON.stringify(existing.metadata) !== JSON.stringify(nk.metadata);
+			});
+
+			if (addedKeys.length === 0 && removedKeys.length === 0 && updatedKeys.length === 0) {
 				isProcessing = false;
 
 				return;
@@ -96,14 +117,23 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 
 			// Remove passkeys for removed keys
 			removedKeys.forEach((k) => {
-				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256") {
-					provider.passkey.store.removePasskey(k.id);
+				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256" || k.type === "hd-derived-p256") {
+					provider.passkey.store.removePasskey(toUrlSafe(k.id));
 				}
 			});
 
 			// Add passkeys for added keys
 			for (const k of addedKeys) {
-				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256") {
+				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256" || k.type === "hd-derived-p256") {
+					provider.passkey.store.addPasskey(
+						createPasskeyFromKey(k as XHDDomainP256KeyData),
+					);
+				}
+			}
+
+			// Refresh passkeys for updated keys
+			for (const k of updatedKeys) {
+				if (k.type === "hd-derived-passkey" || k.type === "xhd-derived-p256" || k.type === "hd-derived-p256") {
 					provider.passkey.store.addPasskey(
 						createPasskeyFromKey(k as XHDDomainP256KeyData),
 					);
@@ -112,15 +142,18 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
 
 			isProcessing = false;
 
+			if (nextKeys) {
+				const k = nextKeys;
+				nextKeys = null;
+				processUpdates(k);
+			}
 		};
 
 		processUpdates(keyStore.state.keys as unknown as Key[]);
 
 		keyStore.subscribe((state) => {
 			if (state.status !== 'ready' && state.status !== 'idle') return;
-			setTimeout(() => {
-				processUpdates(state.keys as unknown as Key[]);
-			}, 0);
+			processUpdates(state.keys as unknown as Key[]);
 		});
 	}
 

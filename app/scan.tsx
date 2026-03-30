@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
+import * as Linking from 'expo-linking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, Stack } from 'expo-router';
@@ -47,20 +48,39 @@ export default function ScanScreen() {
   const handleBarcodeScanned = async (scanningResult: { type: string; data: string }) => {
     if(scanned) return;
     setScanned(true);
-    let { type, data } = scanningResult;
+    let { data } = scanningResult;
     
-    // Normalize the data into a valid URL
+    const lowerData = data.toLowerCase();
+    // Support fido: and liquid: deeplinks
+    if (lowerData.startsWith('fido:')) {
+      try {
+        await Linking.openURL(data);
+        router.back();
+      } catch (error) {
+        Alert.alert("Error", "Could not open FIDO link natively");
+        router.back();
+      }
+      return;
+    }
+
+    if (!lowerData.startsWith('liquid:')) {
+      Alert.alert("Error", "Unsupported QR code. Only fido: and liquid: links are supported.");
+      router.back();
+      return;
+    }
+
+    // Handle liquid: links
     let processedData = data;
-    if (!processedData.includes('://')) {
-      processedData = 'https://' + processedData;
-    } else if (processedData.startsWith('liquid://')) {
-      processedData = processedData.replace('liquid://', 'https://');
+    if (lowerData.startsWith('liquid://')) {
+      processedData = 'https://' + data.substring(9);
+    } else if (lowerData.startsWith('liquid:')) {
+      processedData = 'https://' + data.substring(7);
     }
 
     if(isValidURL(processedData)) {
       if(accounts.length === 0) {
         Alert.alert("Error", "No accounts found. Please create or import an account first.");
-        setScanned(false);
+        router.back();
         return;
       }
 
@@ -74,7 +94,6 @@ export default function ScanScreen() {
 
       if (!requestId && pathname && pathname !== '/') {
         // Handle liquid://<host>/<requestId> case
-        // If it's a single segment, it might be the requestId
         const segments = pathname.split('/').filter(Boolean);
         if (segments.length === 1) {
           requestId = segments[0];
@@ -84,7 +103,7 @@ export default function ScanScreen() {
 
       if(!requestId){
         Alert.alert("Error", "Invalid QR code: missing requestId");
-        setScanned(false);
+        router.back();
         return;
       }
 
@@ -100,13 +119,8 @@ export default function ScanScreen() {
       return;
     }
 
-    Alert.alert(
-      "QR Code Scanned",
-      `Type: ${type}\nData: ${data}`,
-      [
-        { text: "OK", onPress: () => setScanned(false) }
-      ]
-    );
+    Alert.alert("Error", "Invalid liquid link format.");
+    router.back();
   };
 
   return (

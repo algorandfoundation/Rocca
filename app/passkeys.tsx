@@ -10,7 +10,6 @@ import { useProvider } from '@/hooks/useProvider';
 export default function PasskeysScreen() {
   const router = useRouter();
   const { passkeys, passkey: passkeyApi } = useProvider();
-
   const handleDelete = (id: string, name: string) => {
     Alert.alert(
       "Delete Passkey",
