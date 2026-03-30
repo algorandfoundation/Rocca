@@ -12,13 +12,13 @@ class ScreenshotManager {
 
     const currentCount = this.count; // Capture the current count for logging
 
-    this.enabled = shouldEnable;
-
     if (shouldEnable) {
       await ScreenCapture.preventScreenCaptureAsync();
+      this.enabled = true;
       console.debug("Screenshot prevention enabled. Count:", currentCount);
     } else {
       await ScreenCapture.allowScreenCaptureAsync();
+      this.enabled = false;
       console.debug("Screenshot prevention disabled. Count:", currentCount);
     }
   }
@@ -27,8 +27,8 @@ class ScreenshotManager {
     this.queue = this.queue
       .then(() => this.update())
       .catch((error) => {
-        console.error("Failed to update screenshot capture state:", error);
         // Swallow the error so that subsequent operations are not blocked.
+        console.error("Failed to update screenshot capture state: ", error);
       });
   }
 
