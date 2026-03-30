@@ -15,6 +15,7 @@ import {registerGlobals} from "react-native-webrtc";
 import { globalPolyfill, setupNavigatorPolyfill } from "@/lib/polyfill";
 import ReactNativePasskeyAutofill from "@algorandfoundation/react-native-passkey-autofill";
 import { CredentialProviderService } from "@/lib/credentialProvider";
+import { PreventScreenshotProvider } from "@/providers/PreventScreenshotProvider";
 import React from "react";
 
 globalPolyfill()
@@ -139,10 +140,12 @@ export default function RootLayout() {
   });
 
   return (
-    <WalletProvider
-      provider={provider}
-    >
-      <Stack />
-    </WalletProvider>
+    <PreventScreenshotProvider>
+      <WalletProvider
+        provider={provider}
+      >
+        <Stack />
+      </WalletProvider>
+    </PreventScreenshotProvider>
   )
 }

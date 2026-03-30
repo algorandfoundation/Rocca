@@ -13,6 +13,7 @@ import * as bip39 from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider'
 import { mnemonicToSeed } from '@scure/bip39'
 import ReactNativePasskeyAutofill from "@algorandfoundation/react-native-passkey-autofill";
+import { PreventScreenshot } from '@/components/PreventScreenshot';
 
 
 // Extract provider configuration from expo-constants
@@ -237,7 +238,7 @@ export default function OnboardingScreen() {
               </View>
 
               {!isBackupVerified && (
-                <>
+                <PreventScreenshot enabled={isPhraseVisible}>
                   <SeedPhrase
                     recoveryPhrase={recoveryPhrase || []}
                     showSeed={isPhraseVisible}
@@ -247,7 +248,7 @@ export default function OnboardingScreen() {
                     }
                     primaryColor={primaryColor}
                   />
-                </>
+                </PreventScreenshot>
               )}
             </ScrollView>
 
