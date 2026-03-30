@@ -10,7 +10,12 @@ export function PreventScreenshotProvider({
   useEffect(() => {
     return () => {
       // Safety reset when app unmounts
-      ScreenCapture.allowScreenCaptureAsync();
+      ScreenCapture.allowScreenCaptureAsync().catch((err) => {
+        console.debug(
+          "PreventScreenshotProvider: Failed to allow screen capture: ",
+          err,
+        );
+      });
     };
   }, []);
 
