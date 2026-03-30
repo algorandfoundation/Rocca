@@ -162,6 +162,14 @@ export interface IdentityStoreApi {
 	 */
 	clear: () => Promise<void>;
 	/**
+	 * Updates the DID Document of an existing identity.
+	 *
+	 * @param address - The address of the identity to update.
+	 * @param didDocument - The new DID Document to set.
+	 * @returns The updated identity if found, otherwise undefined.
+	 */
+	updateDidDocument: (address: string, didDocument: DIDDocument) => Promise<Identity | undefined>;
+	/**
 	 * The hooks for identity store operations.
 	 */
 	hooks: HookCollection<any>;

@@ -6,11 +6,13 @@ import {
 	clearIdentities,
 	getIdentity,
 	removeIdentity,
+	updateIdentityDidDocument,
 } from "./store";
 import type {
 	Identity,
 	IdentityStoreExtension,
 	IdentityStoreState,
+	DIDDocument,
 } from "./types";
 
 /**
@@ -44,6 +46,9 @@ export const WithIdentityStore: Extension<IdentityStoreExtension> = (
 				},
 				async clear() {
 					return hooks("clear", clearIdentities, { store });
+				},
+				async updateDidDocument(address: string, didDocument: DIDDocument) {
+					return hooks("updateDidDocument", updateIdentityDidDocument, { store, address, didDocument });
 				},
 				hooks,
 			},
