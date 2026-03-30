@@ -23,23 +23,29 @@ class ScreenshotManager {
     }
   }
 
-  private enqueueUpdate() {
+  private enqueue(): Promise<void> {
     this.queue = this.queue
       .then(() => this.update())
       .catch((error) => {
         // Swallow the error so that subsequent operations are not blocked.
         console.error("Failed to update screenshot capture state: ", error);
       });
+    return this.queue;
   }
 
-  enable() {
+  enable(): Promise<void> {
     this.count++;
-    this.enqueueUpdate();
+    return this.enqueue();
   }
 
-  disable() {
+  disable(): Promise<void> {
     this.count = Math.max(0, this.count - 1);
-    this.enqueueUpdate();
+    return this.enqueue();
+  }
+
+  reset(): Promise<void> {
+    this.count = 0;
+    return this.enqueue();
   }
 }
 

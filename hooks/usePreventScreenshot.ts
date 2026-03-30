@@ -5,10 +5,14 @@ export function usePreventScreenshot(enabled = true) {
   useEffect(() => {
     if (!enabled) return;
 
-    screenshotManager.enable();
+    void screenshotManager.enable().catch((error) => {
+      console.error("Failed to enable screenshot prevention: ", error);
+    });
 
     return () => {
-      screenshotManager.disable();
+      void screenshotManager.disable().catch((error) => {
+        console.error("Failed to disable screenshot prevention: ", error);
+      });
     };
   }, [enabled]);
 }
