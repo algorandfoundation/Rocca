@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import { validateMnemonic, mnemonicToSeed } from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider';
+import { PreventScreenshot } from '@/components/PreventScreenshot';
 
 // Extract provider configuration from expo-constants
 const config = Constants.expoConfig?.extra?.provider || {
@@ -138,18 +139,20 @@ export default function ImportWalletScreen() {
 
           <View style={styles.importInputContainer}>
             <Text style={styles.importLabel}>Recovery Phrase (24 words)</Text>
-            <TextInput
-              style={styles.importTextInput}
-              multiline
-              numberOfLines={8}
-              placeholder="Enter your 24-word recovery phrase here...&#10;word1 word2 word3 ..."
-              placeholderTextColor="#94A3B8"
-              value={importText}
-              onChangeText={setImportText}
-              autoCapitalize="none"
-              autoCorrect={false}
-              textAlignVertical="top"
-            />
+            <PreventScreenshot>
+              <TextInput
+                style={styles.importTextInput}
+                multiline
+                numberOfLines={8}
+                placeholder="Enter your 24-word recovery phrase here...&#10;word1 word2 word3 ..."
+                placeholderTextColor="#94A3B8"
+                value={importText}
+                onChangeText={setImportText}
+                autoCapitalize="none"
+                autoCorrect={false}
+                textAlignVertical="top"
+              />
+            </PreventScreenshot>
             <Text style={styles.importHelper}>
               Words entered: {importText.split(/\s+/).filter(w => w.length > 0).length} / 24
             </Text>
