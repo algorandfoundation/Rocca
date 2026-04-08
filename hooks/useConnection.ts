@@ -9,16 +9,22 @@ import {
   decodeAddress,
   decodeAssertionRequestOptions,
   encodeCredential,
-} from "@algorandfoundation/liquid-client";
-import { encodeAddress } from "@algorandfoundation/keystore";
-import type { KeyData, KeyStoreState } from "@algorandfoundation/keystore";
+} from '@algorandfoundation/liquid-client';
+import { encodeAddress } from '@algorandfoundation/keystore';
+import type { KeyData, KeyStoreState } from '@algorandfoundation/keystore';
 import { fetchSecret, getMasterKey, commit } from '@algorandfoundation/react-native-keystore';
 import { keyStore } from '@/stores/keystore';
 import { accountsStore } from '@/stores/accounts';
 import { passkeysStore } from '@/stores/passkeys';
 import { useProvider } from '@/hooks/useProvider';
 import { addMessage } from '@/stores/messages';
-import { sessionsStore, addSession, updateSessionStatus, updateSessionActivity, Session } from '@/stores/sessions';
+import {
+  sessionsStore,
+  addSession,
+  updateSessionStatus,
+  updateSessionActivity,
+  Session,
+} from '@/stores/sessions';
 
 interface UseConnectionResult {
   session: Session | undefined;
@@ -35,11 +41,11 @@ interface UseConnectionResult {
 export function useConnection(origin: string, requestId: string): UseConnectionResult {
   const router = useRouter();
   const { accounts, keys, key, passkey, sessions } = useProvider();
-  
+
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
   const addressRef = useRef<string | null>(null);
-  
+
   useEffect(() => {
     addressRef.current = address;
   }, [address]);
@@ -53,8 +59,8 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
   const lastUserActivityRef = useRef<number>(Date.now());
   const authFlowInProgressRef = useRef<boolean>(false);
 
-  const session = useStore(sessionsStore, (state) => 
-    state.sessions.find(s => s.id === requestId && s.origin === origin)
+  const session = useStore(sessionsStore, (state) =>
+    state.sessions.find((s) => s.id === requestId && s.origin === origin),
   );
 
   const reset = useCallback(() => {
@@ -68,20 +74,28 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
     updateSessionStatus(requestId, origin, 'closed');
   }, [requestId, origin]);
 
-  const send = useCallback((text: string) => {
-    if (text.trim() && dataChannelRef.current && dataChannelRef.current.readyState === 'open' && address) {
-      dataChannelRef.current.send(text.trim());
-      addMessage({ 
-        text: text.trim(), 
-        sender: 'me',
-        address,
-        origin,
-        requestId
-      });
-      updateSessionActivity(requestId, origin);
-      lastUserActivityRef.current = Date.now();
-    }
-  }, [requestId, origin, address]);
+  const send = useCallback(
+    (text: string) => {
+      if (
+        text.trim() &&
+        dataChannelRef.current &&
+        dataChannelRef.current.readyState === 'open' &&
+        address
+      ) {
+        dataChannelRef.current.send(text.trim());
+        addMessage({
+          text: text.trim(),
+          sender: 'me',
+          address,
+          origin,
+          requestId,
+        });
+        updateSessionActivity(requestId, origin);
+        lastUserActivityRef.current = Date.now();
+      }
+    },
+    [requestId, origin, address],
+  );
 
   useEffect(() => {
     let active = true;
@@ -91,7 +105,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
     if (isConnected) {
       heartbeatInterval = setInterval(() => {
         if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
-          console.log("Sending heartbeat message");
+          console.log('Sending heartbeat message');
           dataChannelRef.current.send('');
           if (active) setLastHeartbeat(Date.now());
         }
@@ -101,7 +115,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         const now = Date.now();
         const inactiveTime = now - lastUserActivityRef.current;
         if (inactiveTime >= 60000) {
-          console.log("Closing connection due to inactivity (1 minute)");
+          console.log('Closing connection due to inactivity (1 minute)');
           if (dataChannelRef.current) {
             dataChannelRef.current.close();
           }
@@ -124,20 +138,21 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
     let active = true;
 
     async function setupConnection() {
-      const toUrlSafe = (id: string) => id.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+      const toUrlSafe = (id: string) =>
+        id.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
       if (!origin || !requestId) {
-        console.error("Missing origin or requestId");
+        console.error('Missing origin or requestId');
         setIsLoading(false);
         return;
       }
 
       if (authFlowInProgressRef.current) {
-        console.log("Auth flow already in progress, skipping duplicate setup");
+        console.log('Auth flow already in progress, skipping duplicate setup');
         return;
       }
 
       if (accountsStore.state.accounts.length === 0 || keyStore.state.keys.length === 0) {
-        console.log("Waiting for accounts and keys to load...");
+        console.log('Waiting for accounts and keys to load...');
         // If it's been loading for more than a few seconds, it might really be empty
         // but typically it's better to wait for them to be non-empty.
         return;
@@ -156,39 +171,57 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         const currentKeys = keyStore.state.keys;
         const currentAccounts = accountsStore.state.accounts;
 
-        const existingSession = currentSessions.find(s => s.id === requestId && s.origin === origin);
+        const existingSession = currentSessions.find(
+          (s) => s.id === requestId && s.origin === origin,
+        );
         if (!existingSession) {
           addSession({ id: requestId, origin, status: 'active', ttl: 60000 });
         } else if (existingSession.status !== 'active') {
           updateSessionStatus(requestId, origin, 'active');
         }
-        
+
         // Try to find the key associated with the first account, but fall back to the first available key
         let foundKey = currentKeys.find((k) => k.id === currentAccounts[0]?.metadata?.keyId);
         if (!foundKey && currentKeys.length > 0) {
           foundKey = currentKeys[0];
-          console.log("Falling back to the first available key for attestation");
+          console.log('Falling back to the first available key for attestation');
         }
 
         if (!foundKey || !foundKey.publicKey) {
-          console.error("No key found for attestation. Keys:", JSON.stringify(currentKeys.map(k => ({id: k.id, type: k.type})), null, 2));
-          console.error("Accounts:", JSON.stringify(currentAccounts.map(a => ({address: a.address, keyId: a.metadata?.keyId})), null, 2));
-          throw new Error("No key found for attestation");
+          console.error(
+            'No key found for attestation. Keys:',
+            JSON.stringify(
+              currentKeys.map((k) => ({ id: k.id, type: k.type })),
+              null,
+              2,
+            ),
+          );
+          console.error(
+            'Accounts:',
+            JSON.stringify(
+              currentAccounts.map((a) => ({ address: a.address, keyId: a.metadata?.keyId })),
+              null,
+              2,
+            ),
+          );
+          throw new Error('No key found for attestation');
         }
 
-        console.log("Found key for attestation:", foundKey.id, foundKey.type);
+        console.log('Found key for attestation:', foundKey.id, foundKey.type);
 
         const sessionCheck = await fetch(`${origin}/auth/session`);
         if (!active) return;
-        console.log("Initial session status:", sessionCheck.ok);
+        console.log('Initial session status:', sessionCheck.ok);
         authFlowInProgressRef.current = true;
-        
+
         const currentPasskeys = await passkey.store.getPasskeys();
-        const relevantPasskeys = currentPasskeys.filter(p => {
+        const relevantPasskeys = currentPasskeys.filter((p) => {
           const storedOrigin = p.metadata?.origin;
           if (!storedOrigin) return false;
           try {
-            const storedHost = storedOrigin.includes('://') ? new URL(storedOrigin).host : storedOrigin;
+            const storedHost = storedOrigin.includes('://')
+              ? new URL(storedOrigin).host
+              : storedOrigin;
             const currentHost = origin.includes('://') ? new URL(origin).host : origin;
             return storedHost === currentHost;
           } catch (e) {
@@ -198,20 +231,25 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
         if (relevantPasskeys.length > 0) {
           const firstPasskey = relevantPasskeys[0];
-          console.log("Found existing passkeys for origin, using first one for options request:", firstPasskey.id);
+          console.log(
+            'Found existing passkeys for origin, using first one for options request:',
+            firstPasskey.id,
+          );
           // TODO: move options upstream
           const optionsResponse = await fetch(`${origin}/assertion/request/${firstPasskey.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              "userVerification": "required"
+              userVerification: 'required',
             }),
           });
-          
+
           if (!optionsResponse.ok) {
-            throw new Error(`Failed to get assertion request: ${optionsResponse.status} ${optionsResponse.statusText}`);
+            throw new Error(
+              `Failed to get assertion request: ${optionsResponse.status} ${optionsResponse.statusText}`,
+            );
           }
-          
+
           const options = await optionsResponse.json();
           const decodedOptions = decodeAssertionRequestOptions(options);
 
@@ -220,36 +258,40 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             if (!decodedOptions.allowCredentials) {
               decodedOptions.allowCredentials = [];
             }
-            const existingIds = new Set(decodedOptions.allowCredentials.map(c => toBase64URL(new Uint8Array(c.id as ArrayBuffer))));
-            relevantPasskeys.forEach(p => {
+            const existingIds = new Set(
+              decodedOptions.allowCredentials.map((c) =>
+                toBase64URL(new Uint8Array(c.id as ArrayBuffer)),
+              ),
+            );
+            relevantPasskeys.forEach((p) => {
               if (!existingIds.has(p.id)) {
                 decodedOptions.allowCredentials!.push({
                   id: fromBase64Url(p.id),
-                  type: 'public-key'
+                  type: 'public-key',
                 });
               }
             });
           }
 
           const challenge = fromBase64Url(options.challenge);
-          
+
           const liquidOptions = {
             requestId,
             origin,
             type: 'algorand',
             address: encodeAddress(foundKey?.publicKey!),
             signature: toBase64URL(await key.store.sign(foundKey.id, challenge)),
-            device: 'Demo Web Wallet'
+            device: 'Demo Web Wallet',
           };
 
-          const credential = await navigator.credentials.get({
-            publicKey: decodedOptions
-          }) as any;
+          const credential = (await navigator.credentials.get({
+            publicKey: decodedOptions,
+          })) as any;
 
           if (!active) return;
 
           if (!credential) {
-            throw new Error("Credential creation failed");
+            throw new Error('Credential creation failed');
           }
 
           let selectedAddress: string | null = null;
@@ -257,45 +299,55 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             try {
               selectedAddress = encodeAddress(new Uint8Array(credential.response.userHandle));
             } catch (e) {
-              console.error("Failed to encode address from userHandle", e);
+              console.error('Failed to encode address from userHandle', e);
             }
           }
 
           if (!selectedAddress) {
-            const matchedPasskey = relevantPasskeys.find(p => p.id === credential.id) || currentPasskeys.find(p => p.id === credential.id);
+            const matchedPasskey =
+              relevantPasskeys.find((p) => p.id === credential.id) ||
+              currentPasskeys.find((p) => p.id === credential.id);
             const userHandle = matchedPasskey?.metadata?.userHandle;
             if (userHandle) {
               try {
                 // Handle different possible formats of userHandle in store (Uint8Array or serialized object)
-                const handleArray = userHandle instanceof Uint8Array ? userHandle : 
-                                    (typeof userHandle === 'object' ? new Uint8Array(Object.values(userHandle)) : null);
+                const handleArray =
+                  userHandle instanceof Uint8Array
+                    ? userHandle
+                    : typeof userHandle === 'object'
+                      ? new Uint8Array(Object.values(userHandle))
+                      : null;
                 if (handleArray) {
                   selectedAddress = encodeAddress(handleArray);
                 }
               } catch (e) {
-                console.error("Failed to encode address from stored userHandle", e);
+                console.error('Failed to encode address from stored userHandle', e);
               }
             }
           }
 
           if (selectedAddress) {
-            console.log("Selected address from passkey:", selectedAddress);
+            console.log('Selected address from passkey:', selectedAddress);
             setAddress(selectedAddress);
             addressRef.current = selectedAddress;
             liquidOptions.address = selectedAddress;
 
             // Re-sign the challenge if the address changed to match the selected passkey
             const selectedPublicKey = decodeAddress(selectedAddress);
-            const selectedKey = keyStore.state.keys.find(k => 
-              k.publicKey && k.publicKey.length === selectedPublicKey.length && 
-              k.publicKey.every((v, i) => v === selectedPublicKey[i])
+            const selectedKey = keyStore.state.keys.find(
+              (k) =>
+                k.publicKey &&
+                k.publicKey.length === selectedPublicKey.length &&
+                k.publicKey.every((v, i) => v === selectedPublicKey[i]),
             );
 
             if (selectedKey) {
-              console.log("Found key for selected address, re-signing challenge");
-              liquidOptions.signature = toBase64URL(await key.store.sign(selectedKey.id, challenge));
+              console.log('Found key for selected address, re-signing challenge');
+              liquidOptions.signature = toBase64URL(
+                await key.store.sign(selectedKey.id, challenge),
+              );
             } else {
-              console.warn("Could not find key for selected address", selectedAddress);
+              console.warn('Could not find key for selected address', selectedAddress);
             }
           }
 
@@ -304,7 +356,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           encodedCredential.clientExtensionResults = {
             //@ts-ignore
             ...(encodedCredential.clientExtensionResults || {}),
-            liquid: liquidOptions
+            liquid: liquidOptions,
           };
 
           const submitResponse = await fetch(`${origin}/assertion/response`, {
@@ -314,13 +366,16 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           });
 
           if (!submitResponse.ok) {
-            throw new Error(`Failed to submit assertion response: ${submitResponse.status} ${submitResponse.statusText}`);
+            throw new Error(
+              `Failed to submit assertion response: ${submitResponse.status} ${submitResponse.statusText}`,
+            );
           }
 
           const currentPasskeys = await passkey.store.getPasskeys();
-          const matchedPasskey = currentPasskeys.find(p => p.id === credential.id);
-          const matchedKey = keyStore.state.keys.find(k => k.id === matchedPasskey?.metadata?.keyId) || 
-                             keyStore.state.keys.find((k) => toUrlSafe(k.id) === credential.id);
+          const matchedPasskey = currentPasskeys.find((p) => p.id === credential.id);
+          const matchedKey =
+            keyStore.state.keys.find((k) => k.id === matchedPasskey?.metadata?.keyId) ||
+            keyStore.state.keys.find((k) => toUrlSafe(k.id) === credential.id);
 
           if (matchedKey) {
             try {
@@ -335,8 +390,8 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             }
           }
         } else {
-          console.log("No existing passkey for origin, using attestation");
-          
+          console.log('No existing passkey for origin, using attestation');
+
           const optionsResponse = await fetch(`${origin}/attestation/request`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -352,21 +407,23 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
               },
             }),
           });
-          
+
           if (!optionsResponse.ok) {
-            throw new Error(`Failed to get attestation request: ${optionsResponse.status} ${optionsResponse.statusText}`);
+            throw new Error(
+              `Failed to get attestation request: ${optionsResponse.status} ${optionsResponse.statusText}`,
+            );
           }
-          
+
           const encodedAttestationOptions = await optionsResponse.json();
           const challenge = fromBase64Url(encodedAttestationOptions.challenge);
-          
+
           const liquidOptions = {
             requestId,
             origin: origin,
             type: 'algorand',
             address: encodeAddress(foundKey?.publicKey!),
             signature: toBase64URL(await key.store.sign(foundKey.id, challenge)),
-            device: 'Demo Web Wallet'
+            device: 'Demo Web Wallet',
           };
 
           const decodedPublicKey = {
@@ -381,17 +438,17 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             excludeCredentials: encodedAttestationOptions.excludeCredentials?.map((cred: any) => ({
               ...cred,
               id: fromBase64Url(cred.id),
-            }))
+            })),
           };
-          
-          const credential = await navigator.credentials.create({
+
+          const credential = (await navigator.credentials.create({
             publicKey: decodedPublicKey,
-          }) as any;
+          })) as any;
 
           if (!active) return;
 
           if (!credential) {
-            throw new Error("Credential creation failed");
+            throw new Error('Credential creation failed');
           }
 
           setAddress(liquidOptions.address);
@@ -408,9 +465,11 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
               clientExtensionResults: response.clientExtensionResults || {},
             },
             clientExtensionResults: {
-              ...(credential.getClientExtensionResults ? credential.getClientExtensionResults() : (credential.clientExtensionResults || {})),
-              liquid: liquidOptions
-            }
+              ...(credential.getClientExtensionResults
+                ? credential.getClientExtensionResults()
+                : credential.clientExtensionResults || {}),
+              liquid: liquidOptions,
+            },
           };
 
           const submitResponse = await fetch(`${origin}/attestation/response`, {
@@ -422,13 +481,16 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           if (!active) return;
 
           if (!submitResponse.ok) {
-            throw new Error(`Failed to submit attestation response: ${submitResponse.status} ${submitResponse.statusText}`);
+            throw new Error(
+              `Failed to submit attestation response: ${submitResponse.status} ${submitResponse.statusText}`,
+            );
           }
 
           const currentPasskeys = await passkey.store.getPasskeys();
-          const matchedPasskey = currentPasskeys.find(p => p.id === credential.id);
-          const matchedKey = keyStore.state.keys.find(k => k.id === matchedPasskey?.metadata?.keyId) || 
-                             keyStore.state.keys.find((k) => toUrlSafe(k.id) === credential.id);
+          const matchedPasskey = currentPasskeys.find((p) => p.id === credential.id);
+          const matchedKey =
+            keyStore.state.keys.find((k) => k.id === matchedPasskey?.metadata?.keyId) ||
+            keyStore.state.keys.find((k) => toUrlSafe(k.id) === credential.id);
 
           if (matchedKey) {
             try {
@@ -443,7 +505,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             }
           }
         }
-      
+
         // Final validation of the session before connecting
         const finalSessionCheck = await fetch(`${origin}/auth/session`);
 
@@ -451,7 +513,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
         if (finalSessionCheck.ok) {
           const sessionData = await finalSessionCheck.json();
-          
+
           if (!active) return;
 
           if (sessionData.address) {
@@ -459,13 +521,13 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             addressRef.current = sessionData.address;
           }
         } else {
-          console.log("Session validation failed (ignored for debugging)");
+          console.log('Session validation failed (ignored for debugging)');
         }
 
         let options: any = { autoConnect: true };
         if (NativeModules.CookieModule) {
           const cookie = await NativeModules.CookieModule.getCookie(origin);
-          
+
           if (!active) return;
 
           if (cookie) {
@@ -474,32 +536,29 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         }
 
         const client = new SignalClient(origin, options);
-        
+
         if (!active) return;
 
         clientRef.current = client;
         //@ts-ignore
         client.authenticated = true;
 
-        const datachannel = await client.peer(requestId, "answer", {
+        const datachannel = await client.peer(requestId, 'answer', {
           iceServers: [
             {
-              urls: [
-                "stun:geo.turn.algonode.xyz:80",
-                "stun:global.turn.nodely.io:443"
-              ]
+              urls: ['stun:geo.turn.algonode.xyz:80', 'stun:global.turn.nodely.io:443'],
             },
             {
               urls: [
-                "turn:geo.turn.algonode.xyz:80?transport=tcp",
-                "turns:global.turn.nodely.io:443?transport=tcp"
+                'turn:geo.turn.algonode.xyz:80?transport=tcp',
+                'turns:global.turn.nodely.io:443?transport=tcp',
               ],
-              "username": "liquid-auth",
-              "credential": "sqmcP4MiTKMT4TGEDSk9jgHY"
+              username: 'liquid-auth',
+              credential: 'sqmcP4MiTKMT4TGEDSk9jgHY',
             },
           ],
         });
-        
+
         if (!active) {
           client.close();
           return;
@@ -508,7 +567,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         dataChannelRef.current = datachannel;
 
         datachannel.onopen = () => {
-          console.log("Data channel opened");
+          console.log('Data channel opened');
           if (active) {
             setIsConnected(true);
             setIsLoading(false);
@@ -518,45 +577,44 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
         datachannel.onmessage = (event) => {
           if (!active) return;
-          console.log("Received message:", event.data);
+          console.log('Received message:', event.data);
           updateSessionActivity(requestId, origin);
           lastUserActivityRef.current = Date.now();
           setLastHeartbeat(Date.now());
           if (event.data && event.data.trim() && addressRef.current) {
-            addMessage({ 
-              text: event.data.trim(), 
+            addMessage({
+              text: event.data.trim(),
               sender: 'peer',
               address: addressRef.current,
               origin,
-              requestId
+              requestId,
             });
           }
         };
 
         datachannel.onclose = () => {
-          console.log("Data channel closed");
+          console.log('Data channel closed');
           updateSessionStatus(requestId, origin, 'closed');
           if (active) {
             setIsConnected(false);
             router.back();
           }
         };
-        
-        datachannel.onerror = (error) => {
-          console.error("Data channel error:", error);
-        };
 
+        datachannel.onerror = (error) => {
+          console.error('Data channel error:', error);
+        };
       } catch (err: any) {
-        console.error("Failed to setup connection:", err);
+        console.error('Failed to setup connection:', err);
         clientRef.current = null;
         updateSessionStatus(requestId, origin, 'failed');
         if (active) {
           setError(err);
           setIsLoading(false);
           Alert.alert(
-            "Connection Failed",
-            err.message || "Failed to setup connection to the peer",
-            [{ text: "OK", onPress: () => router.back() }]
+            'Connection Failed',
+            err.message || 'Failed to setup connection to the peer',
+            [{ text: 'OK', onPress: () => router.back() }],
           );
         }
       } finally {
@@ -588,6 +646,6 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
     isLoading,
     isConnected,
     lastHeartbeat,
-    reset
+    reset,
   };
 }

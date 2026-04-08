@@ -1,18 +1,8 @@
-import type { Extension } from "@algorandfoundation/wallet-provider";
-import { Store } from "@tanstack/store";
-import Hook from "before-after-hook";
-import {
-	addPasskey,
-	clearPasskeys,
-	getPasskey,
-	getPasskeys,
-	removePasskey,
-} from "./store";
-import type {
-	Passkey,
-	PasskeyStoreExtension,
-	PasskeyStoreState,
-} from "./types";
+import type { Extension } from '@algorandfoundation/wallet-provider';
+import { Store } from '@tanstack/store';
+import Hook from 'before-after-hook';
+import { addPasskey, clearPasskeys, getPasskey, getPasskeys, removePasskey } from './store';
+import type { Passkey, PasskeyStoreExtension, PasskeyStoreState } from './types';
 
 /**
  * An extension that provides a passkey store for managing passkeys.
@@ -31,50 +21,46 @@ import type {
  * });
  * ```
  */
-export const WithPasskeyStore: Extension<PasskeyStoreExtension> = (
-	_provider,
-	options,
-) => {
-	const passkeyStore =
-		options?.passkeys?.store ?? new Store<PasskeyStoreState>({ passkeys: [] });
-	const passkeyHooks = options?.passkeys?.hooks ?? new Hook.Collection<any>();
+export const WithPasskeyStore: Extension<PasskeyStoreExtension> = (_provider, options) => {
+  const passkeyStore = options?.passkeys?.store ?? new Store<PasskeyStoreState>({ passkeys: [] });
+  const passkeyHooks = options?.passkeys?.hooks ?? new Hook.Collection<any>();
 
-	return {
-		get passkeys() {
-			return passkeyStore.state.passkeys;
-		},
-		passkey: {
-			store: {
-				addPasskey: async (passkey: Passkey) => {
-					return passkeyHooks("add", addPasskey, {
-						store: passkeyStore,
-						passkey,
-					});
-				},
-				removePasskey: async (id: string) => {
-					return passkeyHooks("remove", removePasskey, {
-						store: passkeyStore,
-						id,
-					});
-				},
-				getPasskey: async (id: string) => {
-					return passkeyHooks("get", getPasskey, {
-						store: passkeyStore,
-						id,
-					});
-				},
-				getPasskeys: async () => {
-					return passkeyHooks("list", getPasskeys, {
-						store: passkeyStore,
-					});
-				},
-				clear: async () => {
-					return passkeyHooks("clear", clearPasskeys, {
-						store: passkeyStore,
-					});
-				},
-				hooks: passkeyHooks,
-			},
-		},
-	} as PasskeyStoreExtension;
+  return {
+    get passkeys() {
+      return passkeyStore.state.passkeys;
+    },
+    passkey: {
+      store: {
+        addPasskey: async (passkey: Passkey) => {
+          return passkeyHooks('add', addPasskey, {
+            store: passkeyStore,
+            passkey,
+          });
+        },
+        removePasskey: async (id: string) => {
+          return passkeyHooks('remove', removePasskey, {
+            store: passkeyStore,
+            id,
+          });
+        },
+        getPasskey: async (id: string) => {
+          return passkeyHooks('get', getPasskey, {
+            store: passkeyStore,
+            id,
+          });
+        },
+        getPasskeys: async () => {
+          return passkeyHooks('list', getPasskeys, {
+            store: passkeyStore,
+          });
+        },
+        clear: async () => {
+          return passkeyHooks('clear', clearPasskeys, {
+            store: passkeyStore,
+          });
+        },
+        hooks: passkeyHooks,
+      },
+    },
+  } as PasskeyStoreExtension;
 };

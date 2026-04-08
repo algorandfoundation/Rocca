@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
 import { DidDocumentModal } from '@/dialogs/DidDocumentModal';
-import {useProvider} from "@/hooks/useProvider";
+import { useProvider } from '@/hooks/useProvider';
 
 // Extract provider configuration from expo-constants
 const config = Constants.expoConfig?.extra?.provider || {
@@ -23,7 +23,8 @@ const config = Constants.expoConfig?.extra?.provider || {
 
 export default function LandingScreen() {
   const router = useRouter();
-  const {key, identity, account, identities, accounts, passkey, passkeys, sessions} = useProvider()
+  const { key, identity, account, identities, accounts, passkey, passkeys, sessions } =
+    useProvider();
   const [modalVisible, setModalVisible] = useState(false);
 
   const activeIdentity = identities[0];
@@ -48,14 +49,17 @@ export default function LandingScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
             <Logo size={40} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.welcomeText} numberOfLines={1}>{welcomeMessage}</Text>
-              <Text style={styles.userName} numberOfLines={1}>{activeAccount ? `${activeAccount.address.slice(0, 8)}...${activeAccount.address.replace('=', '').slice(-8)}` : `${name} Wallet`}</Text>
+              <Text style={styles.welcomeText} numberOfLines={1}>
+                {welcomeMessage}
+              </Text>
+              <Text style={styles.userName} numberOfLines={1}>
+                {activeAccount
+                  ? `${activeAccount.address.slice(0, 8)}...${activeAccount.address.replace('=', '').slice(-8)}`
+                  : `${name} Wallet`}
+              </Text>
             </View>
           </View>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => router.push('/scan')}
-          >
+          <TouchableOpacity style={styles.profileButton} onPress={() => router.push('/scan')}>
             <MaterialIcons name="qr-code-scanner" size={28} color={primaryColor} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.profileButton}>
@@ -68,7 +72,9 @@ export default function LandingScreen() {
             <Text style={styles.balanceLabel}>Total Balance</Text>
             <MaterialIcons name="visibility" size={20} color="rgba(255, 255, 255, 0.6)" />
           </View>
-          <Text style={styles.balanceAmount}>{activeAccount ? `$${activeAccount.balance.toString()}` : '$0.00'}</Text>
+          <Text style={styles.balanceAmount}>
+            {activeAccount ? `$${activeAccount.balance.toString()}` : '$0.00'}
+          </Text>
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton}>
               <MaterialIcons name="send" size={20} color="#FFFFFF" />
@@ -112,7 +118,7 @@ export default function LandingScreen() {
             </View>
             <View style={styles.serviceGrid}>
               {showAccounts && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.serviceItem}
                   onPress={() => router.push('/accounts')}
                 >
@@ -124,7 +130,7 @@ export default function LandingScreen() {
                 </TouchableOpacity>
               )}
               {showPasskeys && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.serviceItem}
                   onPress={() => router.push('/passkeys')}
                 >
@@ -136,7 +142,7 @@ export default function LandingScreen() {
                 </TouchableOpacity>
               )}
               {showIdentities && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.serviceItem}
                   onPress={() => router.push('/identities')}
                 >
@@ -148,7 +154,7 @@ export default function LandingScreen() {
                 </TouchableOpacity>
               )}
               {showConnections && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.serviceItem}
                   onPress={() => router.push('/connections')}
                 >
@@ -181,17 +187,15 @@ export default function LandingScreen() {
           </View>
         </View>
 
-
         <TouchableOpacity
           style={styles.resetButton}
-          onPress={async () =>
-              {
-                await key.store.clear()
-                await account.store.clear()
-                await identity.store.clear()
-                await passkey.store.clear()
-                router.replace('/onboarding')
-              }}
+          onPress={async () => {
+            await key.store.clear();
+            await account.store.clear();
+            await identity.store.clear();
+            await passkey.store.clear();
+            router.replace('/onboarding');
+          }}
         >
           <Text style={styles.resetButtonText}>Logout & Reset Onboarding</Text>
         </TouchableOpacity>

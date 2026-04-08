@@ -1,0 +1,2 @@
+# Git blame ignore revs file
+.git-blame-ignore-revs linguist-generated=true

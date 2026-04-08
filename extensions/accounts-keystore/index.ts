@@ -1,6 +1,6 @@
-import { WithAccountsKeystore } from "./extension";
+import { WithAccountsKeystore } from './extension';
 
-export * from "./extension";
-export * from "./types";
+export * from './extension';
+export * from './types';
 
 export default WithAccountsKeystore;

@@ -1,4 +1,4 @@
-import { usePreventScreenshot } from "@/hooks/usePreventScreenshot";
+import { usePreventScreenshot } from '@/hooks/usePreventScreenshot';
 
 type Props = {
   enabled?: boolean;

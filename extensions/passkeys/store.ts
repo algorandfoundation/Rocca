@@ -1,5 +1,5 @@
-import type { Store } from "@tanstack/store";
-import type { Passkey, PasskeyStoreState } from "./types";
+import type { Store } from '@tanstack/store';
+import type { Passkey, PasskeyStoreState } from './types';
 
 /**
  * Adds a passkey to the store.
@@ -15,20 +15,20 @@ import type { Passkey, PasskeyStoreState } from "./types";
  * ```
  */
 export function addPasskey({
-	store,
-	passkey,
+  store,
+  passkey,
 }: {
-	store: Store<PasskeyStoreState>;
-	passkey: Passkey;
+  store: Store<PasskeyStoreState>;
+  passkey: Passkey;
 }): Passkey {
-	store.setState((state) => {
-		const filtered = state.passkeys.filter((p) => p.id !== passkey.id);
-		return {
-			...state,
-			passkeys: [passkey, ...filtered],
-		};
-	});
-	return passkey;
+  store.setState((state) => {
+    const filtered = state.passkeys.filter((p) => p.id !== passkey.id);
+    return {
+      ...state,
+      passkeys: [passkey, ...filtered],
+    };
+  });
+  return passkey;
 }
 
 /**
@@ -44,18 +44,18 @@ export function addPasskey({
  * ```
  */
 export function removePasskey({
-	store,
-	id,
+  store,
+  id,
 }: {
-	store: Store<PasskeyStoreState>;
-	id: string;
+  store: Store<PasskeyStoreState>;
+  id: string;
 }): void {
-	store.setState((state) => {
-		return {
-			...state,
-			passkeys: state.passkeys.filter((passkey) => passkey.id !== id),
-		};
-	});
+  store.setState((state) => {
+    return {
+      ...state,
+      passkeys: state.passkeys.filter((passkey) => passkey.id !== id),
+    };
+  });
 }
 
 /**
@@ -72,13 +72,13 @@ export function removePasskey({
  * ```
  */
 export function getPasskey({
-	store,
-	id,
+  store,
+  id,
 }: {
-	store: Store<PasskeyStoreState>;
-	id: string;
+  store: Store<PasskeyStoreState>;
+  id: string;
 }): Passkey | undefined {
-	return store.state.passkeys.find((passkey) => passkey.id === id);
+  return store.state.passkeys.find((passkey) => passkey.id === id);
 }
 
 /**
@@ -93,12 +93,8 @@ export function getPasskey({
  * getPasskeys({ store });
  * ```
  */
-export function getPasskeys({
-	store,
-}: {
-	store: Store<PasskeyStoreState>;
-}): Passkey[] {
-	return store.state.passkeys;
+export function getPasskeys({ store }: { store: Store<PasskeyStoreState> }): Passkey[] {
+  return store.state.passkeys;
 }
 
 /**
@@ -112,15 +108,11 @@ export function getPasskeys({
  * clearPasskeys({ store });
  * ```
  */
-export function clearPasskeys({
-	store,
-}: {
-	store: Store<PasskeyStoreState>;
-}): void {
-	store.setState((state) => {
-		return {
-			...state,
-			passkeys: [],
-		};
-	});
+export function clearPasskeys({ store }: { store: Store<PasskeyStoreState> }): void {
+  store.setState((state) => {
+    return {
+      ...state,
+      passkeys: [],
+    };
+  });
 }

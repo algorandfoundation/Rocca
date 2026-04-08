@@ -1,11 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import Animated, { 
-  FadeIn, 
-  FadeOut, 
-  LinearTransition,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 interface SeedPhraseProps {
   recoveryPhrase: string[];
@@ -22,29 +18,27 @@ export default function SeedPhrase({
   showSeed,
   validateWords = null,
   onInputChange,
-  primaryColor
+  primaryColor,
 }: SeedPhraseProps) {
-
-  
   const renderWord = (word: string, index: number) => {
     const isTestWord = validateWords !== null && index in validateWords;
     const shouldHideWord = !showSeed && !isTestWord && validateWords === null;
-    
+
     // In test mode, we "remove" non-test words by not rendering them
     if (validateWords !== null && !isTestWord) {
       return null;
     }
 
     return (
-      <Animated.View 
-        key={index} 
+      <Animated.View
+        key={index}
         layout={LinearTransition.duration(300)}
         entering={FadeIn.duration(300)}
         exiting={FadeOut.duration(300)}
         style={[
-          styles.wordBox, 
+          styles.wordBox,
           isTestWord && styles.testWordBox,
-          isTestWord && { borderColor: primaryColor }
+          isTestWord && { borderColor: primaryColor },
         ]}
       >
         <Text style={styles.wordIndex}>{index + 1}.</Text>
@@ -68,28 +62,22 @@ export default function SeedPhrase({
 
   return (
     <View style={styles.container}>
-      <Animated.View 
+      <Animated.View
         layout={LinearTransition.duration(300)}
         style={[styles.wordsGrid, { minHeight: (48 + 4) * 8 }]}
       >
-        {recoveryPhrase && recoveryPhrase.length > 0 ? (
-          recoveryPhrase.map((word, index) => renderWord(word, index))
-        ) : (
-          // Placeholder grid during initial generation (if phrase not ready yet)
-          [...Array(24)].map((_, index) => (
-            <View key={index} style={styles.wordBox}>
-              <Text style={styles.wordIndex}>{index + 1}.</Text>
-              <View style={[styles.wordHidden, { backgroundColor: '#E2E8F0' }]} />
-            </View>
-          ))
-        )}
-        
+        {recoveryPhrase && recoveryPhrase.length > 0
+          ? recoveryPhrase.map((word, index) => renderWord(word, index))
+          : // Placeholder grid during initial generation (if phrase not ready yet)
+            [...Array(24)].map((_, index) => (
+              <View key={index} style={styles.wordBox}>
+                <Text style={styles.wordIndex}>{index + 1}.</Text>
+                <View style={[styles.wordHidden, { backgroundColor: '#E2E8F0' }]} />
+              </View>
+            ))}
+
         {!showSeed && validateWords === null && (
-          <Animated.View 
-            entering={FadeIn}
-            exiting={FadeOut}
-            style={styles.lockOverlay}
-          >
+          <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.lockOverlay}>
             <View style={[styles.lockCircle, { backgroundColor: primaryColor }]}>
               <MaterialIcons name="lock" size={32} color="#FFFFFF" />
             </View>

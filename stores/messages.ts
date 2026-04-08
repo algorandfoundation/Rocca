@@ -1,5 +1,5 @@
-import { Store } from "@tanstack/react-store";
-import { createMMKV } from "react-native-mmkv";
+import { Store } from '@tanstack/react-store';
+import { createMMKV } from 'react-native-mmkv';
 
 export interface Message {
   id: string;
@@ -62,10 +62,8 @@ export function addMessage(message: Omit<Message, 'id' | 'timestamp'>) {
 export function clearMessages(address: string, origin: string, requestId: string) {
   messagesStore.setState((state) => ({
     ...state,
-    messages: state.messages.filter(m => 
-      m.address !== address || 
-      m.origin !== origin || 
-      m.requestId !== requestId
+    messages: state.messages.filter(
+      (m) => m.address !== address || m.origin !== origin || m.requestId !== requestId,
     ),
   }));
 }

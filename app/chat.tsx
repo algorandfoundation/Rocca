@@ -1,7 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, Keyboard,
-  TouchableWithoutFeedback
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -14,22 +22,18 @@ export default function ChatScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ origin: string; requestId: string }>();
   const [inputText, setInputText] = useState('');
-  const {
-    isConnected,
-    isLoading,
-    isError,
-    send,
-    lastHeartbeat,
-    reset,
-    address
-  } = useConnection(params.origin || '', params.requestId || '');
+  const { isConnected, isLoading, isError, send, lastHeartbeat, reset, address } = useConnection(
+    params.origin || '',
+    params.requestId || '',
+  );
 
   const { messages } = useStore(messagesStore, (state) => ({
-    messages: state.messages.filter(m => 
-      m.origin === params.origin && 
-      m.requestId === params.requestId && 
-      (address ? m.address === address : true)
-    )
+    messages: state.messages.filter(
+      (m) =>
+        m.origin === params.origin &&
+        m.requestId === params.requestId &&
+        (address ? m.address === address : true),
+    ),
   }));
 
   const flatListRef = useRef<FlatList>(null);
@@ -46,12 +50,9 @@ export default function ChatScreen() {
 
   // Scroll to bottom when keyboard opens
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }
-    );
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    });
 
     return () => {
       keyboardDidShowListener.remove();
@@ -71,20 +72,18 @@ export default function ChatScreen() {
   };
 
   const renderItem = ({ item }: { item: Message }) => (
-    <View style={[
-      styles.messageBubble,
-      item.sender === 'me' ? styles.myMessage : styles.peerMessage
-    ]}>
-      <Text style={[
-        styles.messageText,
-        item.sender === 'me' ? styles.myMessageText : styles.peerMessageText
-      ]}>
+    <View
+      style={[styles.messageBubble, item.sender === 'me' ? styles.myMessage : styles.peerMessage]}
+    >
+      <Text
+        style={[
+          styles.messageText,
+          item.sender === 'me' ? styles.myMessageText : styles.peerMessageText,
+        ]}
+      >
         {item.text}
       </Text>
-      <Text style={[
-        styles.timestamp,
-        item.sender === 'me' && styles.myTimestamp
-      ]}>
+      <Text style={[styles.timestamp, item.sender === 'me' && styles.myTimestamp]}>
         {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </Text>
     </View>
@@ -92,37 +91,51 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <Stack.Screen options={{ 
-        title: isConnected ? 'Connected' : (isLoading ? 'Connecting...' : (isError ? 'Error' : 'Disconnected')),
-        headerShown: true,
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
-            <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
-          </TouchableOpacity>
-        ),
-        headerRight: () => isConnected ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {isHeartbeatVisible && (
-              <MaterialIcons name="favorite" size={16} color="#10B981" style={{ marginRight: 10 }} />
-            )}
-            <TouchableOpacity 
-              onPress={() => address && clearMessages(address, params.origin || '', params.requestId || '')} 
-              style={{ marginRight: 15 }}
-            >
-              <MaterialIcons name="delete-outline" size={24} color="#6B7280" />
+      <Stack.Screen
+        options={{
+          title: isConnected
+            ? 'Connected'
+            : isLoading
+              ? 'Connecting...'
+              : isError
+                ? 'Error'
+                : 'Disconnected',
+          headerShown: true,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
+              <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDisconnect} style={{ marginRight: 15 }}>
-              <MaterialIcons name="link-off" size={24} color="#EF4444" />
-            </TouchableOpacity>
-          </View>
-        ) : null
-      }} />
-      
-      <KeyboardAvoidingView
-          style={{ flex: 1 }}
-      >
+          ),
+          headerRight: () =>
+            isConnected ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {isHeartbeatVisible && (
+                  <MaterialIcons
+                    name="favorite"
+                    size={16}
+                    color="#10B981"
+                    style={{ marginRight: 10 }}
+                  />
+                )}
+                <TouchableOpacity
+                  onPress={() =>
+                    address && clearMessages(address, params.origin || '', params.requestId || '')
+                  }
+                  style={{ marginRight: 15 }}
+                >
+                  <MaterialIcons name="delete-outline" size={24} color="#6B7280" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleDisconnect} style={{ marginRight: 15 }}>
+                  <MaterialIcons name="link-off" size={24} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            ) : null,
+        }}
+      />
+
+      <KeyboardAvoidingView style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={{ display:'flex', height: '100%' }}>
+          <View style={{ display: 'flex', height: '100%' }}>
             <FlatList
               ref={flatListRef}
               data={messages}
@@ -139,12 +152,15 @@ export default function ChatScreen() {
                 style={styles.input}
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder={isConnected ? "Type a message..." : "Connecting..."}
+                placeholder={isConnected ? 'Type a message...' : 'Connecting...'}
                 placeholderTextColor="#94A3B8"
                 editable={isConnected}
               />
-              <TouchableOpacity 
-                style={[styles.sendButton, (!inputText.trim() || !isConnected) && styles.sendButtonDisabled]} 
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  (!inputText.trim() || !isConnected) && styles.sendButtonDisabled,
+                ]}
                 onPress={handleSend}
                 disabled={!inputText.trim() || !isConnected}
               >

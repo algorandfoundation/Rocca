@@ -10,11 +10,10 @@ import SeedPhrase from '../components/SeedPhrase';
 
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as bip39 from '@scure/bip39';
-import { useProvider } from '@/hooks/useProvider'
-import { mnemonicToSeed } from '@scure/bip39'
-import ReactNativePasskeyAutofill from "@algorandfoundation/react-native-passkey-autofill";
+import { useProvider } from '@/hooks/useProvider';
+import { mnemonicToSeed } from '@scure/bip39';
+import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 import { PreventScreenshot } from '@/components/PreventScreenshot';
-
 
 // Extract provider configuration from expo-constants
 const config = Constants.expoConfig?.extra?.provider || {
@@ -55,7 +54,7 @@ function onboardingReducer(state: State, action: Action): State {
       return {
         ...state,
         step: 'verify',
-        testInput: Object.fromEntries(action.indices.map(idx => [idx, ''])),
+        testInput: Object.fromEntries(action.indices.map((idx) => [idx, ''])),
       };
     case 'VERIFY':
       return { ...state, testInput: action.input };
@@ -71,52 +70,54 @@ function onboardingReducer(state: State, action: Action): State {
   }
 }
 
-function getIndicatorStep (step: OnboardingStep) {
-  if (step === 'welcome') return 1
-  if (step === 'generate') return 2
-  if (step === 'backup') return 2
-  if (step === 'verify') return 3
-  if (step === 'complete') return 3
-  return 0
+function getIndicatorStep(step: OnboardingStep) {
+  if (step === 'welcome') return 1;
+  if (step === 'generate') return 2;
+  if (step === 'backup') return 2;
+  if (step === 'verify') return 3;
+  if (step === 'complete') return 3;
+  return 0;
 }
 
- function getSecurityMessage(step: OnboardingStep) {
-   switch (step) {
-     case 'generate':
-     case 'backup':
-       return 'Write down these 24 words in order and store them in a safe offline place. Do not take a screenshot.'
-     case 'verify':
-       return 'Enter the requested words from your phrase to confirm you have a correct backup.'
-     default:
-       return 'Your recovery phrase is the only way to recover your wallet. Keep it secret and never share it.'
-   }
- }
+function getSecurityMessage(step: OnboardingStep) {
+  switch (step) {
+    case 'generate':
+    case 'backup':
+      return 'Write down these 24 words in order and store them in a safe offline place. Do not take a screenshot.';
+    case 'verify':
+      return 'Enter the requested words from your phrase to confirm you have a correct backup.';
+    default:
+      return 'Your recovery phrase is the only way to recover your wallet. Keep it secret and never share it.';
+  }
+}
 
 export default function OnboardingScreen() {
   // UI Elements
-  const { primaryColor, secondaryColor, name } = config
-  const scrollViewRef = useRef<ScrollView>(null)
+  const { primaryColor, secondaryColor, name } = config;
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Expo Router for Navigation
-  const router = useRouter()
+  const router = useRouter();
   // Provider Context, used to hold global states and interfaces
-  const { keys, key } = useProvider()
+  const { keys, key } = useProvider();
   // State reducer
-  const [{ step, recoveryPhrase, testInput }, dispatch] =
-    useReducer(onboardingReducer, initialState)
+  const [{ step, recoveryPhrase, testInput }, dispatch] = useReducer(
+    onboardingReducer,
+    initialState,
+  );
 
   useEffect(() => {
     if (keys.length > 0 && step === 'welcome') {
-      router.replace('/landing')
+      router.replace('/landing');
     }
-  }, [keys, step])
+  }, [keys, step]);
 
   // Helpers for state
-  const currentIndicatorStep = getIndicatorStep(step)
-  const securityMessage = getSecurityMessage(step)
-  const isBackupVerified = step === 'complete'
-  const isPhraseVisible = step === 'backup'
-  const showTest = step === 'verify'
+  const currentIndicatorStep = getIndicatorStep(step);
+  const securityMessage = getSecurityMessage(step);
+  const isBackupVerified = step === 'complete';
+  const isPhraseVisible = step === 'backup';
+  const showTest = step === 'verify';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -129,8 +130,14 @@ export default function OnboardingScreen() {
                 key={s}
                 style={[
                   styles.stepDot,
-                  currentIndicatorStep === s && [styles.stepDotActive, { backgroundColor: primaryColor }],
-                  currentIndicatorStep > s && [styles.stepDotCompleted, { backgroundColor: secondaryColor }],
+                  currentIndicatorStep === s && [
+                    styles.stepDotActive,
+                    { backgroundColor: primaryColor },
+                  ],
+                  currentIndicatorStep > s && [
+                    styles.stepDotCompleted,
+                    { backgroundColor: secondaryColor },
+                  ],
                 ]}
               />
             ))}
@@ -170,18 +177,18 @@ export default function OnboardingScreen() {
                 style={[styles.primaryButton, { backgroundColor: primaryColor }]}
                 onPress={() => {
                   if (keys.length > 0) {
-                    router.replace('/landing')
-                    return
+                    router.replace('/landing');
+                    return;
                   }
 
                   // Update onboarding to include the text, this is used to validate the list
-                  const phrase = bip39.generateMnemonic(wordlist, 256).split(' ')
-                  dispatch({ type: 'SET_PHRASE', phrase })
+                  const phrase = bip39.generateMnemonic(wordlist, 256).split(' ');
+                  dispatch({ type: 'SET_PHRASE', phrase });
 
                   // Scroll to the button once generation is complete
                   setTimeout(() => {
-                    scrollViewRef.current?.scrollToEnd({ animated: true })
-                  }, 100)
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                  }, 100);
                 }}
               >
                 <Text style={styles.primaryButtonText}>Create Wallet</Text>
@@ -191,7 +198,9 @@ export default function OnboardingScreen() {
                 style={styles.secondaryButton}
                 onPress={() => router.push('/import')}
               >
-                <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>Import Existing Wallet</Text>
+                <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>
+                  Import Existing Wallet
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -213,9 +222,7 @@ export default function OnboardingScreen() {
 
               <View style={styles.infoSection}>
                 <Text style={styles.infoTitle}>
-                  {isBackupVerified
-                      ? 'Identity Secured!'
-                      : 'Secure Your Recovery Phrase'}
+                  {isBackupVerified ? 'Identity Secured!' : 'Secure Your Recovery Phrase'}
                 </Text>
 
                 {isBackupVerified ? (
@@ -263,7 +270,9 @@ export default function OnboardingScreen() {
                             style={styles.secondaryButton}
                             onPress={() => dispatch({ type: 'RESET' })}
                           >
-                            <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>Go Back</Text>
+                            <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>
+                              Go Back
+                            </Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.primaryButton, { backgroundColor: primaryColor }]}
@@ -293,13 +302,16 @@ export default function OnboardingScreen() {
                             style={styles.secondaryButton}
                             onPress={() => dispatch({ type: 'RESET' })}
                           >
-                            <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>Reset Onboarding</Text>
+                            <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>
+                              Reset Onboarding
+                            </Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.primaryButton, { backgroundColor: primaryColor }]}
                             onPress={async () => {
                               const isCorrect = Object.entries(testInput).every(
-                                ([index, value]) => value.toLowerCase().trim() === recoveryPhrase?.[Number(index)]
+                                ([index, value]) =>
+                                  value.toLowerCase().trim() === recoveryPhrase?.[Number(index)],
                               );
                               if (isCorrect) {
                                 dispatch({ type: 'VERIFY_SUCCESS' });
@@ -316,7 +328,7 @@ export default function OnboardingScreen() {
                                     keyUsages: ['deriveKey', 'deriveBits'],
                                     privateKey: await mnemonicToSeed(recoveryPhrase.join(' ')),
                                   },
-                                  'bytes'
+                                  'bytes',
                                 );
 
                                 // Generate HD Root Key
@@ -326,9 +338,9 @@ export default function OnboardingScreen() {
                                   extractable: true,
                                   keyUsages: ['deriveKey', 'deriveBits'],
                                   params: {
-                                    parentKeyId: seedId
-                                  }
-                                })
+                                    parentKeyId: seedId,
+                                  },
+                                });
 
                                 try {
                                   // Use the rootKeyId we just generated
@@ -342,41 +354,44 @@ export default function OnboardingScreen() {
                                   type: 'hd-derived-ed25519',
                                   algorithm: 'EdDSA',
                                   extractable: true,
-                                  keyUsages: ['sign', "verify"],
+                                  keyUsages: ['sign', 'verify'],
                                   params: {
                                     parentKeyId: rootKeyId,
                                     context: 0,
                                     account: 0,
                                     index: 0,
-                                    derivation: 9
-                                  }
-                                })
+                                    derivation: 9,
+                                  },
+                                });
 
                                 // Generate Ed25519 Identity Key
                                 await key.store.generate({
                                   type: 'hd-derived-ed25519',
                                   algorithm: 'EdDSA',
                                   extractable: true,
-                                  keyUsages: ['sign', "verify"],
+                                  keyUsages: ['sign', 'verify'],
                                   params: {
                                     parentKeyId: rootKeyId,
                                     context: 1,
                                     account: 0,
                                     index: 0,
-                                    derivation: 9
-                                  }
-                                })
+                                    derivation: 9,
+                                  },
+                                });
 
                                 router.replace('/landing');
-
                               } else {
                                 Alert.alert(
                                   'Verification Failed',
                                   "The words you entered don't match your recovery phrase. Would you like to try again or start over?",
                                   [
                                     { text: 'Try Again', style: 'cancel' },
-                                    { text: 'Start Over', onPress: () => dispatch({ type: 'RESET' }), style: 'destructive' },
-                                  ]
+                                    {
+                                      text: 'Start Over',
+                                      onPress: () => dispatch({ type: 'RESET' }),
+                                      style: 'destructive',
+                                    },
+                                  ],
                                 );
                               }
                             }}
@@ -402,7 +417,7 @@ export default function OnboardingScreen() {
         )}
       </View>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({

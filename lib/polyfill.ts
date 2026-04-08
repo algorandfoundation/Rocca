@@ -1,5 +1,5 @@
-import { Passkey } from "react-native-passkey";
-import { fromBase64Url, toBase64URL } from "@algorandfoundation/liquid-client";
+import { Passkey } from 'react-native-passkey';
+import { fromBase64Url, toBase64URL } from '@algorandfoundation/liquid-client';
 
 function toUint8Array(buf: BufferSource): Uint8Array {
   if (buf instanceof Uint8Array) return buf;
@@ -18,10 +18,9 @@ function toArrayBuffer(base64url: string): ArrayBuffer {
 }
 
 export function globalPolyfill() {
-
-// Global unhandled promise rejection handler to catch "Unable to activate keep awake" errors
-// This is an intermittent issue with expo-keep-awake that can occur during system transitions
-// or when system dialogs (like passkeys) are active.
+  // Global unhandled promise rejection handler to catch "Unable to activate keep awake" errors
+  // This is an intermittent issue with expo-keep-awake that can occur during system transitions
+  // or when system dialogs (like passkeys) are active.
   if (typeof ErrorUtils !== 'undefined') {
     const originalErrorHandler = ErrorUtils.getGlobalHandler();
     ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
@@ -39,11 +38,11 @@ export function globalPolyfill() {
     });
   }
 
-// React Native doesn't have a standard window.onunhandledrejection but we can still
-// try to catch them by overriding how they are handled if possible.
-// For Hermes, promise rejections that bubble up will eventually hit the global error handler.
+  // React Native doesn't have a standard window.onunhandledrejection but we can still
+  // try to catch them by overriding how they are handled if possible.
+  // For Hermes, promise rejections that bubble up will eventually hit the global error handler.
 
-// @ts-ignore
+  // @ts-ignore
   if (global?.HermesInternal?.hasPromise?.()) {
     // @ts-ignore
     const originalRejectionHandler = global.HermesInternal.getUnhandledPromiseRejectionHandler?.();
@@ -66,7 +65,7 @@ export function setupNavigatorPolyfill() {
   // @ts-ignore
   if (!global.AuthenticatorAssertionResponse) {
     // @ts-ignore
-    global.AuthenticatorAssertionResponse = function () { };
+    global.AuthenticatorAssertionResponse = function () {};
     // @ts-ignore
     global.AuthenticatorAssertionResponse.prototype.authenticatorData = null;
     // @ts-ignore
@@ -79,7 +78,7 @@ export function setupNavigatorPolyfill() {
   // @ts-ignore
   if (!global.AuthenticatorAttestationResponse) {
     // @ts-ignore
-    global.AuthenticatorAttestationResponse = function () { };
+    global.AuthenticatorAttestationResponse = function () {};
     // @ts-ignore
     global.AuthenticatorAttestationResponse.prototype.attestationObject = null;
     // @ts-ignore
@@ -99,7 +98,10 @@ export function setupNavigatorPolyfill() {
       if (!publicKey) return null;
       const request = {
         ...publicKey,
-        challenge: typeof publicKey.challenge === 'string' ? publicKey.challenge : toBase64URL(toUint8Array(publicKey.challenge)),
+        challenge:
+          typeof publicKey.challenge === 'string'
+            ? publicKey.challenge
+            : toBase64URL(toUint8Array(publicKey.challenge)),
         allowCredentials: publicKey.allowCredentials?.map((cred) => ({
           ...cred,
           id: typeof cred.id === 'string' ? cred.id : toBase64URL(toUint8Array(cred.id)),
@@ -119,7 +121,9 @@ export function setupNavigatorPolyfill() {
             clientDataJSON,
             authenticatorData: authData,
             signature: toArrayBuffer(result.response.signature),
-            userHandle: result.response.userHandle ? toArrayBuffer(result.response.userHandle) : null,
+            userHandle: result.response.userHandle
+              ? toArrayBuffer(result.response.userHandle)
+              : null,
             clientExtensionResults: result.clientExtensionResults || {},
           },
           authenticatorAttachment: result.authenticatorAttachment,
@@ -135,20 +139,28 @@ export function setupNavigatorPolyfill() {
       if (!publicKey) return null;
       const request = {
         ...publicKey,
-        challenge: typeof publicKey.challenge === 'string' ? publicKey.challenge : toBase64URL(toUint8Array(publicKey.challenge)),
+        challenge:
+          typeof publicKey.challenge === 'string'
+            ? publicKey.challenge
+            : toBase64URL(toUint8Array(publicKey.challenge)),
         user: {
           ...publicKey.user,
-          id: typeof publicKey.user.id === 'string' ? publicKey.user.id : toBase64URL(toUint8Array(publicKey.user.id)),
+          id:
+            typeof publicKey.user.id === 'string'
+              ? publicKey.user.id
+              : toBase64URL(toUint8Array(publicKey.user.id)),
         },
         excludeCredentials: publicKey.excludeCredentials?.map((cred) => ({
           ...cred,
           id: typeof cred.id === 'string' ? cred.id : toBase64URL(toUint8Array(cred.id)),
         })),
-        authenticatorSelection: publicKey.authenticatorSelection ? {
-          ...publicKey.authenticatorSelection,
-          requireResidentKey: true,
-          residentKey: 'required',
-        } : undefined,
+        authenticatorSelection: publicKey.authenticatorSelection
+          ? {
+              ...publicKey.authenticatorSelection,
+              requireResidentKey: true,
+              residentKey: 'required',
+            }
+          : undefined,
         extensions: undefined,
       };
       // Android Credential Manager is very strict about the RP ID.
@@ -167,8 +179,12 @@ export function setupNavigatorPolyfill() {
             attestationObject: toArrayBuffer(result.response.attestationObject),
             getTransports: () => (result.response as any).transports || [],
             getPublicKeyAlgorithm: () => (result.response as any).publicKeyAlgorithm || -7,
-            getPublicKey: () => result.response.publicKey ? toArrayBuffer(result.response.publicKey) : null,
-            getAuthenticatorData: () => result.response.authenticatorData ? toArrayBuffer(result.response.authenticatorData) : null,
+            getPublicKey: () =>
+              result.response.publicKey ? toArrayBuffer(result.response.publicKey) : null,
+            getAuthenticatorData: () =>
+              result.response.authenticatorData
+                ? toArrayBuffer(result.response.authenticatorData)
+                : null,
             clientExtensionResults: result.clientExtensionResults || {},
           },
           authenticatorAttachment: result.authenticatorAttachment,

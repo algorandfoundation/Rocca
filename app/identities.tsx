@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity
-} from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,15 +11,17 @@ export default function IdentitiesScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <Stack.Screen options={{ 
-        title: 'Identities',
-        headerShown: true,
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
-            <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
-          </TouchableOpacity>
-        ),
-      }} />
+      <Stack.Screen
+        options={{
+          title: 'Identities',
+          headerShown: true,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
+              <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Identities (DIDs)</Text>
@@ -41,9 +41,7 @@ export default function IdentitiesScreen() {
                 </TouchableOpacity>
               </View>
             ))}
-            {identities.length === 0 && (
-              <Text style={styles.emptyText}>No identities found</Text>
-            )}
+            {identities.length === 0 && <Text style={styles.emptyText}>No identities found</Text>}
           </View>
         </View>
       </ScrollView>

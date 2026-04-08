@@ -36,14 +36,18 @@ jest.mock('@/hooks/useProvider', () => ({
     provider: {
       keystore: {
         generateKey: jest.fn().mockResolvedValue({ id: 'key1' }),
-      }
-    }
+      },
+    },
   }),
 }));
 
 // Mock bip39
 jest.mock('@scure/bip39', () => ({
-  generateMnemonic: jest.fn().mockReturnValue('apple banana cherry date elderberry fig grape honeydew iceberg jackfruit kiwi lemon'),
+  generateMnemonic: jest
+    .fn()
+    .mockReturnValue(
+      'apple banana cherry date elderberry fig grape honeydew iceberg jackfruit kiwi lemon',
+    ),
   mnemonicToSeed: jest.fn().mockResolvedValue(new Uint8Array(64)),
   wordlist: { english: [] },
 }));
@@ -69,29 +73,29 @@ jest.mock('@expo/vector-icons', () => ({
 describe('<OnboardingScreen />', () => {
   it('renders welcome step initially', () => {
     const { getByText } = render(<OnboardingScreen />);
-    
+
     expect(getByText('Welcome to Rocca')).toBeTruthy();
     expect(getByText('Create Wallet')).toBeTruthy();
   });
 
   it('transitions to generate step when clicking Create Wallet', async () => {
     const { getByText, findByText } = render(<OnboardingScreen />);
-    
+
     fireEvent.press(getByText('Create Wallet'));
-    
+
     expect(await findByText('Secure Your Identity.')).toBeTruthy();
     expect(await findByText('View Secret')).toBeTruthy();
   });
 
   it('shows the recovery phrase after generation', async () => {
     const { getByText, findByText } = render(<OnboardingScreen />);
-    
+
     fireEvent.press(getByText('Create Wallet'));
-    
+
     // Wait for the transition and then press "View Secret"
     const revealButton = await findByText('View Secret');
     fireEvent.press(revealButton);
-    
+
     // Now it should show "Verify Recovery Phrase"
     expect(await findByText('Verify Recovery Phrase')).toBeTruthy();
   });

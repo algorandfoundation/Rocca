@@ -1,5 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal as RNModal, TouchableOpacity, ScrollView, ModalProps as RNModalProps } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal as RNModal,
+  TouchableOpacity,
+  ScrollView,
+  ModalProps as RNModalProps,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface ModalProps extends RNModalProps {
@@ -26,9 +34,7 @@ export const Modal = ({ visible, onClose, title, children, ...props }: ModalProp
               <MaterialIcons name="close" size={24} color="#64748B" />
             </TouchableOpacity>
           </View>
-          <ScrollView style={styles.modalBody}>
-            {children}
-          </ScrollView>
+          <ScrollView style={styles.modalBody}>{children}</ScrollView>
         </View>
       </View>
     </RNModal>

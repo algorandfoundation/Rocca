@@ -1,5 +1,13 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  TextInput,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -31,12 +39,12 @@ export default function ImportWalletScreen() {
       .toLowerCase()
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 0);
-    
+      .filter((word) => word.length > 0);
+
     if (words.length !== 24) {
       Alert.alert(
         'Invalid Phrase',
-        `Expected 24 words, but found ${words.length}. Please enter your complete recovery phrase.`
+        `Expected 24 words, but found ${words.length}. Please enter your complete recovery phrase.`,
       );
       return;
     }
@@ -44,17 +52,17 @@ export default function ImportWalletScreen() {
     // Validate using BIP39
     const phrase = words.join(' ');
     const isValid = validateMnemonic(phrase, wordlist);
-    
+
     if (!isValid) {
       Alert.alert(
         'Invalid Recovery Phrase',
-        'The recovery phrase you entered is not valid. Please check your words and try again.'
+        'The recovery phrase you entered is not valid. Please check your words and try again.',
       );
       return;
     }
 
     setIsImporting(true);
-    
+
     try {
       // Import to the keystore
       const seedId = await key.store.import(
@@ -65,7 +73,7 @@ export default function ImportWalletScreen() {
           keyUsages: ['deriveKey', 'deriveBits'],
           privateKey: await mnemonicToSeed(phrase),
         },
-        'bytes'
+        'bytes',
       );
 
       // Generate HD Root Key
@@ -75,46 +83,46 @@ export default function ImportWalletScreen() {
         extractable: true,
         keyUsages: ['deriveKey', 'deriveBits'],
         params: {
-          parentKeyId: seedId
-        }
-      })
+          parentKeyId: seedId,
+        },
+      });
 
       // Generate Ed25519 Account Key
       await key.store.generate({
         type: 'hd-derived-ed25519',
         algorithm: 'EdDSA',
         extractable: true,
-        keyUsages: ['sign', "verify"],
+        keyUsages: ['sign', 'verify'],
         params: {
           parentKeyId: rootKeyId,
           context: 0,
           account: 0,
           index: 0,
-          derivation: 9
-        }
-      })
+          derivation: 9,
+        },
+      });
 
       // Generate Ed25519 Identity Key
       await key.store.generate({
         type: 'hd-derived-ed25519',
         algorithm: 'EdDSA',
         extractable: true,
-        keyUsages: ['sign', "verify"],
+        keyUsages: ['sign', 'verify'],
         params: {
           parentKeyId: rootKeyId,
           context: 1,
           account: 0,
           index: 0,
-          derivation: 9
-        }
-      })
+          derivation: 9,
+        },
+      });
 
       router.replace('/landing');
     } catch (error) {
       console.error('Import failed:', error);
       Alert.alert(
         'Import Failed',
-        'Failed to import wallet. Please check your recovery phrase and try again.'
+        'Failed to import wallet. Please check your recovery phrase and try again.',
       );
     } finally {
       setIsImporting(false);
@@ -154,15 +162,15 @@ export default function ImportWalletScreen() {
               />
             </PreventScreenshot>
             <Text style={styles.importHelper}>
-              Words entered: {importText.split(/\s+/).filter(w => w.length > 0).length} / 24
+              Words entered: {importText.split(/\s+/).filter((w) => w.length > 0).length} / 24
             </Text>
           </View>
 
           <View style={styles.importInfo}>
             <MaterialIcons name="info" size={20} color="#64748B" />
             <Text style={styles.importInfoText}>
-              Your recovery phrase is only used to restore your wallet locally. 
-              It is never sent to any server.
+              Your recovery phrase is only used to restore your wallet locally. It is never sent to
+              any server.
             </Text>
           </View>
         </ScrollView>
@@ -175,9 +183,12 @@ export default function ImportWalletScreen() {
           >
             <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>Cancel</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
-            style={[styles.primaryButton, { backgroundColor: primaryColor, opacity: isImporting ? 0.7 : 1 }]}
+            style={[
+              styles.primaryButton,
+              { backgroundColor: primaryColor, opacity: isImporting ? 0.7 : 1 },
+            ]}
             onPress={handleImport}
             disabled={isImporting}
           >

@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert
-} from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,38 +9,36 @@ export default function PasskeysScreen() {
   const router = useRouter();
   const { passkeys, passkey: passkeyApi } = useProvider();
   const handleDelete = (id: string, name: string) => {
-    Alert.alert(
-      "Delete Passkey",
-      `Are you sure you want to delete "${name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive", 
-          onPress: async () => {
-            try {
-              await passkeyApi.store.removePasskey(id);
-            } catch (error) {
-              console.error('Failed to remove passkey:', error);
-              Alert.alert('Error', 'Failed to remove passkey');
-            }
-          } 
-        }
-      ]
-    );
+    Alert.alert('Delete Passkey', `Are you sure you want to delete "${name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await passkeyApi.store.removePasskey(id);
+          } catch (error) {
+            console.error('Failed to remove passkey:', error);
+            Alert.alert('Error', 'Failed to remove passkey');
+          }
+        },
+      },
+    ]);
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <Stack.Screen options={{ 
-        title: 'Passkeys',
-        headerShown: true,
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
-            <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
-          </TouchableOpacity>
-        ),
-      }} />
+      <Stack.Screen
+        options={{
+          title: 'Passkeys',
+          headerShown: true,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
+              <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Passkeys</Text>
@@ -64,9 +60,12 @@ export default function PasskeysScreen() {
                       Origin: {passkey.metadata.origin}
                     </Text>
                   )}
-                  <Text style={styles.date}>Created: {passkey.createdAt ? new Date(passkey.createdAt).toLocaleDateString() : 'N/A'}</Text>
+                  <Text style={styles.date}>
+                    Created:{' '}
+                    {passkey.createdAt ? new Date(passkey.createdAt).toLocaleDateString() : 'N/A'}
+                  </Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => handleDelete(passkey.id, passkey.name)}
                   style={styles.deleteButton}
                 >
@@ -74,9 +73,7 @@ export default function PasskeysScreen() {
                 </TouchableOpacity>
               </View>
             ))}
-            {passkeys.length === 0 && (
-              <Text style={styles.emptyText}>No passkeys found</Text>
-            )}
+            {passkeys.length === 0 && <Text style={styles.emptyText}>No passkeys found</Text>}
           </View>
         </View>
       </ScrollView>

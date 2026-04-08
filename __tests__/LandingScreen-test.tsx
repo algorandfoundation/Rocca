@@ -52,13 +52,13 @@ jest.mock('@expo/vector-icons', () => ({
 describe('<LandingScreen />', () => {
   it('renders correctly with mocked provider data', () => {
     const { getByText } = render(<LandingScreen />);
-    
+
     // Check for welcome message
     expect(getByText('Your identity, connected.')).toBeTruthy();
-    
+
     // Check for balance (mocked as 100)
     expect(getByText('$100')).toBeTruthy();
-    
+
     // Check for identity DID (partial check because it might be truncated in UI)
     // In landing.tsx: {activeIdentity?.did || 'No identity found'}
     expect(getByText('did:key:z6Mkh...')).toBeTruthy();
@@ -66,7 +66,7 @@ describe('<LandingScreen />', () => {
 
   it('renders provider services when enabled', () => {
     const { getByText, getAllByText } = render(<LandingScreen />);
-    
+
     expect(getByText('Accounts')).toBeTruthy();
     expect(getByText('Passkeys')).toBeTruthy();
     expect(getByText('Identities')).toBeTruthy();

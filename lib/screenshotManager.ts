@@ -1,4 +1,4 @@
-import * as ScreenCapture from "expo-screen-capture";
+import * as ScreenCapture from 'expo-screen-capture';
 
 class ScreenshotManager {
   private count = 0;
@@ -15,11 +15,11 @@ class ScreenshotManager {
     if (shouldEnable) {
       await ScreenCapture.preventScreenCaptureAsync();
       this.enabled = true;
-      console.debug("Screenshot prevention enabled. Count:", currentCount);
+      console.debug('Screenshot prevention enabled. Count:', currentCount);
     } else {
       await ScreenCapture.allowScreenCaptureAsync();
       this.enabled = false;
-      console.debug("Screenshot prevention disabled. Count:", currentCount);
+      console.debug('Screenshot prevention disabled. Count:', currentCount);
     }
   }
 
@@ -28,7 +28,7 @@ class ScreenshotManager {
       .then(() => this.update())
       .catch((error) => {
         // Swallow the error so that subsequent operations are not blocked.
-        console.error("Failed to update screenshot capture state: ", error);
+        console.error('Failed to update screenshot capture state: ', error);
       });
     return this.queue;
   }

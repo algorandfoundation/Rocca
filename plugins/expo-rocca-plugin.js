@@ -20,16 +20,20 @@ const withRoccaResolutionStrategy = (config) => {
         const allProjectsMatch = content.match(/allprojects\s*\{[\s\S]*?\n}/);
         if (allProjectsMatch) {
           let allprojectsContent = allProjectsMatch[0];
-          
+
           // 1. Add flatDir for local AARs if not already present in ALLPROJECTS
-          const aarPath = 'node_modules/@algorandfoundation/react-native-passkey-autofill/android/libs';
+          const aarPath =
+            'node_modules/@algorandfoundation/react-native-passkey-autofill/android/libs';
           if (!allprojectsContent.includes('dP256Android-release')) {
             const flatDirBlock = `
         flatDir {
             dirs "\${rootProject.projectDir}/../${aarPath}"
         }`;
             // Correctly target repositories INSIDE allprojects
-            allprojectsContent = allprojectsContent.replace(/repositories\s*\{/, `repositories {\n${flatDirBlock}`);
+            allprojectsContent = allprojectsContent.replace(
+              /repositories\s*\{/,
+              `repositories {\n${flatDirBlock}`,
+            );
           }
 
           // 2. Add resolutionStrategy for BC and MMKV if not already present
@@ -55,16 +59,16 @@ const withRoccaResolutionStrategy = (config) => {
             // Inject resolutionStrategy BEFORE the LAST closing brace of allprojects
             const lastBraceIndex = allprojectsContent.lastIndexOf('}');
             if (lastBraceIndex !== -1) {
-                allprojectsContent = 
-                    allprojectsContent.substring(0, lastBraceIndex) + 
-                    resolutionStrategy + 
-                    allprojectsContent.substring(lastBraceIndex);
+              allprojectsContent =
+                allprojectsContent.substring(0, lastBraceIndex) +
+                resolutionStrategy +
+                allprojectsContent.substring(lastBraceIndex);
             }
           }
-          
+
           content = content.replace(allProjectsMatch[0], allprojectsContent);
         }
-        
+
         fs.writeFileSync(buildGradlePath, content);
       }
       return config;

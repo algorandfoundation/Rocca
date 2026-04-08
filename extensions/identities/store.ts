@@ -1,5 +1,5 @@
-import type { Store } from "@tanstack/store";
-import type { Identity, IdentityStoreState } from "./types.ts";
+import type { Store } from '@tanstack/store';
+import type { Identity, IdentityStoreState } from './types.ts';
 
 /**
  * Adds an identity to the store.
@@ -10,19 +10,19 @@ import type { Identity, IdentityStoreState } from "./types.ts";
  * @returns The added {@link Identity}.
  */
 export function addIdentity({
-	store,
-	identity,
+  store,
+  identity,
 }: {
-	store: Store<IdentityStoreState>;
-	identity: Identity;
+  store: Store<IdentityStoreState>;
+  identity: Identity;
 }): Identity {
-	store.setState((state) => {
-		return {
-			...state,
-			identities: [identity, ...state.identities],
-		};
-	});
-	return identity;
+  store.setState((state) => {
+    return {
+      ...state,
+      identities: [identity, ...state.identities],
+    };
+  });
+  return identity;
 }
 
 /**
@@ -33,18 +33,18 @@ export function addIdentity({
  * @param params.address - The address of the identity to remove.
  */
 export function removeIdentity({
-	store,
-	address,
+  store,
+  address,
 }: {
-	store: Store<IdentityStoreState>;
-	address: string;
+  store: Store<IdentityStoreState>;
+  address: string;
 }): void {
-	store.setState((state) => {
-		return {
-			...state,
-			identities: state.identities.filter((identity) => identity.address !== address),
-		};
-	});
+  store.setState((state) => {
+    return {
+      ...state,
+      identities: state.identities.filter((identity) => identity.address !== address),
+    };
+  });
 }
 
 /**
@@ -56,13 +56,13 @@ export function removeIdentity({
  * @returns The {@link Identity} if found, otherwise undefined.
  */
 export function getIdentity({
-	store,
-	address,
+  store,
+  address,
 }: {
-	store: Store<IdentityStoreState>;
-	address: string;
+  store: Store<IdentityStoreState>;
+  address: string;
 }): Identity | undefined {
-	return store.state.identities.find((identity) => identity.address === address);
+  return store.state.identities.find((identity) => identity.address === address);
 }
 
 /**
@@ -71,15 +71,11 @@ export function getIdentity({
  * @param params - The store parameters.
  * @param params.store - The TanStack store instance for {@link IdentityStoreState}.
  */
-export function clearIdentities({
-	store,
-}: {
-	store: Store<IdentityStoreState>;
-}): void {
-	store.setState((state) => {
-		return {
-			...state,
-			identities: [],
-		};
-	});
+export function clearIdentities({ store }: { store: Store<IdentityStoreState> }): void {
+  store.setState((state) => {
+    return {
+      ...state,
+      identities: [],
+    };
+  });
 }

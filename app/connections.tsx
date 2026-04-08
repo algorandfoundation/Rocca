@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  StyleSheet, Text, View, ScrollView, TouchableOpacity
-} from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -13,27 +11,31 @@ export default function ConnectionsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <Stack.Screen options={{ 
-        title: 'Connections',
-        headerShown: true,
-        headerLeft: () => (
-          <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
-            <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
-          </TouchableOpacity>
-        ),
-      }} />
+      <Stack.Screen
+        options={{
+          title: 'Connections',
+          headerShown: true,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
+              <MaterialIcons name="arrow-back" size={24} color="#3B82F6" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Active Connections</Text>
           <View style={styles.list}>
             {sessions.map((session, index) => (
-              <TouchableOpacity 
-                key={index} 
+              <TouchableOpacity
+                key={index}
                 style={styles.card}
-                onPress={() => router.push({
+                onPress={() =>
+                  router.push({
                     pathname: '/chat',
-                    params: { origin: session.origin, requestId: session.id }
-                })}
+                    params: { origin: session.origin, requestId: session.id },
+                  })
+                }
               >
                 <View style={styles.iconContainer}>
                   <MaterialIcons name="link" size={24} color="#64748B" />

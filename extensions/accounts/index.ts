@@ -1,7 +1,7 @@
-import { WithAccountStore } from "./extension";
+import { WithAccountStore } from './extension';
 
-export * from "./extension";
-export * from "./store";
-export * from "./types";
+export * from './extension';
+export * from './store';
+export * from './types';
 
 export default WithAccountStore;

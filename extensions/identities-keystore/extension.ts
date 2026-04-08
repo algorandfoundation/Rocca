@@ -1,56 +1,45 @@
-import type {
-	Identity,
-	IdentityStoreExtension,
-	IdentityStoreState,
-} from "@/extensions/identities";
-import type {
-	Key,
-	KeyStoreExtension,
-	KeyStoreState,
-} from "@algorandfoundation/keystore";
-import type { Extension } from "@algorandfoundation/wallet-provider";
-import type { Store } from "@tanstack/store";
-import type {
-	IdentitiesKeystoreExtension,
-	IdentitiesKeystoreExtensionOptions,
-} from "./types.ts";
-import { generateDidKey, generateDidDocument } from "@/extensions/identities/did-document";
-import type { DIDDocument } from "@/extensions/identities/types";
-import { localStorage } from "@/stores/mmkv-local";
+import type { Identity, IdentityStoreExtension, IdentityStoreState } from '@/extensions/identities';
+import type { Key, KeyStoreExtension, KeyStoreState } from '@algorandfoundation/keystore';
+import type { Extension } from '@algorandfoundation/wallet-provider';
+import type { Store } from '@tanstack/store';
+import type { IdentitiesKeystoreExtension, IdentitiesKeystoreExtensionOptions } from './types.ts';
+import { generateDidKey, generateDidDocument } from '@/extensions/identities/did-document';
+import type { DIDDocument } from '@/extensions/identities/types';
+import { localStorage } from '@/stores/mmkv-local';
 
-const DID_DOCUMENT_KEY_PREFIX = "did:document:";
+const DID_DOCUMENT_KEY_PREFIX = 'did:document:';
 
 /**
  * Save DID Document to MMKV storage
  */
 function saveDidDocument(did: string, document: DIDDocument): void {
-	const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
-	localStorage.set(key, JSON.stringify(document));
+  const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
+  localStorage.set(key, JSON.stringify(document));
 }
 
 /**
  * Load DID Document from MMKV storage
  */
 function loadDidDocument(did: string): DIDDocument | null {
-	const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
-	const json = localStorage.getString(key);
-	if (json) {
-		try {
-			return JSON.parse(json) as DIDDocument;
-		} catch (e) {
-			console.error("Failed to parse DID Document from storage:", e);
-			return null;
-		}
-	}
-	return null;
+  const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
+  const json = localStorage.getString(key);
+  if (json) {
+    try {
+      return JSON.parse(json) as DIDDocument;
+    } catch (e) {
+      console.error('Failed to parse DID Document from storage:', e);
+      return null;
+    }
+  }
+  return null;
 }
 
 /**
  * Remove DID Document from MMKV storage
  */
 function removeDidDocument(did: string): void {
-	const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
-	localStorage.remove(key);
+  const key = `${DID_DOCUMENT_KEY_PREFIX}${did}`;
+  localStorage.remove(key);
 }
 
 /**
@@ -60,140 +49,137 @@ function removeDidDocument(did: string): void {
  * in the keystore with context 1, providing a sign method that leverages the keystore backend.
  */
 export const WithIdentitiesKeystore: Extension<IdentitiesKeystoreExtension> = (
-	provider: KeyStoreExtension & IdentityStoreExtension,
-	options: IdentitiesKeystoreExtensionOptions,
+  provider: KeyStoreExtension & IdentityStoreExtension,
+  options: IdentitiesKeystoreExtensionOptions,
 ) => {
-	// Ensure dependencies are present
-	if (!provider.identity) {
-		throw new Error(
-			"IdentitiesKeystore extension requires WithIdentityStore extension to be present on the provider.",
-		);
-	}
-	if (!provider.key) {
-		throw new Error(
-			"IdentitiesKeystore extension requires WithKeyStore extension to be present on the provider.",
-		);
-	}
+  // Ensure dependencies are present
+  if (!provider.identity) {
+    throw new Error(
+      'IdentitiesKeystore extension requires WithIdentityStore extension to be present on the provider.',
+    );
+  }
+  if (!provider.key) {
+    throw new Error(
+      'IdentitiesKeystore extension requires WithKeyStore extension to be present on the provider.',
+    );
+  }
 
-	const keyStore: Store<KeyStoreState> = options.keystore.store;
-	const identityStore: Store<IdentityStoreState> = options.identities.store;
-	const { autoPopulate = true } = options.identities.keystore ?? {};
+  const keyStore: Store<KeyStoreState> = options.keystore.store;
+  const identityStore: Store<IdentityStoreState> = options.identities.store;
+  const { autoPopulate = true } = options.identities.keystore ?? {};
 
-	const keys = [...((keyStore.state.keys as Key[]) ?? [])];
+  const keys = [...((keyStore.state.keys as Key[]) ?? [])];
 
-	/**
-	 * Creates an identity object for a given key ID and address.
-	 */
-	const createKeyIdentity = (
-		keyId: string,
-		address: string,
-		did: string,
-		publicKey: Uint8Array,
-	): Identity => {
-		// Generate the DID Document
-		const didDocument = generateDidDocument(did, publicKey);
-		
-		// Save to MMKV storage
-		saveDidDocument(did, didDocument);
+  /**
+   * Creates an identity object for a given key ID and address.
+   */
+  const createKeyIdentity = (
+    keyId: string,
+    address: string,
+    did: string,
+    publicKey: Uint8Array,
+  ): Identity => {
+    // Generate the DID Document
+    const didDocument = generateDidDocument(did, publicKey);
 
-		return {
-			address,
-			did,
-			didDocument,
-			type: "did:key",
-			metadata: { keyId },
+    // Save to MMKV storage
+    saveDidDocument(did, didDocument);
 
-			// TODO: TransactionSigners
-			sign: async (txns: Uint8Array[]) => {
-				// Sign each transaction using the keystore
-				const signedTxns: Uint8Array[] = [];
-				for (const txn of txns) {
-					const signed = await provider.key.store.sign(keyId, txn);
-					signedTxns.push(signed);
-				}
-				return signedTxns;
-			},
-		};
-	};
+    return {
+      address,
+      did,
+      didDocument,
+      type: 'did:key',
+      metadata: { keyId },
 
-	// Initial population if enabled
-	if (autoPopulate) {
-		let isProcessing = false;
-		let nextKeys: Key[] | null = null;
+      // TODO: TransactionSigners
+      sign: async (txns: Uint8Array[]) => {
+        // Sign each transaction using the keystore
+        const signedTxns: Uint8Array[] = [];
+        for (const txn of txns) {
+          const signed = await provider.key.store.sign(keyId, txn);
+          signedTxns.push(signed);
+        }
+        return signedTxns;
+      },
+    };
+  };
 
-		const processUpdates = (newKeys: Key[]) => {
-			if (isProcessing) {
-				nextKeys = newKeys;
-				return;
-			}
-			isProcessing = true;
-			nextKeys = null;
+  // Initial population if enabled
+  if (autoPopulate) {
+    let isProcessing = false;
+    let nextKeys: Key[] | null = null;
 
-			// Find added keys
-			const addedKeys = newKeys.filter(
-				(newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
-			);
+    const processUpdates = (newKeys: Key[]) => {
+      if (isProcessing) {
+        nextKeys = newKeys;
+        return;
+      }
+      isProcessing = true;
+      nextKeys = null;
 
-			// Find removed keys
-			const removedKeys = keys.filter(
-				(existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
-			);
+      // Find added keys
+      const addedKeys = newKeys.filter(
+        (newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
+      );
 
-			if (addedKeys.length === 0 && removedKeys.length === 0) {
-				isProcessing = false;
-				return;
-			}
+      // Find removed keys
+      const removedKeys = keys.filter(
+        (existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
+      );
 
-			// Update the local cache of keys
-			keys.length = 0;
-			newKeys.forEach(k => keys.push(k));
+      if (addedKeys.length === 0 && removedKeys.length === 0) {
+        isProcessing = false;
+        return;
+      }
 
-			// Remove identities for removed keys
-			removedKeys.forEach((k) => {
-				if (k.type === "hd-derived-ed25519" && k.publicKey) {
-					const address = generateDidKey(k.publicKey);
-					const identity = identityStore.state.identities.find((i) => i.address === address);
-					if (identity && identity.metadata?.keyId === k.id) {
-						console.log(`Removing identity for key ${k.id}-${k.type}...`);
-						// Remove DID Document from storage
-						if (identity.did) {
-							removeDidDocument(identity.did);
-						}
-						provider.identity.store.removeIdentity(address);
-					}
-				}
-			});
+      // Update the local cache of keys
+      keys.length = 0;
+      newKeys.forEach((k) => keys.push(k));
 
-			// Process only the newly added keys
-			addedKeys.forEach((k) => {
-				if (k.type === "hd-derived-ed25519" && k.publicKey && k.metadata?.context === 1) {
-					console.log(`Checking identity for key ${k.id}-${k.type}...`);
-					const did = generateDidKey(k.publicKey);
-					const address = did;
+      // Remove identities for removed keys
+      removedKeys.forEach((k) => {
+        if (k.type === 'hd-derived-ed25519' && k.publicKey) {
+          const address = generateDidKey(k.publicKey);
+          const identity = identityStore.state.identities.find((i) => i.address === address);
+          if (identity && identity.metadata?.keyId === k.id) {
+            console.log(`Removing identity for key ${k.id}-${k.type}...`);
+            // Remove DID Document from storage
+            if (identity.did) {
+              removeDidDocument(identity.did);
+            }
+            provider.identity.store.removeIdentity(address);
+          }
+        }
+      });
 
-					// Skip if the identity already exists
-					if (!identityStore.state.identities.some((i) => i.address === address)) {
-						console.log(`Adding identity for key ${k.id}-${k.type}...`);
-						provider.identity.store.addIdentity(
-							createKeyIdentity(k.id, address, did, k.publicKey),
-						);
-					}
-				}
-			});
+      // Process only the newly added keys
+      addedKeys.forEach((k) => {
+        if (k.type === 'hd-derived-ed25519' && k.publicKey && k.metadata?.context === 1) {
+          console.log(`Checking identity for key ${k.id}-${k.type}...`);
+          const did = generateDidKey(k.publicKey);
+          const address = did;
 
-			isProcessing = false;
+          // Skip if the identity already exists
+          if (!identityStore.state.identities.some((i) => i.address === address)) {
+            console.log(`Adding identity for key ${k.id}-${k.type}...`);
+            provider.identity.store.addIdentity(createKeyIdentity(k.id, address, did, k.publicKey));
+          }
+        }
+      });
 
-		};
+      isProcessing = false;
+    };
 
-		processUpdates(keyStore.state.keys as unknown as Key[]);
+    processUpdates(keyStore.state.keys as unknown as Key[]);
 
-		keyStore.subscribe((state) => {
-			if (state.status !== 'ready' && state.status !== 'idle') return;
-			setTimeout(() => {
-				processUpdates(state.keys as unknown as Key[]);
-			}, 0);
-		});
-	}
+    keyStore.subscribe((state) => {
+      if (state.status !== 'ready' && state.status !== 'idle') return;
+      setTimeout(() => {
+        processUpdates(state.keys as unknown as Key[]);
+      }, 0);
+    });
+  }
 
-	return provider as unknown as IdentitiesKeystoreExtension;
+  return provider as unknown as IdentitiesKeystoreExtension;
 };

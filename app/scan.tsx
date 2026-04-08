@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useProvider } from "@/hooks/useProvider";
+import { useProvider } from '@/hooks/useProvider';
 
 function isValidURL(urlString: string) {
   try {
@@ -17,7 +17,7 @@ function isValidURL(urlString: string) {
 }
 
 export default function ScanScreen() {
-  const {accounts} = useProvider();
+  const { accounts } = useProvider();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const router = useRouter();
@@ -46,10 +46,10 @@ export default function ScanScreen() {
   }
 
   const handleBarcodeScanned = async (scanningResult: { type: string; data: string }) => {
-    if(scanned) return;
+    if (scanned) return;
     setScanned(true);
     let { data } = scanningResult;
-    
+
     const lowerData = data.toLowerCase();
     // Support fido: and liquid: deeplinks
     if (lowerData.startsWith('fido:')) {
@@ -57,14 +57,14 @@ export default function ScanScreen() {
         await Linking.openURL(data);
         router.back();
       } catch (error) {
-        Alert.alert("Error", "Could not open FIDO link natively");
+        Alert.alert('Error', 'Could not open FIDO link natively');
         router.back();
       }
       return;
     }
 
     if (!lowerData.startsWith('liquid:')) {
-      Alert.alert("Error", "Unsupported QR code. Only fido: and liquid: links are supported.");
+      Alert.alert('Error', 'Unsupported QR code. Only fido: and liquid: links are supported.');
       router.back();
       return;
     }
@@ -77,19 +77,19 @@ export default function ScanScreen() {
       processedData = 'https://' + data.substring(7);
     }
 
-    if(isValidURL(processedData)) {
-      if(accounts.length === 0) {
-        Alert.alert("Error", "No accounts found. Please create or import an account first.");
+    if (isValidURL(processedData)) {
+      if (accounts.length === 0) {
+        Alert.alert('Error', 'No accounts found. Please create or import an account first.');
         router.back();
         return;
       }
 
       const url = new URL(processedData);
-      console.log("URL detected:", processedData);
-      console.log("URL host:", url.host);
-      
+      console.log('URL detected:', processedData);
+      console.log('URL host:', url.host);
+
       // Extract requestId from query parameter or pathname
-      let requestId = url.searchParams.get("requestId");
+      let requestId = url.searchParams.get('requestId');
       let pathname = url.pathname;
 
       if (!requestId && pathname && pathname !== '/') {
@@ -101,8 +101,8 @@ export default function ScanScreen() {
         }
       }
 
-      if(!requestId){
-        Alert.alert("Error", "Invalid QR code: missing requestId");
+      if (!requestId) {
+        Alert.alert('Error', 'Invalid QR code: missing requestId');
         router.back();
         return;
       }
@@ -114,12 +114,12 @@ export default function ScanScreen() {
 
       router.replace({
         pathname: '/chat',
-        params: { origin, requestId }
+        params: { origin, requestId },
       });
       return;
     }
 
-    Alert.alert("Error", "Invalid liquid link format.");
+    Alert.alert('Error', 'Invalid liquid link format.');
     router.back();
   };
 
@@ -131,7 +131,7 @@ export default function ScanScreen() {
         facing="back"
         onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
         barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
+          barcodeTypes: ['qr'],
         }}
       >
         <View style={styles.overlay}>

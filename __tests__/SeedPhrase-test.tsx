@@ -14,16 +14,25 @@ jest.mock('@expo/vector-icons', () => ({
 }));
 
 describe('<SeedPhrase />', () => {
-  const mockPhrase = ['apple', 'banana', 'cherry', 'date', 'elderberry', 'fig', 'grape', 'honeydew', 'iceberg', 'jackfruit', 'kiwi', 'lemon'];
+  const mockPhrase = [
+    'apple',
+    'banana',
+    'cherry',
+    'date',
+    'elderberry',
+    'fig',
+    'grape',
+    'honeydew',
+    'iceberg',
+    'jackfruit',
+    'kiwi',
+    'lemon',
+  ];
   const primaryColor = '#3B82F6';
 
   it('renders all words when showSeed is true', () => {
     const { getByText } = render(
-      <SeedPhrase 
-        recoveryPhrase={mockPhrase} 
-        showSeed={true} 
-        primaryColor={primaryColor} 
-      />
+      <SeedPhrase recoveryPhrase={mockPhrase} showSeed={true} primaryColor={primaryColor} />,
     );
 
     mockPhrase.forEach((word) => {
@@ -33,11 +42,7 @@ describe('<SeedPhrase />', () => {
 
   it('hides words when showSeed is false and no validation is active', () => {
     const { queryByText } = render(
-      <SeedPhrase 
-        recoveryPhrase={mockPhrase} 
-        showSeed={false} 
-        primaryColor={primaryColor} 
-      />
+      <SeedPhrase recoveryPhrase={mockPhrase} showSeed={false} primaryColor={primaryColor} />,
     );
 
     // It should NOT show the words
@@ -49,12 +54,12 @@ describe('<SeedPhrase />', () => {
   it('renders input fields for words specified in validateWords', () => {
     const validateWords = { 0: '', 5: '' };
     const { getByPlaceholderText } = render(
-      <SeedPhrase 
-        recoveryPhrase={mockPhrase} 
-        showSeed={false} 
+      <SeedPhrase
+        recoveryPhrase={mockPhrase}
+        showSeed={false}
         validateWords={validateWords}
-        primaryColor={primaryColor} 
-      />
+        primaryColor={primaryColor}
+      />,
     );
 
     expect(getByPlaceholderText('Word #1')).toBeTruthy();
@@ -65,20 +70,20 @@ describe('<SeedPhrase />', () => {
     const validateWords = { 0: '' };
     const onInputChange = jest.fn();
     const { getByPlaceholderText } = render(
-      <SeedPhrase 
-        recoveryPhrase={mockPhrase} 
-        showSeed={false} 
+      <SeedPhrase
+        recoveryPhrase={mockPhrase}
+        showSeed={false}
         validateWords={validateWords}
         onInputChange={onInputChange}
-        primaryColor={primaryColor} 
-      />
+        primaryColor={primaryColor}
+      />,
     );
 
     const input = getByPlaceholderText('Word #1');
     act(() => {
       fireEvent.changeText(input, 'test');
     });
-    
+
     expect(onInputChange).toHaveBeenCalledWith(0, 'test');
   });
 });
