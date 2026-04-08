@@ -12,7 +12,7 @@ jest.mock('expo-camera', () => {
       // Store the callback so we can call it manually
       React.useEffect(() => {
         if (props.onBarcodeScanned) {
-          global.triggerBarcodeScanned = props.onBarcodeScanned;
+          (global as any).triggerBarcodeScanned = props.onBarcodeScanned;
         }
       }, [props.onBarcodeScanned]);
       return null;

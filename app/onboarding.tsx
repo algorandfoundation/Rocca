@@ -1,7 +1,17 @@
-import React, { useReducer, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
+import React, { useReducer, useRef, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Image,
+  Modal,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
@@ -12,8 +22,9 @@ import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as bip39 from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider';
 import { mnemonicToSeed } from '@scure/bip39';
-import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
+import { bootstrap } from '@/lib/bootstrap';
 import { PreventScreenshot } from '@/components/PreventScreenshot';
+import * as DocumentPicker from 'expo-document-picker';
 
 // Extract provider configuration from expo-constants
 const config = Constants.expoConfig?.extra?.provider || {
@@ -95,6 +106,7 @@ export default function OnboardingScreen() {
   // UI Elements
   const { primaryColor, secondaryColor, name } = config;
   const scrollViewRef = useRef<ScrollView>(null);
+  const [showImportOptions, setShowImportOptions] = useState(false);
 
   // Expo Router for Navigation
   const router = useRouter();
@@ -106,11 +118,15 @@ export default function OnboardingScreen() {
     initialState,
   );
 
+  const pathname = usePathname();
+
   useEffect(() => {
-    if (keys.length > 0 && step === 'welcome') {
+    // Only auto-navigate to landing if we are on the welcome step AND this is the active route
+    // This prevents interrupting the /import flow which is pushed on top of this screen.
+    if (keys.length > 0 && step === 'welcome' && pathname === '/onboarding') {
       router.replace('/landing');
     }
-  }, [keys, step]);
+  }, [keys, step, pathname, router]);
 
   // Helpers for state
   const currentIndicatorStep = getIndicatorStep(step);
@@ -196,13 +212,95 @@ export default function OnboardingScreen() {
 
               <TouchableOpacity
                 style={styles.secondaryButton}
-                onPress={() => router.push('/import')}
+                onPress={() => setShowImportOptions(true)}
               >
                 <Text style={[styles.secondaryButtonText, { color: primaryColor }]}>
                   Import Existing Wallet
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Import Options Modal */}
+            <Modal
+              visible={showImportOptions}
+              transparent={true}
+              animationType="fade"
+              onRequestClose={() => setShowImportOptions(false)}
+            >
+              <TouchableOpacity
+                style={styles.modalOverlay}
+                activeOpacity={1}
+                onPress={() => setShowImportOptions(false)}
+              >
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Import Options</Text>
+
+                  <TouchableOpacity
+                    style={styles.optionButton}
+                    onPress={() => {
+                      setShowImportOptions(false);
+                      router.push('/import');
+                    }}
+                  >
+                    <View style={[styles.optionIcon, { backgroundColor: secondaryColor }]}>
+                      <MaterialIcons name="text-fields" size={24} color={primaryColor} />
+                    </View>
+                    <View style={styles.optionTextContainer}>
+                      <Text style={styles.optionLabel}>Recovery Phrase</Text>
+                      <Text style={styles.optionSubLabel}>
+                        Import using your 24-word secret phrase
+                      </Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={24} color="#CBD5E1" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.optionButton}
+                    onPress={async () => {
+                      setShowImportOptions(false);
+                      try {
+                        const result = await DocumentPicker.getDocumentAsync({
+                          type: 'application/json',
+                          copyToCacheDirectory: true,
+                        });
+
+                        if (result.canceled) return;
+
+                        const file = result.assets[0];
+                        // Just navigate to import with the backup URI
+                        router.push({
+                          pathname: '/import',
+                          params: { backupUri: file.uri },
+                        });
+                      } catch (error) {
+                        Alert.alert(
+                          'Error',
+                          error instanceof Error ? error.message : 'Unknown error',
+                        );
+                      }
+                    }}
+                  >
+                    <View style={[styles.optionIcon, { backgroundColor: '#ECFDF5' }]}>
+                      <MaterialIcons name="backup" size={24} color="#10B981" />
+                    </View>
+                    <View style={styles.optionTextContainer}>
+                      <Text style={styles.optionLabel}>Restore from Backup</Text>
+                      <Text style={styles.optionSubLabel}>
+                        Recover from a previously exported file
+                      </Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={24} color="#CBD5E1" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.modalCancelButton}
+                    onPress={() => setShowImportOptions(false)}
+                  >
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </Modal>
           </View>
         ) : (
           /* Step 2: Secure Your Identity (Generating, Backup, Verify) */
@@ -342,42 +440,44 @@ export default function OnboardingScreen() {
                                   },
                                 });
 
-                                try {
-                                  // Use the rootKeyId we just generated
-                                  await ReactNativePasskeyAutofill.setHdRootKeyId(rootKeyId);
-                                } catch (e) {
-                                  console.error('Failed to set HD Root Key ID:', e);
-                                }
-
                                 // Generate Ed25519 Account Key
+                                const accountParams = {
+                                  parentKeyId: rootKeyId,
+                                  context: 0,
+                                  account: 0,
+                                  index: 0,
+                                  derivation: 9,
+                                };
                                 await key.store.generate({
                                   type: 'hd-derived-ed25519',
                                   algorithm: 'EdDSA',
                                   extractable: true,
                                   keyUsages: ['sign', 'verify'],
                                   params: {
-                                    parentKeyId: rootKeyId,
-                                    context: 0,
-                                    account: 0,
-                                    index: 0,
-                                    derivation: 9,
+                                    ...accountParams,
                                   },
                                 });
 
                                 // Generate Ed25519 Identity Key
+                                const identityParams = {
+                                  parentKeyId: rootKeyId,
+                                  context: 1,
+                                  account: 0,
+                                  index: 0,
+                                  derivation: 9,
+                                };
                                 await key.store.generate({
                                   type: 'hd-derived-ed25519',
                                   algorithm: 'EdDSA',
                                   extractable: true,
                                   keyUsages: ['sign', 'verify'],
                                   params: {
-                                    parentKeyId: rootKeyId,
-                                    context: 1,
-                                    account: 0,
-                                    index: 0,
-                                    derivation: 9,
+                                    ...identityParams,
                                   },
                                 });
+
+                                // Bootstrap to ensure native side is updated with new master key and keys
+                                await bootstrap(false);
 
                                 router.replace('/landing');
                               } else {
@@ -575,5 +675,64 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 24,
+  },
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  optionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  optionSubLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalCancelButton: {
+    marginTop: 8,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#64748B',
   },
 });

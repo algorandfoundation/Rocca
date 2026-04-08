@@ -6,11 +6,12 @@ import {
   SignalClient,
   toBase64URL,
   fromBase64Url,
-  decodeAddress,
   decodeAssertionRequestOptions,
   encodeCredential,
 } from '@algorandfoundation/liquid-client';
 import { encodeAddress } from '@algorandfoundation/keystore';
+import { decodeAddress } from '@/utils/algorand';
+import { toUrlSafe } from '@/utils/base64';
 import type { KeyData, KeyStoreState } from '@algorandfoundation/keystore';
 import { fetchSecret, getMasterKey, commit } from '@algorandfoundation/react-native-keystore';
 import { keyStore } from '@/stores/keystore';
@@ -138,8 +139,6 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
     let active = true;
 
     async function setupConnection() {
-      const toUrlSafe = (id: string) =>
-        id.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
       if (!origin || !requestId) {
         console.error('Missing origin or requestId');
         setIsLoading(false);
@@ -165,6 +164,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
       setIsLoading(true);
       setError(null);
+      authFlowInProgressRef.current = true;
 
       try {
         const currentSessions = sessionsStore.state.sessions;
@@ -212,7 +212,6 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         const sessionCheck = await fetch(`${origin}/auth/session`);
         if (!active) return;
         console.log('Initial session status:', sessionCheck.ok);
-        authFlowInProgressRef.current = true;
 
         const currentPasskeys = await passkey.store.getPasskeys();
         const relevantPasskeys = currentPasskeys.filter((p) => {
@@ -244,6 +243,8 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             }),
           });
 
+          if (!active) return;
+
           if (!optionsResponse.ok) {
             throw new Error(
               `Failed to get assertion request: ${optionsResponse.status} ${optionsResponse.statusText}`,
@@ -251,6 +252,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           }
 
           const options = await optionsResponse.json();
+          if (!active) return;
           const decodedOptions = decodeAssertionRequestOptions(options);
 
           // Ensure all relevant passkeys are allowed in the options to allow user selection in the intent
@@ -287,13 +289,14 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           const credential = (await navigator.credentials.get({
             publicKey: decodedOptions,
           })) as any;
-
           if (!active) return;
+          authFlowInProgressRef.current = false;
 
           if (!credential) {
             throw new Error('Credential creation failed');
           }
 
+          const currentPasskeys = await passkey.store.getPasskeys();
           let selectedAddress: string | null = null;
           if (credential.response?.userHandle) {
             try {
@@ -333,7 +336,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             liquidOptions.address = selectedAddress;
 
             // Re-sign the challenge if the address changed to match the selected passkey
-            const selectedPublicKey = decodeAddress(selectedAddress);
+            const selectedPublicKey = decodeAddress(selectedAddress).publicKey;
             const selectedKey = keyStore.state.keys.find(
               (k) =>
                 k.publicKey &&
@@ -371,7 +374,6 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             );
           }
 
-          const currentPasskeys = await passkey.store.getPasskeys();
           const matchedPasskey = currentPasskeys.find((p) => p.id === credential.id);
           const matchedKey =
             keyStore.state.keys.find((k) => k.id === matchedPasskey?.metadata?.keyId) ||
@@ -400,13 +402,16 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
               authenticatorSelection: {
                 authenticatorAttachment: 'platform',
                 userVerification: 'required',
-                requireResidentKey: false,
+                residentKey: 'required',
+                requireResidentKey: true,
               },
               extensions: {
                 liquid: true,
               },
             }),
           });
+
+          if (!active) return;
 
           if (!optionsResponse.ok) {
             throw new Error(
@@ -415,6 +420,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           }
 
           const encodedAttestationOptions = await optionsResponse.json();
+          if (!active) return;
           const challenge = fromBase64Url(encodedAttestationOptions.challenge);
 
           const liquidOptions = {
@@ -430,7 +436,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             ...encodedAttestationOptions,
             user: {
               ...encodedAttestationOptions.user,
-              id: decodeAddress(liquidOptions.address),
+              id: decodeAddress(liquidOptions.address).publicKey,
               name: liquidOptions.address,
               displayName: liquidOptions.address,
             },
@@ -444,8 +450,8 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           const credential = (await navigator.credentials.create({
             publicKey: decodedPublicKey,
           })) as any;
-
           if (!active) return;
+          authFlowInProgressRef.current = false;
 
           if (!credential) {
             throw new Error('Credential creation failed');
@@ -635,7 +641,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         clientRef.current = null;
       }
     };
-  }, [origin, requestId, router, key, passkey, accounts.length > 0, keys.length > 0]);
+  }, [origin, requestId, router, accounts.length > 0, keys.length > 0]);
 
   return {
     session,

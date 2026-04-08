@@ -9,6 +9,7 @@ jest.mock('expo-router', () => ({
     replace: jest.fn(),
     back: jest.fn(),
   }),
+  usePathname: () => '/onboarding',
 }));
 
 // Mock expo-constants
@@ -64,6 +65,11 @@ jest.mock('react-native-reanimated', () => {
   Reanimated.default.call = () => {};
   return Reanimated;
 });
+
+// Mock bootstrap
+jest.mock('@/lib/bootstrap', () => ({
+  bootstrap: jest.fn().mockResolvedValue(undefined),
+}));
 
 // Mock MaterialIcons
 jest.mock('@expo/vector-icons', () => ({

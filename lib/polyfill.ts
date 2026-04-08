@@ -154,14 +154,8 @@ export function setupNavigatorPolyfill() {
           ...cred,
           id: typeof cred.id === 'string' ? cred.id : toBase64URL(toUint8Array(cred.id)),
         })),
-        authenticatorSelection: publicKey.authenticatorSelection
-          ? {
-              ...publicKey.authenticatorSelection,
-              requireResidentKey: true,
-              residentKey: 'required',
-            }
-          : undefined,
-        extensions: undefined,
+        authenticatorSelection: publicKey.authenticatorSelection,
+        extensions: publicKey.extensions,
       };
       // Android Credential Manager is very strict about the RP ID.
       // It must match the domain where the assetlinks.json is hosted.
@@ -180,10 +174,12 @@ export function setupNavigatorPolyfill() {
             getTransports: () => (result.response as any).transports || [],
             getPublicKeyAlgorithm: () => (result.response as any).publicKeyAlgorithm || -7,
             getPublicKey: () =>
-              result.response.publicKey ? toArrayBuffer(result.response.publicKey) : null,
+              (result.response as any).publicKey
+                ? toArrayBuffer((result.response as any).publicKey)
+                : null,
             getAuthenticatorData: () =>
-              result.response.authenticatorData
-                ? toArrayBuffer(result.response.authenticatorData)
+              (result.response as any).authenticatorData
+                ? toArrayBuffer((result.response as any).authenticatorData)
                 : null,
             clientExtensionResults: result.clientExtensionResults || {},
           },

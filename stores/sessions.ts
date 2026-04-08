@@ -27,6 +27,7 @@ const loadInitialSessions = (): SessionsState => {
       // Filter out expired sessions on load
       const now = Date.now();
       const validSessions = parsed.filter((s: Session) => {
+        if (!s) return false;
         if (!s.ttl) return true;
         return now - s.lastActivity < s.ttl;
       });
@@ -44,7 +45,9 @@ export const sessionsStore = new Store<SessionsState>(loadInitialSessions());
 sessionsStore.subscribe(() => {
   const state = sessionsStore.state;
   try {
-    sessionsLocalStorage.set('sessions', JSON.stringify(state.sessions));
+    if (state.sessions) {
+      sessionsLocalStorage.set('sessions', JSON.stringify(state.sessions));
+    }
   } catch (error) {
     console.error('Failed to save sessions to storage:', error);
   }

@@ -73,7 +73,10 @@ export async function listBackupFiles(): Promise<BackupFile[]> {
   return backupFiles.sort((a, b) => b.modificationTime - a.modificationTime);
 }
 
-export async function importDidDocument(fileUri: string, currentDid: string): Promise<DIDDocument> {
+export async function importDidDocument(
+  fileUri: string,
+  currentDid?: string,
+): Promise<DIDDocument> {
   const jsonContent = await FileSystem.readAsStringAsync(fileUri);
 
   let backupData: DIDBackupData;
@@ -87,8 +90,10 @@ export async function importDidDocument(fileUri: string, currentDid: string): Pr
     throw new Error('Invalid backup format: missing DID Document');
   }
 
-  if (backupData.didDocument.id !== currentDid) {
-    throw new Error(`DID mismatch: backup is for ${backupData.didDocument.id}, but current identity is ${currentDid}`);
+  if (currentDid && backupData.didDocument.id !== currentDid) {
+    throw new Error(
+      `DID mismatch: backup is for ${backupData.didDocument.id}, but current identity is ${currentDid}`,
+    );
   }
 
   return backupData.didDocument;

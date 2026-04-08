@@ -5,6 +5,7 @@ import type {
   KeyStoreState,
   XHDDerivedKeyData,
 } from '@algorandfoundation/keystore';
+import { encodeAddress } from '@algorandfoundation/keystore';
 import type { Extension } from '@algorandfoundation/wallet-provider';
 import type { Store } from '@tanstack/store';
 import type {
@@ -44,7 +45,7 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
   const accountStore: Store<AccountStoreState<KeystoreAccount>> = options.accounts.store;
   const { autoPopulate = true } = options.accounts.keystore ?? {};
 
-  const keys = [...((keyStore.state.keys as Key[]) ?? [])];
+  const keys: Key[] = [];
 
   /**
    * Creates an account object for a given key ID and address.
@@ -76,74 +77,92 @@ export const WithAccountsKeystore: Extension<AccountsKeystoreExtension> = (
     let isProcessing = false;
     let nextKeys: Key[] | null = null;
 
-    const processUpdates = (newKeys: Key[]) => {
+    const processUpdates = async (newKeys: Key[]) => {
+      console.log(
+        `[AccountsKeystore] processUpdates called with ${newKeys.length} keys. Current status: ${keyStore.state.status}`,
+      );
       if (isProcessing) {
+        console.log('[AccountsKeystore] already processing, queueing next update');
         nextKeys = newKeys;
         return;
       }
       isProcessing = true;
-      nextKeys = null;
+      try {
+        nextKeys = null;
 
-      // Find added keys
-      const addedKeys = newKeys.filter(
-        (newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
-      );
+        // Find added keys
+        const addedKeys = newKeys.filter(
+          (newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
+        );
 
-      // Find removed keys
-      const removedKeys = keys.filter(
-        (existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
-      );
+        // Find removed keys
+        const removedKeys = keys.filter(
+          (existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
+        );
 
-      if (addedKeys.length === 0 && removedKeys.length === 0) {
+        console.log(
+          `[AccountsKeystore] processUpdates: ${newKeys.length} total, ${addedKeys.length} added, ${removedKeys.length} removed`,
+        );
+
+        if (addedKeys.length === 0 && removedKeys.length === 0) {
+          console.log('[AccountsKeystore] No changes to process');
+          return;
+        }
+
+        // Update the local cache of keys BEFORE processing to ensure consistency
+        keys.length = 0;
+        newKeys.forEach((k) => keys.push(k));
+
+        // Remove accounts for removed keys
+        for (const k of removedKeys) {
+          if (k.type === 'hd-derived-ed25519' && k.publicKey) {
+            const address = encodeAddress(k.publicKey);
+            const account = accountStore.state.accounts.find((a) => a.address === address);
+            if (account && account.metadata?.keyId === k.id) {
+              console.log(`Removing account for key ${k.id}-${k.type}...`);
+              await provider.account.store.removeAccount(address);
+            }
+          }
+        }
+
+        // Process only the newly added keys
+        for (const k of addedKeys) {
+          if (k.type === 'hd-derived-ed25519' && k.publicKey) {
+            console.log(`Checking account for key ${k.id}-${k.type}...`);
+            const address = encodeAddress(k.publicKey);
+            const parentKeyId = (k as XHDDerivedKeyData)?.metadata?.parentKeyId;
+
+            // Skip if the account already exists
+            if (
+              !accountStore.state.accounts.some((a) => a.address === address) &&
+              k.metadata?.context === 0
+            ) {
+              console.log(`Adding account for key ${k.id}-${k.type}...`);
+              await provider.account.store.addAccount(createKeyAccount(k.id, address, parentKeyId));
+            }
+          }
+        }
+      } finally {
         isProcessing = false;
-
-        return;
+        if (nextKeys) {
+          const k = nextKeys;
+          nextKeys = null;
+          await processUpdates(k);
+        }
       }
-
-      // Update the local cache of keys
-      keys.length = 0;
-      newKeys.forEach((k) => keys.push(k));
-
-      // Remove accounts for removed keys
-      removedKeys.forEach((k) => {
-        if (k.type === 'hd-derived-ed25519' && k.publicKey) {
-          const address = base64.encode(k.publicKey);
-          const account = accountStore.state.accounts.find((a) => a.address === address);
-          if (account && account.metadata?.keyId === k.id) {
-            console.log(`Removing account for key ${k.id}-${k.type}...`);
-            provider.account.store.removeAccount(address);
-          }
-        }
-      });
-
-      // Process only the newly added keys
-      addedKeys.forEach((k) => {
-        if (k.type === 'hd-derived-ed25519' && k.publicKey) {
-          console.log(`Checking account for key ${k.id}-${k.type}...`);
-          const address = base64.encode(k.publicKey);
-          const parentKeyId = (k as XHDDerivedKeyData)?.metadata?.parentKeyId;
-
-          // Skip if the account already exists
-          if (
-            !accountStore.state.accounts.some((a) => a.address === address) &&
-            k.metadata?.context === 0
-          ) {
-            console.log(`Adding account for key ${k.id}-${k.type}...`);
-            provider.account.store.addAccount(createKeyAccount(k.id, address, parentKeyId));
-          }
-        }
-      });
-
-      isProcessing = false;
     };
 
     processUpdates(keyStore.state.keys as unknown as Key[]);
 
     keyStore.subscribe((state) => {
-      if (state.status !== 'ready' && state.status !== 'idle') return;
-      setTimeout(() => {
-        processUpdates(state.keys as unknown as Key[]);
-      }, 0);
+      console.log(
+        `[AccountsKeystore] Keystore subscriber fired. Status: ${state.status}, Keys: ${state.keys.length}`,
+      );
+      if (state.status !== 'ready' && state.status !== 'idle') {
+        console.log(`[AccountsKeystore] Ignoring status: ${state.status}`);
+        return;
+      }
+      processUpdates(state.keys as unknown as Key[]);
     });
   }
 

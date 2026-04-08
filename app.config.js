@@ -12,7 +12,7 @@ const getBundleIdentifier = () => {
       return 'com.anonymous.rocca';
     case 'debug':
     default:
-      return 'com.anonymous.rocca.debug';
+      return 'com.anonymous.rocca';
   }
 };
 
@@ -63,7 +63,6 @@ module.exports = {
       favicon: './assets/favicon.png',
     },
     plugins: [
-      './plugins/expo-rocca-plugin',
       'expo-router',
       [
         'expo-splash-screen',

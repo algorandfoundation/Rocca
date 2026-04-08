@@ -1,4 +1,4 @@
-import type { IdentityStoreApi, IdentityStoreOptions } from '@/extensions/identities';
+import type { IdentityStoreApi, IdentityStoreOptions, DIDDocument } from '@/extensions/identities';
 import type { KeyStoreOptions } from '@algorandfoundation/keystore';
 
 /**
@@ -21,6 +21,12 @@ export interface IdentitiesKeystoreExtensionOptions extends KeyStoreOptions, Ide
  */
 export interface IdentitiesKeystoreExtension {
   identity: {
-    store: IdentityStoreApi;
+    store: IdentityStoreApi & {
+      /**
+       * Recreates the keystore state (derived keys) based on the provided DID Document.
+       * @param doc The DID Document to restore from.
+       */
+      restoreFromDidDocument: (doc: DIDDocument) => Promise<void>;
+    };
   };
 }

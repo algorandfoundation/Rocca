@@ -37,6 +37,16 @@ export interface Passkey {
   algorithm: string;
 
   /**
+   * The user handle associated with the passkey.
+   */
+  userHandle?: string;
+
+  /**
+   * The origin associated with the passkey.
+   */
+  origin?: string;
+
+  /**
    * The timestamp when the passkey was created.
    */
   createdAt?: number;

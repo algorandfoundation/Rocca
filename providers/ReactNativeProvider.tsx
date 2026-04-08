@@ -3,8 +3,18 @@ import { Provider } from '@algorandfoundation/wallet-provider';
 
 import { WithKeyStore } from '@algorandfoundation/react-native-keystore';
 import { Account, AccountStoreExtension, WithAccountStore } from '@/extensions/accounts';
-import { Identity, IdentityStoreApi, WithIdentityStore } from '@/extensions/identities';
-import { WithPasskeyStore, Passkey, PasskeyStoreApi } from '@/extensions/passkeys';
+import {
+  Identity,
+  IdentityStoreApi,
+  IdentityStoreExtension,
+  WithIdentityStore,
+} from '@/extensions/identities';
+import {
+  Passkey,
+  PasskeyStoreApi,
+  PasskeyStoreExtension,
+  WithPasskeyStore,
+} from '@/extensions/passkeys';
 import type { KeyStoreAPI, Key } from '@algorandfoundation/keystore';
 import { type LogMessage, WithLogStore, type LogStoreApi } from '@algorandfoundation/log-store';
 import type { keyStoreHooks } from '@/stores/before-after';
@@ -20,8 +30,8 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithIdentityStore,
     WithPasskeyStore,
     WithAccountsKeystore,
-    WithIdentitiesKeystore,
     WithPasskeysKeystore,
+    WithIdentitiesKeystore,
   ] as const;
 
   keys!: Key[];
@@ -32,12 +42,8 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
   status!: string;
 
   account!: AccountStoreExtension<Account | KeystoreAccount>['account'];
-  identity!: {
-    store: IdentityStoreApi;
-  };
-  passkey!: {
-    store: PasskeyStoreApi;
-  };
+  identity!: IdentityStoreExtension['identity'];
+  passkey!: PasskeyStoreExtension['passkey'];
   // The generic Keystore Interface
   key!: {
     store: KeyStoreAPI & { clear: () => Promise<void>; hooks: typeof keyStoreHooks };
