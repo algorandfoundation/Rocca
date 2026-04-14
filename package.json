@@ -92,7 +92,6 @@
     "jest-expo": "^55.0.9",
     "lefthook": "^2.1.2",
     "oxfmt": "^0.44.0",
-    "patch-package": "^8.0.0",
     "react-test-renderer": "^19.1.0",
     "typescript": "~5.8.3"
   },
