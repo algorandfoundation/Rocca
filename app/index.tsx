@@ -6,6 +6,8 @@ import { useStore } from '@tanstack/react-store';
 import { logsStore } from '@algorandfoundation/log-store';
 import Logo from '@/components/Logo';
 import { useProvider } from '@/hooks/useProvider';
+import { getMasterKey } from '@/lib/crypto';
+import { resetGenericPassword } from 'react-native-keychain';
 
 export default function Index() {
   const { keys, status } = useProvider();

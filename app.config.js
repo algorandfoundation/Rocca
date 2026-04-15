@@ -57,6 +57,7 @@ module.exports = {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: getBundleIdentifier(),
+      allowBackup: false,
     },
     web: {
       output: 'static',

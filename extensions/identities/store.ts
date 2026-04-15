@@ -17,9 +17,10 @@ export function addIdentity({
   identity: Identity;
 }): Identity {
   store.setState((state) => {
+    const filtered = state.identities.filter((i) => i.address !== identity.address);
     return {
       ...state,
-      identities: [identity, ...state.identities],
+      identities: [identity, ...filtered],
     };
   });
   return identity;

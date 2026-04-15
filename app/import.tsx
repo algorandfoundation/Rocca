@@ -73,6 +73,14 @@ export default function ImportWalletScreen() {
 
     try {
       console.log('Starting import process...');
+
+      // Clear existing keys and data to prevent duplication
+      console.log('Clearing existing wallet data...');
+      await key.store.clear();
+      await provider.account.store.clear();
+      await provider.identity.store.clear();
+      await provider.passkey.store.clear();
+
       // Load backup if present to validate early
       let backupDoc = null;
       if (backupUri) {

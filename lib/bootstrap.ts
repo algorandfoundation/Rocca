@@ -1,5 +1,9 @@
 import { Alert, Platform } from 'react-native';
-import { fetchSecret, getMasterKey, storage } from '@algorandfoundation/react-native-keystore';
+import {
+  AuthenticationOptions,
+  fetchSecret,
+  storage,
+} from '@algorandfoundation/react-native-keystore';
 import {
   initializeKeyStore,
   Key,
@@ -13,13 +17,130 @@ import { keyStore } from '@/stores/keystore';
 import { CredentialProviderService } from '@/lib/credentialProvider';
 import { logsStore, addLog, generateId } from '@algorandfoundation/log-store';
 
+import * as Keychain from 'react-native-keychain';
+import { randomBytes } from 'react-native-quick-crypto';
+
+/**
+ * Robustly retrieves the master key from the Keychain, or generates a new one if it doesn't exist.
+ * This version correctly handles biometric options on Android which the library currently misses.
+ */
+async function retrieveMasterKeyLocally(options?: AuthenticationOptions): Promise<Buffer> {
+  const logMsg = (message: string, level = 'info') => {
+    addLog({
+      store: logsStore,
+      log: { id: generateId(), level, context: 'Bootstrap', timestamp: new Date(), message },
+    });
+    if (level === 'error') {
+      console.error(`[Bootstrap ERROR] ${message}`);
+    } else {
+      console.log(`[Bootstrap INFO] ${message}`);
+    }
+  };
+
+  const prompt =
+    typeof options?.prompt === 'string'
+      ? options.prompt
+      : typeof options?.prompt === 'object' && (options.prompt as any)?.title
+        ? (options.prompt as any).title
+        : 'Authenticate to secure your wallet';
+
+  const biometryType = await Keychain.getSupportedBiometryType();
+  const enrolled = Platform.OS === 'ios' ? await Keychain.canImplyAuthentication() : true;
+  const securityLevel = await Keychain.getSecurityLevel();
+  const passcodeAvailable = await Keychain.isPasscodeAuthAvailable();
+
+  logMsg(
+    `Biometric diagnostics: Platform: ${Platform.OS}, Type: ${biometryType}, Enrolled (iOS only): ${enrolled}, SecurityLevel: ${securityLevel}, PasscodeAvailable: ${passcodeAvailable}`,
+  );
+
+  const canUseBiometry = biometryType !== null && enrolled;
+
+  if (options?.biometrics && !canUseBiometry) {
+    logMsg(
+      `Biometric authentication is requested but not available or enrolled (Type: ${biometryType}, Enrolled: ${enrolled}).`,
+      'error',
+    );
+    throw new Error('Biometric authentication is requested but not available or enrolled.');
+  }
+
+  const getOptions: Keychain.Options = {
+    service: 'app-secret',
+  };
+
+  if (options?.biometrics) {
+    getOptions.accessControl = Keychain.ACCESS_CONTROL.BIOMETRY_ANY;
+    getOptions.accessible = Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY;
+    getOptions.authenticationPrompt = prompt;
+  }
+
+  logMsg(
+    `Local retrieval starting. Biometrics requested: ${options?.biometrics}, Available: ${canUseBiometry}`,
+  );
+
+  // Try to get existing key
+  logMsg(`Attempting getGenericPassword with options: ${JSON.stringify(getOptions)}`);
+  try {
+    const credentials = await Keychain.getGenericPassword(getOptions);
+
+    if (credentials) {
+      logMsg('getGenericPassword succeeded!');
+      return Buffer.from(credentials.password, 'hex');
+    }
+    logMsg('getGenericPassword returned false (no credentials)');
+  } catch (e: any) {
+    const errorMsg = String(e);
+    if (errorMsg.includes('CryptoFailedException')) {
+      logMsg(
+        `Detected stale/corrupt Keychain data (CryptoFailedException). Treating as "not found" per PR #792 workaround.`,
+        'warn',
+      );
+      // We can't decrypt it anyway, so we should proceed as if it doesn't exist.
+      // Calling reset here is safer to ensure we start fresh.
+      await Keychain.resetGenericPassword(getOptions);
+    } else {
+      logMsg(`getGenericPassword error: ${e}`, 'error');
+      throw e;
+    }
+  }
+
+  logMsg('No existing key found. Creating new master key...');
+
+  // Create new random key if it doesn't exist
+  const newKey = randomBytes(32);
+  logMsg('Saving new master key...');
+
+  const setOptions: Keychain.Options = {
+    service: 'app-secret',
+  };
+
+  if (options?.biometrics) {
+    setOptions.accessControl = Keychain.ACCESS_CONTROL.BIOMETRY_ANY;
+    setOptions.accessible = Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY;
+    setOptions.authenticationPrompt = prompt;
+  }
+
+  logMsg(`Attempting setGenericPassword with options: ${JSON.stringify(setOptions)}`);
+  try {
+    // Explicitly reset before setting a new key to avoid stale data conflicts
+    await Keychain.resetGenericPassword(setOptions);
+    await Keychain.setGenericPassword('master', newKey.toString('hex'), setOptions);
+    logMsg('New master key saved successfully');
+  } catch (e) {
+    logMsg(`setGenericPassword error: ${e}`, 'error');
+    throw e;
+  }
+
+  return Buffer.from(newKey);
+}
+
 /**
  * Bootstraps the app's keystore and native passkey autofill service.
  * This should be called on app start, and after any operation that changes the wallet's keys (e.g., import, create).
  *
+ * @param options
  * @param showAlert - Whether to show an alert if the autofill service is not enabled.
  */
-export async function bootstrap(showAlert = true) {
+export async function bootstrap(options?: AuthenticationOptions, showAlert = true) {
   const logMsg = (message: string, level = 'info') => {
     addLog({
       store: logsStore,
@@ -35,8 +156,15 @@ export async function bootstrap(showAlert = true) {
   try {
     setStatus({ store: keyStore as unknown as Store<KeyStoreState>, status: 'loading' });
 
+    const keyIds = storage.getAllKeys();
+    logMsg(`Found ${keyIds.length} keys in storage`);
+
+    if (keyIds.length === 0) {
+      logMsg('No keys found in MMKV, but ensuring master key is ready');
+    }
+
     logMsg('Fetching master key...');
-    const masterKey = await getMasterKey();
+    const masterKey = await retrieveMasterKeyLocally(options);
     logMsg('Master key retrieved');
 
     logMsg('Setting master key in native side...');
@@ -44,11 +172,34 @@ export async function bootstrap(showAlert = true) {
       logMsg(`ReactNativePasskeyAutofill.setMasterKey error: ${e}`, 'error');
     });
 
+    if (keyIds.length === 0) {
+      initializeKeyStore({
+        store: keyStore as unknown as Store<KeyStoreState>,
+        keys: [],
+      });
+
+      // Even if no keys, we should still configure intent actions
+      await ReactNativePasskeyAutofill.configureIntentActions(
+        'co.algorand.passkeyautofill.GET_PASSKEY',
+        'co.algorand.passkeyautofill.CREATE_PASSKEY',
+      ).catch((e) => {
+        logMsg(`ReactNativePasskeyAutofill.configureIntentActions error: ${e}`, 'error');
+      });
+
+      logMsg('No keys found, setting keystore status to idle');
+      setStatus({ store: keyStore as unknown as Store<KeyStoreState>, status: 'idle' });
+
+      return;
+    }
+
     const secrets = await Promise.all(
-      storage.getAllKeys().map(async (keyId) => {
+      keyIds.map(async (keyId) => {
         try {
           // Pass a copy because fetchSecret clears the buffer in its finally block
-          return await fetchSecret<KeyData>({ keyId, masterKey: Buffer.from(masterKey) });
+          return await fetchSecret<KeyData>({
+            keyId,
+            options: { ...options, masterKey: Buffer.from(masterKey) },
+          });
         } catch (e) {
           logMsg(`fetchSecret failed for key ${keyId}: ${e}`, 'error');
           return null;
@@ -113,20 +264,23 @@ export async function bootstrap(showAlert = true) {
     );
     logMsg(`CredentialProviderService isEnabled: ${isEnabled}`);
 
-    if (showAlert && !isEnabled && Platform.OS === 'android') {
-      Alert.alert(
-        'Enable Autofill Service',
-        'To use passkeys, you need to enable the autofill service for this app in your Android settings.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Open Settings',
-            onPress: async () => {
-              await CredentialProviderService.showCredentialProviderSettings();
+    if (!isEnabled && Platform.OS === 'android') {
+      logMsg('CredentialProviderService is NOT enabled. Showing alert.');
+      if (showAlert) {
+        Alert.alert(
+          'Enable Autofill Service',
+          'To use passkeys, you need to enable the autofill service for this app in your Android settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Open Settings',
+              onPress: async () => {
+                await CredentialProviderService.showCredentialProviderSettings();
+              },
             },
-          },
-        ],
-      );
+          ],
+        );
+      }
     }
 
     await ReactNativePasskeyAutofill.configureIntentActions(

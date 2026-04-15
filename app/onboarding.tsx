@@ -417,6 +417,12 @@ export default function OnboardingScreen() {
                                   throw new Error('Recovery phrase is null');
                                 }
 
+                                // Clear existing keys and data to prevent duplication
+                                await key.store.clear();
+                                await provider.account.store.clear();
+                                await provider.identity.store.clear();
+                                await provider.passkeys.store.clear();
+
                                 // Import to the keystore
                                 const seedId = await key.store.import(
                                   {
