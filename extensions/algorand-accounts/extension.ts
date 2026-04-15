@@ -3,7 +3,15 @@ import { getAlgorandBalances } from '@/lib/algorand';
 import { encodeAddress, Key, KeyStoreState } from '@algorandfoundation/keystore';
 import { base64 } from '@scure/base';
 import { Store } from '@tanstack/react-store';
-import { AlgorandAccountsExtension, AlgorandAccountsExtensionOptions } from './types';
+import {
+  AlgorandAccount,
+  AlgorandAccountsExtension,
+  AlgorandAccountsExtensionOptions,
+} from './types';
+
+export function isAlgorandAccount(account: Account): account is AlgorandAccount {
+  return account.type === 'algorand-account';
+}
 
 export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExtensionOptions) => {
   // Ensure dependencies are present
