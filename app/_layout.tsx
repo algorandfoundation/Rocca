@@ -1,5 +1,4 @@
 import { CredentialProviderService } from '@/lib/credentialProvider';
-import { accountStoreHooks } from '@/lib/hooks/accounts-store-hooks';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
@@ -41,7 +40,6 @@ const provider = new ReactNativeProvider(
       keystore: {
         autoPopulate: true,
       },
-      hooks: accountStoreHooks,
     },
     identities: {
       store: identitiesStore,
@@ -58,6 +56,9 @@ const provider = new ReactNativeProvider(
     keystore: {
       store: keyStore,
       hooks: keyStoreHooks,
+    },
+    algorand: {
+      // TODO: algod configuration (instead of using directly from env)
     },
   },
 );
