@@ -1,8 +1,10 @@
 import { Account, AccountAsset, AccountStoreState } from '@/extensions/accounts';
-import { getAlgorandBalances } from '@/lib/algorand';
+import { getAlgorandBalances } from '@/extensions/algorand-accounts/algorand';
+import { AlgorandClient } from '@algorandfoundation/algokit-utils';
 import { encodeAddress, Key, KeyStoreState } from '@algorandfoundation/keystore';
 import { base64 } from '@scure/base';
 import { Store } from '@tanstack/react-store';
+import Hook from 'before-after-hook';
 import {
   AlgorandAccount,
   AlgorandAccountsExtension,
@@ -26,10 +28,14 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
     );
   }
 
+  // Create algorand client
+  const algorandClient = AlgorandClient.fromConfig(options.algorand.algoConfig);
   // Get the store from the options
   const accountsStore: Store<AccountStoreState<Account>> = options.accounts.store;
   // Get the keystore from the options
   const keyStore: Store<KeyStoreState> = options.keystore.store;
+  // Get or create hooks for algorand account operations
+  const hooks = options.algorand.hooks ?? new Hook.Collection<any>();
   // clone of keystore at starting point prior to execution
   const keys = [...((keyStore.state.keys as Key[]) ?? [])];
 
@@ -64,19 +70,14 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
       if (k.type === 'hd-derived-ed25519' && k.publicKey) {
         const address = base64.encode(k.publicKey);
 
-        const alreadyExists = accountsStore.state.accounts.some(
-          (account) => account.address === address,
-        );
-        console.log(
-          `Checking algorand account balances for key ${k.id}-${k.type}... alreadyExists: ${alreadyExists} ${address}`,
-        );
+        console.log(`Checking algorand account balances for key ${k.id}-${k.type}... ${address}`);
 
         const algorandAddress = encodeAddress(k.publicKey);
         let r: { balance: bigint; assets?: AccountAsset[] };
 
         // lookup accounts balances, assets
         try {
-          r = await getAlgorandBalances(algorandAddress);
+          r = await getAlgorandBalances(algorandClient, algorandAddress);
         } catch (error) {
           console.error('Failed to fetch algorand balances for address:', algorandAddress, error);
           return;
@@ -84,24 +85,43 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
 
         const { balance, assets } = r;
 
-        // add new account to store
-        accountsStore.setState((prevState) => ({
-          accounts: [
-            ...prevState.accounts,
-            {
-              type: 'algorand-account',
-              address: address,
-              balance,
-              assets: assets ?? [],
-              metadata: {},
-              sign: async (_txns: Uint8Array[]) => {
-                return [];
-              },
+        // Create a sign function for this key
+        const makeSignFunction = (keyId: string) => async (txns: Uint8Array[]) => {
+          return hooks(
+            'sign',
+            async ({ keyId, txns }: { keyId: string; txns: Uint8Array[] }) => {
+              const signedTxns: Uint8Array[] = [];
+              for (const txn of txns) {
+                const signed = await provider.key.store.sign(keyId, txn);
+                signedTxns.push(signed);
+              }
+              return signedTxns;
             },
-          ],
+            { keyId, txns },
+          );
+        };
+
+        // Update the account with algorand data
+        const updateAccountWithAlgorandData = (account: Account) => {
+          if (account.address !== address) {
+            return account;
+          }
+
+          return {
+            ...account,
+            type: 'algorand-account' as const,
+            balance,
+            assets: assets ?? [],
+            sign: makeSignFunction(k.id),
+          };
+        };
+
+        // Update the store with the new account data
+        accountsStore.setState((prevState) => ({
+          accounts: prevState.accounts.map(updateAccountWithAlgorandData),
         }));
 
-        console.info('Added algorand account with balance and assets:', address);
+        console.info('Updated algorand account with balance and assets:', address);
       }
     });
 
