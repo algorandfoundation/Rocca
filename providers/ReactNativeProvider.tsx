@@ -2,7 +2,7 @@ import { Provider } from '@algorandfoundation/wallet-provider';
 import { createContext, type ReactNode } from 'react';
 
 import { Account, AccountStoreExtension, WithAccountStore } from '@/extensions/accounts';
-import { KeystoreAccount, WithAccountsKeystore } from '@/extensions/accounts-keystore';
+import { KeystoreAccount } from '@/extensions/accounts-keystore';
 import { AlgorandAccount, WithAlgorandAccounts } from '@/extensions/algorand-accounts';
 import { Identity, IdentityStoreApi, WithIdentityStore } from '@/extensions/identities';
 import { WithIdentitiesKeystore } from '@/extensions/identities-keystore';
@@ -20,7 +20,6 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithAccountStore,
     WithIdentityStore,
     WithPasskeyStore,
-    WithAccountsKeystore,
     WithIdentitiesKeystore,
     WithPasskeysKeystore,
     WithAlgorandAccounts,

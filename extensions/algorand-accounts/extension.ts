@@ -1,7 +1,7 @@
 import { Account, AccountAsset, AccountStoreState } from '@/extensions/accounts';
 import { getAlgorandBalances } from '@/extensions/algorand-accounts/algorand';
 import { AlgorandClient } from '@algorandfoundation/algokit-utils';
-import { encodeAddress, Key, KeyStoreState } from '@algorandfoundation/keystore';
+import { encodeAddress, Key, KeyStoreState, XHDDerivedKeyData } from '@algorandfoundation/keystore';
 import { base64 } from '@scure/base';
 import { Store } from '@tanstack/react-store';
 import Hook from 'before-after-hook';
@@ -56,8 +56,14 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
       (newKey) => !keys.some((existingKey) => existingKey.id === newKey.id),
     );
 
-    if (addedKeys.length === 0) {
+    // Find removed keys
+    const removedKeys = keys.filter(
+      (existingKey) => !newKeys.some((newKey) => newKey.id === existingKey.id),
+    );
+
+    if (addedKeys.length === 0 && removedKeys.length === 0) {
       isProcessing = false;
+
       return;
     }
 
@@ -65,7 +71,19 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
     keys.length = 0;
     newKeys.forEach((k) => keys.push(k));
 
-    // Add passkeys for added keys
+    // Remove algorand accounts for removed keys
+    removedKeys.forEach((k) => {
+      if (k.type === 'hd-derived-ed25519' && k.publicKey) {
+        const address = base64.encode(k.publicKey);
+        const account = accountsStore.state.accounts.find((a) => a.address === address);
+        if (account && account.metadata?.keyId === k.id && account.type === 'algorand-account') {
+          console.log(`Removing algorand account for key ${k.id}-${k.type}...`);
+          provider.account.store.removeAccount(address);
+        }
+      }
+    });
+
+    // Add algorand accounts for added keys
     addedKeys.forEach(async (k) => {
       if (k.type === 'hd-derived-ed25519' && k.publicKey) {
         const address = base64.encode(k.publicKey);
@@ -83,45 +101,51 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
           return;
         }
 
+        // Only treat accounts with balance > 0.1 ALGO as active accounts to add to the store
+        if (r.balance < 100000n) {
+          console.log(`Balance < 0.1 ALGO found for address: ${address}, skipping...`);
+          return;
+        }
+
         const { balance, assets } = r;
 
-        // Create a sign function for this key
-        const makeSignFunction = (keyId: string) => async (txns: Uint8Array[]) => {
-          return hooks(
-            'sign',
-            async ({ keyId, txns }: { keyId: string; txns: Uint8Array[] }) => {
-              const signedTxns: Uint8Array[] = [];
-              for (const txn of txns) {
-                const signed = await provider.key.store.sign(keyId, txn);
-                signedTxns.push(signed);
-              }
-              return signedTxns;
-            },
-            { keyId, txns },
-          );
-        };
+        // Skip if the account already exists
+        if (
+          !accountsStore.state.accounts.some(
+            (a) => a.address === address && k.metadata?.context === 0,
+          )
+        ) {
+          console.log(`Adding account for key ${k.id}-${k.type}...`);
 
-        // Update the account with algorand data
-        const updateAccountWithAlgorandData = (account: Account) => {
-          if (account.address !== address) {
-            return account;
-          }
+          const parentKeyId = (k as XHDDerivedKeyData)?.metadata?.parentKeyId;
 
-          return {
-            ...account,
+          // Create a hooked sign function for this key
+          const makeHookedSignFn = (keyId: string) => async (txns: Uint8Array[]) => {
+            return hooks(
+              'sign',
+              async ({ keyId, txns }: { keyId: string; txns: Uint8Array[] }) => {
+                const signedTxns: Uint8Array[] = [];
+                for (const txn of txns) {
+                  const signed = await provider.key.store.sign(keyId, txn);
+                  signedTxns.push(signed);
+                }
+                return signedTxns;
+              },
+              { keyId, txns },
+            );
+          };
+
+          provider.account.store.addAccount({
             type: 'algorand-account' as const,
+            address: address,
             balance,
             assets: assets ?? [],
-            sign: makeSignFunction(k.id),
-          };
-        };
+            metadata: { keyId: k.id, parentKeyId: parentKeyId },
+            sign: makeHookedSignFn(k.id),
+          });
 
-        // Update the store with the new account data
-        accountsStore.setState((prevState) => ({
-          accounts: prevState.accounts.map(updateAccountWithAlgorandData),
-        }));
-
-        console.info('Updated algorand account with balance and assets:', address);
+          console.info('Added algorand account with balance and assets:', address);
+        }
       }
     });
 
