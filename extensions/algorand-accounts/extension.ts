@@ -177,9 +177,33 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
         algorandClient,
         algorandAddresses,
         (address: string, assetId: bigint, amount: bigint) => {
-          console.log(
+          console.debug(
             `Balance change detected for address: ${address}, assetId: ${assetId}, amount: ${amount}`,
           );
+
+          accountsStore.setState((state) => ({
+            ...state,
+            accounts: state.accounts.map((a) => {
+              if (!isAlgorandAccount(a)) return a;
+              // Algorand address in the callback is in standard format; account address is base64
+              const algorandAddress = encodeAddress(base64.decode(a.address));
+              if (algorandAddress !== address) return a;
+
+              if (assetId === 0n) {
+                // Native ALGO balance update - add the delta
+                return { ...a, balance: a.balance + amount };
+              }
+
+              // ASA balance update — find by assetId string match and add delta
+              const assetIdStr = assetId.toString();
+              return {
+                ...a,
+                assets: a.assets.map((asset) =>
+                  asset.id === assetIdStr ? { ...asset, balance: asset.balance + amount } : asset,
+                ),
+              };
+            }),
+          }));
         },
       );
       containedSubscriber.subscriber.start();
