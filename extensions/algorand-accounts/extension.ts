@@ -1,5 +1,8 @@
 import { Account, AccountAsset, AccountStoreState } from '@/extensions/accounts';
-import { getAlgorandBalances } from '@/extensions/algorand-accounts/algorand';
+import {
+  createSubscriberWithWatchlist,
+  getAlgorandBalances,
+} from '@/extensions/algorand-accounts/algorand';
 import { AlgorandClient } from '@algorandfoundation/algokit-utils';
 import { encodeAddress, Key, KeyStoreState, XHDDerivedKeyData } from '@algorandfoundation/keystore';
 import { base64 } from '@scure/base';
@@ -41,6 +44,7 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
 
   let isProcessing = false;
   let nextKeys: Key[] | null = null;
+  let containedSubscriber: ReturnType<typeof createSubscriberWithWatchlist> | null = null;
 
   const processUpdates = async (newKeys: Key[]) => {
     if (isProcessing) {
@@ -72,82 +76,114 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
     newKeys.forEach((k) => keys.push(k));
 
     // Remove algorand accounts for removed keys
-    removedKeys.forEach((k) => {
-      if (k.type === 'hd-derived-ed25519' && k.publicKey) {
-        const address = base64.encode(k.publicKey);
-        const account = accountsStore.state.accounts.find((a) => a.address === address);
-        if (account && account.metadata?.keyId === k.id && account.type === 'algorand-account') {
-          console.log(`Removing algorand account for key ${k.id}-${k.type}...`);
-          provider.account.store.removeAccount(address);
+    await Promise.all(
+      removedKeys.map(async (k) => {
+        if (k.type === 'hd-derived-ed25519' && k.publicKey) {
+          const address = base64.encode(k.publicKey);
+          const account = accountsStore.state.accounts.find((a) => a.address === address);
+          if (account && account.metadata?.keyId === k.id && account.type === 'algorand-account') {
+            console.log(`Removing algorand account for key ${k.id}-${k.type}...`);
+            provider.account.store.removeAccount(address);
+          }
         }
-      }
-    });
+      }),
+    );
 
     // Add algorand accounts for added keys
-    addedKeys.forEach(async (k) => {
-      if (k.type === 'hd-derived-ed25519' && k.publicKey) {
-        const address = base64.encode(k.publicKey);
+    await Promise.all(
+      addedKeys.map(async (k) => {
+        if (k.type === 'hd-derived-ed25519' && k.publicKey) {
+          const address = base64.encode(k.publicKey);
 
-        console.log(`Checking algorand account balances for key ${k.id}-${k.type}... ${address}`);
+          console.log(`Checking algorand account balances for key ${k.id}-${k.type}... ${address}`);
 
-        const algorandAddress = encodeAddress(k.publicKey);
-        let r: { balance: bigint; assets?: AccountAsset[] };
+          const algorandAddress = encodeAddress(k.publicKey);
+          let r: { balance: bigint; assets?: AccountAsset[] };
 
-        // lookup accounts balances, assets
-        try {
-          r = await getAlgorandBalances(algorandClient, algorandAddress);
-        } catch (error) {
-          console.error('Failed to fetch algorand balances for address:', algorandAddress, error);
-          return;
+          // lookup accounts balances, assets
+          try {
+            r = await getAlgorandBalances(algorandClient, algorandAddress);
+          } catch (error) {
+            console.error('Failed to fetch algorand balances for address:', algorandAddress, error);
+            return;
+          }
+
+          // Only treat accounts with balance > 0.1 ALGO as active accounts to add to the store
+          if (r.balance < 100000n) {
+            console.log(`Balance < 0.1 ALGO found for address: ${address}, skipping...`);
+            return;
+          }
+
+          const { balance, assets } = r;
+
+          // Skip if the account already exists
+          if (
+            !accountsStore.state.accounts.some(
+              (a) => a.address === address && k.metadata?.context === 0,
+            )
+          ) {
+            console.log(`Adding account for key ${k.id}-${k.type}...`);
+
+            const parentKeyId = (k as XHDDerivedKeyData)?.metadata?.parentKeyId;
+
+            // Create a hooked sign function for this key
+            const makeHookedSignFn = (keyId: string) => async (txns: Uint8Array[]) => {
+              return hooks(
+                'sign',
+                async ({ keyId, txns }: { keyId: string; txns: Uint8Array[] }) => {
+                  const signedTxns: Uint8Array[] = [];
+                  for (const txn of txns) {
+                    const signed = await provider.key.store.sign(keyId, txn);
+                    signedTxns.push(signed);
+                  }
+                  return signedTxns;
+                },
+                { keyId, txns },
+              );
+            };
+
+            provider.account.store.addAccount({
+              type: 'algorand-account' as const,
+              address: address,
+              balance,
+              assets: assets ?? [],
+              metadata: { keyId: k.id, parentKeyId: parentKeyId },
+              sign: makeHookedSignFn(k.id),
+            });
+
+            console.info('Added algorand account with balance and assets:', address);
+          }
         }
+      }),
+    );
 
-        // Only treat accounts with balance > 0.1 ALGO as active accounts to add to the store
-        if (r.balance < 100000n) {
-          console.log(`Balance < 0.1 ALGO found for address: ${address}, skipping...`);
-          return;
-        }
+    // Collect algorand account addresses from the store and update the subscriber
+    const algorandAddresses = accountsStore.state.accounts
+      .filter(isAlgorandAccount)
+      .map((a) => encodeAddress(base64.decode(a.address)));
 
-        const { balance, assets } = r;
+    console.log(
+      'Algorand accounts updated, restarting subscriber with watchlist:',
+      algorandAddresses,
+    );
 
-        // Skip if the account already exists
-        if (
-          !accountsStore.state.accounts.some(
-            (a) => a.address === address && k.metadata?.context === 0,
-          )
-        ) {
-          console.log(`Adding account for key ${k.id}-${k.type}...`);
+    if (containedSubscriber) {
+      containedSubscriber.subscriber.stop('updating watchlist');
+      containedSubscriber = null;
+    }
 
-          const parentKeyId = (k as XHDDerivedKeyData)?.metadata?.parentKeyId;
-
-          // Create a hooked sign function for this key
-          const makeHookedSignFn = (keyId: string) => async (txns: Uint8Array[]) => {
-            return hooks(
-              'sign',
-              async ({ keyId, txns }: { keyId: string; txns: Uint8Array[] }) => {
-                const signedTxns: Uint8Array[] = [];
-                for (const txn of txns) {
-                  const signed = await provider.key.store.sign(keyId, txn);
-                  signedTxns.push(signed);
-                }
-                return signedTxns;
-              },
-              { keyId, txns },
-            );
-          };
-
-          provider.account.store.addAccount({
-            type: 'algorand-account' as const,
-            address: address,
-            balance,
-            assets: assets ?? [],
-            metadata: { keyId: k.id, parentKeyId: parentKeyId },
-            sign: makeHookedSignFn(k.id),
-          });
-
-          console.info('Added algorand account with balance and assets:', address);
-        }
-      }
-    });
+    if (algorandAddresses.length > 0) {
+      containedSubscriber = createSubscriberWithWatchlist(
+        algorandClient,
+        algorandAddresses,
+        (address: string, assetId: bigint, amount: bigint) => {
+          console.log(
+            `Balance change detected for address: ${address}, assetId: ${assetId}, amount: ${amount}`,
+          );
+        },
+      );
+      containedSubscriber.subscriber.start();
+    }
 
     isProcessing = false;
 
