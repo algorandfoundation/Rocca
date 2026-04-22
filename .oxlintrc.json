@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
-  "plugins": ["react", "react-hooks", "jsx-a11y"],
+  "plugins": ["react", "typescript", "jsx-a11y"],
   "env": {
     "node": true,
     "es2022": true
