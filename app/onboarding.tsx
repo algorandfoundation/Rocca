@@ -111,7 +111,7 @@ export default function OnboardingScreen() {
   // Expo Router for Navigation
   const router = useRouter();
   // Provider Context, used to hold global states and interfaces
-  const { keys, key } = useProvider();
+  const { keys, key, account, identity, passkey } = useProvider();
   // State reducer
   const [{ step, recoveryPhrase, testInput }, dispatch] = useReducer(
     onboardingReducer,
@@ -419,9 +419,9 @@ export default function OnboardingScreen() {
 
                                 // Clear existing keys and data to prevent duplication
                                 await key.store.clear();
-                                await provider.account.store.clear();
-                                await provider.identity.store.clear();
-                                await provider.passkeys.store.clear();
+                                await account.store.clear();
+                                await identity.store.clear();
+                                await passkey.store.clear();
 
                                 // Import to the keystore
                                 const seedId = await key.store.import(
@@ -483,7 +483,7 @@ export default function OnboardingScreen() {
                                 });
 
                                 // Bootstrap to ensure native side is updated with new master key and keys
-                                await bootstrap(false);
+                                await bootstrap(undefined, false);
 
                                 router.replace('/landing');
                               } else {
