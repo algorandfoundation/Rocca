@@ -3,6 +3,10 @@ import { useEffect } from 'react';
 
 export function usePreventScreenshot(enabled = true) {
   useEffect(() => {
+    if (__DEV__) {
+      console.log('Screenshot prevention disabled for development builds.');
+      return;
+    }
     if (!enabled) return;
 
     void screenshotManager.enable().catch((error) => {

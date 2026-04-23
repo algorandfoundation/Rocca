@@ -67,7 +67,7 @@ The following extensions are used to provide the wallet's functionality:
   - `key.store.sign(keyId: string, data: Uint8Array)`: Sign transactions or challenges.
   - `key.store.exportPublicKey(keyId: string)`: Retrieve public keys.
 
-### 2. AccountStore Extension (`@/extensions/accounts`)
+### 2. AccountStore Extension (`@algorandfoundation/accounts-store`)
 
 - **Purpose**: Manages a list of user accounts and their metadata.
 - **Functionality**:
@@ -77,7 +77,7 @@ The following extensions are used to provide the wallet's functionality:
   - `account.store.removeAccount(address: string)`: Remove an account.
   - `account.store.clear()`: Remove all accounts.
 
-### 3. AccountsKeystore Extension (`@/extensions/accounts-keystore`)
+### 3. AccountsKeystore Extension (`@algorandfoundation/accounts-keystore-extension`)
 
 - **Purpose**: Bridges the AccountStore and KeyStore.
 - **Functionality**:

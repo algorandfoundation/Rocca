@@ -1,5 +1,9 @@
-import { Account, AccountStoreOptions, AccountStoreState } from '@/extensions/accounts';
-import { KeystoreAccount } from '@/extensions/accounts-keystore';
+import { KeystoreAccount } from '@algorandfoundation/accounts-keystore-extension';
+import {
+  Account,
+  AccountStoreOptions,
+  AccountStoreState,
+} from '@algorandfoundation/accounts-store';
 import { AlgoClientConfig } from '@algorandfoundation/algokit-utils/types/network-client';
 import { KeyStoreOptions } from '@algorandfoundation/keystore';
 import type { Extension, ExtensionOptions } from '@algorandfoundation/wallet-provider';

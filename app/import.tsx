@@ -9,13 +9,19 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import { validateMnemonic, mnemonicToSeed } from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider';
+import { identitiesStore } from '@/stores/identities';
+import { accountsStore } from '@/stores/accounts';
+import { passkeysStore } from '@/stores/passkeys';
 import { PreventScreenshot } from '@/components/PreventScreenshot';
+import { bootstrap } from '@/lib/bootstrap';
+import type { IdentitiesKeystoreExtension } from '@/extensions/identities-keystore/types';
+import { importDidDocument } from '@/utils/did-backup';
 
 // Extract provider configuration from expo-constants
 const config = Constants.expoConfig?.extra?.provider || {
@@ -26,7 +32,9 @@ const config = Constants.expoConfig?.extra?.provider || {
 
 export default function ImportWalletScreen() {
   const router = useRouter();
-  const { key } = useProvider();
+  const { backupUri } = useLocalSearchParams<{ backupUri?: string }>();
+  const provider = useProvider();
+  const { key, identity } = provider;
   const { primaryColor } = config;
 
   const [importText, setImportText] = useState('');
@@ -64,7 +72,24 @@ export default function ImportWalletScreen() {
     setIsImporting(true);
 
     try {
+      console.log('Starting import process...');
+
+      // Clear existing keys and data to prevent duplication
+      console.log('Clearing existing wallet data...');
+      await key.store.clear();
+      await provider.account.store.clear();
+      await provider.identity.store.clear();
+      await provider.passkey.store.clear();
+
+      // Load backup if present to validate early
+      let backupDoc = null;
+      if (backupUri) {
+        console.log('Loading backup from:', backupUri);
+        backupDoc = await importDidDocument(backupUri);
+      }
+
       // Import to the keystore
+      console.log('Importing seed phrase...');
       const seedId = await key.store.import(
         {
           type: 'hd-seed',
@@ -77,6 +102,7 @@ export default function ImportWalletScreen() {
       );
 
       // Generate HD Root Key
+      console.log('Generating HD Root Key...');
       const rootKeyId = await key.store.generate({
         type: 'hd-root-key',
         algorithm: 'raw',
@@ -87,36 +113,72 @@ export default function ImportWalletScreen() {
         },
       });
 
-      // Generate Ed25519 Account Key
-      await key.store.generate({
-        type: 'hd-derived-ed25519',
-        algorithm: 'EdDSA',
-        extractable: true,
-        keyUsages: ['sign', 'verify'],
-        params: {
+      if (backupDoc) {
+        // Restore derived keys from backup
+        console.log('Restoring from backup document...');
+        const identitiesKeystore =
+          identity.store as unknown as IdentitiesKeystoreExtension['identity']['store'];
+        if (identitiesKeystore.restoreFromDidDocument) {
+          await identitiesKeystore.restoreFromDidDocument(backupDoc);
+        }
+        console.log('Backup restoration complete.');
+      } else {
+        // Default generation if no backup
+        console.log('Generating default keys...');
+        // Generate Ed25519 Account Key
+        const accountParams = {
           parentKeyId: rootKeyId,
           context: 0,
           account: 0,
           index: 0,
           derivation: 9,
-        },
-      });
+        };
+        await key.store.generate({
+          type: 'hd-derived-ed25519',
+          algorithm: 'EdDSA',
+          extractable: true,
+          keyUsages: ['sign', 'verify'],
+          params: {
+            ...accountParams,
+          },
+        });
 
-      // Generate Ed25519 Identity Key
-      await key.store.generate({
-        type: 'hd-derived-ed25519',
-        algorithm: 'EdDSA',
-        extractable: true,
-        keyUsages: ['sign', 'verify'],
-        params: {
+        // Generate Ed25519 Identity Key
+        const identityParams = {
           parentKeyId: rootKeyId,
           context: 1,
           account: 0,
           index: 0,
           derivation: 9,
-        },
-      });
+        };
+        await key.store.generate({
+          type: 'hd-derived-ed25519',
+          algorithm: 'EdDSA',
+          extractable: true,
+          keyUsages: ['sign', 'verify'],
+          params: {
+            ...identityParams,
+          },
+        });
+        console.log('Default key generation complete.');
+      }
 
+      // Give a small moment for extensions to process state updates before navigating
+      // This helps prevent flickering on the landing screen as identities are populated
+      console.log('Waiting for state synchronization...');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Bootstrap to ensure native side is updated with new master key and keys
+      await bootstrap(false);
+
+      const { identities } = identitiesStore.state;
+      const { accounts } = accountsStore.state;
+      const { passkeys: providerPasskeys } = passkeysStore.state;
+      console.log(
+        `Import complete. Summary: identities=${identities.length}, accounts=${accounts.length}, passkeys=${providerPasskeys.length}`,
+      );
+
+      console.log('Navigating to landing...');
       router.replace('/landing');
     } catch (error) {
       console.error('Import failed:', error);

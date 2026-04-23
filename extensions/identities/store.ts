@@ -1,5 +1,5 @@
 import type { Store } from '@tanstack/store';
-import type { Identity, IdentityStoreState } from './types.ts';
+import type { Identity, IdentityStoreState, DIDDocument } from './types.ts';
 
 /**
  * Adds an identity to the store.
@@ -17,12 +17,51 @@ export function addIdentity({
   identity: Identity;
 }): Identity {
   store.setState((state) => {
+    const filtered = state.identities.filter((i) => i.address !== identity.address);
     return {
       ...state,
-      identities: [identity, ...state.identities],
+      identities: [identity, ...filtered],
     };
   });
   return identity;
+}
+
+/**
+ * Updates the DID Document of an existing identity in the store.
+ *
+ * @param params - The update parameters.
+ * @param params.store - The TanStack store instance for {@link IdentityStoreState}.
+ * @param params.address - The address of the identity to update.
+ * @param params.didDocument - The new {@link DIDDocument} to set.
+ * @returns The updated {@link Identity} if found, otherwise undefined.
+ */
+export function updateIdentityDidDocument({
+  store,
+  address,
+  didDocument,
+}: {
+  store: Store<IdentityStoreState>;
+  address: string;
+  didDocument: DIDDocument;
+}): Identity | undefined {
+  let updatedIdentity: Identity | undefined;
+
+  store.setState((state) => {
+    const identities = state.identities.map((identity) => {
+      if (identity.address === address) {
+        updatedIdentity = { ...identity, didDocument };
+        return updatedIdentity;
+      }
+      return identity;
+    });
+
+    return {
+      ...state,
+      identities,
+    };
+  });
+
+  return updatedIdentity;
 }
 
 /**

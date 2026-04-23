@@ -1,14 +1,21 @@
 import { Provider } from '@algorandfoundation/wallet-provider';
 import { createContext, type ReactNode } from 'react';
 
-import { Account, AccountStoreExtension, WithAccountStore } from '@/extensions/accounts';
-import { KeystoreAccount } from '@/extensions/accounts-keystore';
 import { AlgorandAccount, WithAlgorandAccounts } from '@/extensions/algorand-accounts';
-import { Identity, IdentityStoreApi, WithIdentityStore } from '@/extensions/identities';
+import { Identity, IdentityStoreExtension, WithIdentityStore } from '@/extensions/identities';
 import { WithIdentitiesKeystore } from '@/extensions/identities-keystore';
-import { Passkey, PasskeyStoreApi, WithPasskeyStore } from '@/extensions/passkeys';
+import { Passkey, PasskeyStoreExtension, WithPasskeyStore } from '@/extensions/passkeys';
 import { WithPasskeysKeystore } from '@/extensions/passkeys-keystore';
 import type { keyStoreHooks } from '@/stores/before-after';
+import {
+  KeystoreAccount,
+  WithAccountsKeystore,
+} from '@algorandfoundation/accounts-keystore-extension';
+import {
+  Account,
+  AccountStoreExtension,
+  WithAccountStore,
+} from '@algorandfoundation/accounts-store';
 import type { Key, KeyStoreAPI } from '@algorandfoundation/keystore';
 import { WithLogStore, type LogMessage, type LogStoreApi } from '@algorandfoundation/log-store';
 import { WithKeyStore } from '@algorandfoundation/react-native-keystore';
@@ -20,8 +27,9 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithAccountStore,
     WithIdentityStore,
     WithPasskeyStore,
-    WithIdentitiesKeystore,
+    WithAccountsKeystore,
     WithPasskeysKeystore,
+    WithIdentitiesKeystore,
     WithAlgorandAccounts,
   ] as const;
 
@@ -33,12 +41,8 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
   status!: string;
 
   account!: AccountStoreExtension<Account | KeystoreAccount | AlgorandAccount>['account'];
-  identity!: {
-    store: IdentityStoreApi;
-  };
-  passkey!: {
-    store: PasskeyStoreApi;
-  };
+  identity!: IdentityStoreExtension['identity'];
+  passkey!: PasskeyStoreExtension['passkey'];
   // The generic Keystore Interface
   key!: {
     store: KeyStoreAPI & { clear: () => Promise<void>; hooks: typeof keyStoreHooks };

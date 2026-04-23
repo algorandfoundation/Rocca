@@ -1,8 +1,8 @@
-import { Account, AccountAsset, AccountStoreState } from '@/extensions/accounts';
 import {
   createSubscriberWithWatchlist,
   getAlgorandBalances,
 } from '@/extensions/algorand-accounts/algorand';
+import { Account, AccountAsset, AccountStoreState } from '@algorandfoundation/accounts-store';
 import { AlgorandClient } from '@algorandfoundation/algokit-utils';
 import { encodeAddress, Key, KeyStoreState, XHDDerivedKeyData } from '@algorandfoundation/keystore';
 import { base64 } from '@scure/base';

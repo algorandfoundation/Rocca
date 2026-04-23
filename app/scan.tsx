@@ -11,7 +11,7 @@ function isValidURL(urlString: string) {
   try {
     new URL(urlString);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -56,7 +56,7 @@ export default function ScanScreen() {
       try {
         await Linking.openURL(data);
         router.back();
-      } catch (error) {
+      } catch {
         Alert.alert('Error', 'Could not open FIDO link natively');
         router.back();
       }

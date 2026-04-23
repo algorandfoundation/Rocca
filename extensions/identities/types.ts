@@ -34,6 +34,7 @@ export interface VerificationMethod {
   type: string;
   controller: string;
   publicKeyMultibase: string;
+  metadata?: Record<string, any>;
 }
 
 /**
@@ -67,7 +68,21 @@ export interface Service {
   /**
    * WebRTC compatible iceServers configuration
    */
-  iceServers: RTCIceServer[];
+  iceServers?: RTCIceServer[];
+  /**
+   * Passkey specific details (for type: "PasskeyService")
+   */
+  passkeys?: {
+    id: string;
+    keyId?: string;
+    origin: string;
+    userHandle: string;
+    count: number;
+  }[];
+  /**
+   * Any other service-specific properties
+   */
+  [key: string]: any;
 }
 
 /**
@@ -160,6 +175,14 @@ export interface IdentityStoreApi {
    * @returns A promise that resolves when the store is cleared.
    */
   clear: () => Promise<void>;
+  /**
+   * Updates the DID Document of an existing identity.
+   *
+   * @param address - The address of the identity to update.
+   * @param didDocument - The new DID Document to set.
+   * @returns The updated identity if found, otherwise undefined.
+   */
+  updateDidDocument: (address: string, didDocument: DIDDocument) => Promise<Identity | undefined>;
   /**
    * The hooks for identity store operations.
    */

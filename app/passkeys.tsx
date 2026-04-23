@@ -49,17 +49,22 @@ export default function PasskeysScreen() {
                   <MaterialIcons name="fingerprint" size={24} color="#10B981" />
                 </View>
                 <View style={styles.details}>
-                  <Text style={styles.passkeyName} numberOfLines={1}>
+                  <Text style={styles.passkeyName} numberOfLines={1} ellipsizeMode="middle">
                     {passkey.name}
                   </Text>
+                  {passkey.userHandle && (
+                    <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="middle">
+                      User: {passkey.userHandle}
+                    </Text>
+                  )}
+                  {passkey.origin && (
+                    <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="middle">
+                      Origin: {passkey.origin}
+                    </Text>
+                  )}
                   <Text style={styles.credentialId} numberOfLines={1} ellipsizeMode="middle">
                     ID: {passkey.id}
                   </Text>
-                  {passkey.metadata?.origin && (
-                    <Text style={styles.origin} numberOfLines={1}>
-                      Origin: {passkey.metadata.origin}
-                    </Text>
-                  )}
                   <Text style={styles.date}>
                     Created:{' '}
                     {passkey.createdAt ? new Date(passkey.createdAt).toLocaleDateString() : 'N/A'}
@@ -129,14 +134,14 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     marginBottom: 2,
   },
+  detailText: {
+    fontSize: 13,
+    color: '#475569',
+    marginBottom: 2,
+  },
   credentialId: {
     fontSize: 13,
     color: '#64748B',
-    marginBottom: 2,
-  },
-  origin: {
-    fontSize: 13,
-    color: '#3B82F6',
     marginBottom: 2,
   },
   date: {
