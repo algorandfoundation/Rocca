@@ -58,14 +58,10 @@ const provider = new ReactNativeProvider(
       hooks: keyStoreHooks,
     },
     algorand: {
-      algoConfig: {
-        algodConfig: {
-          token: process.env.EXPO_PUBLIC_ALGOD_TOKEN ?? '',
-          server: process.env.EXPO_PUBLIC_ALGOD_SERVER || 'https://mainnet-api.4160.nodely.dev',
-          port: process.env.EXPO_PUBLIC_ALGOD_PORT
-            ? Number(process.env.EXPO_PUBLIC_ALGOD_PORT)
-            : 443,
-        },
+      algodConfig: {
+        token: process.env.EXPO_PUBLIC_ALGOD_TOKEN ?? '',
+        server: process.env.EXPO_PUBLIC_ALGOD_SERVER || 'https://mainnet-api.4160.nodely.dev',
+        port: process.env.EXPO_PUBLIC_ALGOD_PORT ? Number(process.env.EXPO_PUBLIC_ALGOD_PORT) : 443,
       },
     },
   },

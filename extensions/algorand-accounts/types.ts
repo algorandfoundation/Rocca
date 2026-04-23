@@ -1,6 +1,6 @@
 import { Account, AccountStoreOptions, AccountStoreState } from '@/extensions/accounts';
 import { KeystoreAccount } from '@/extensions/accounts-keystore';
-import { AlgoConfig } from '@algorandfoundation/algokit-utils/types/network-client';
+import { AlgoClientConfig } from '@algorandfoundation/algokit-utils/types/network-client';
 import { KeyStoreOptions } from '@algorandfoundation/keystore';
 import type { Extension, ExtensionOptions } from '@algorandfoundation/wallet-provider';
 import { Store } from '@tanstack/store';
@@ -9,7 +9,7 @@ import { HookCollection } from 'before-after-hook';
 export interface AlgorandAccountsExtensionOptions
   extends ExtensionOptions, KeyStoreOptions, AccountStoreOptions<Account> {
   algorand: {
-    algoConfig: AlgoConfig;
+    algodConfig: AlgoClientConfig;
     hooks?: HookCollection<any>;
   };
   accounts: {

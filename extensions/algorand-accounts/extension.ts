@@ -32,7 +32,7 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
   }
 
   // Create algorand client
-  const algorandClient = AlgorandClient.fromConfig(options.algorand.algoConfig);
+  const algorandClient = AlgorandClient.fromConfig({ algodConfig: options.algorand.algodConfig });
   // Get the store from the options
   const accountsStore: Store<AccountStoreState<Account>> = options.accounts.store;
   // Get the keystore from the options
