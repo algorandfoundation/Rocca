@@ -220,9 +220,9 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
 
   keyStore.subscribe((state) => {
     if (state.status !== 'ready' && state.status !== 'idle') return;
-    setTimeout(() => {
-      processUpdates(state.keys as unknown as Key[]);
-    }, 0);
+    setImmediate(async () => {
+      await processUpdates(state.keys as unknown as Key[]);
+    });
   });
 
   return provider as unknown as AlgorandAccountsExtension;
