@@ -1,5 +1,5 @@
-import { Passkey } from 'react-native-passkey';
 import { fromBase64Url, toBase64URL } from '@algorandfoundation/liquid-client';
+import { Passkey } from 'react-native-passkey';
 
 function toUint8Array(buf: BufferSource): Uint8Array {
   if (buf instanceof Uint8Array) return buf;
@@ -26,12 +26,10 @@ export function globalPolyfill() {
     ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
       const errorMessage = error?.message || (typeof error === 'string' ? error : '');
       if (errorMessage.includes('Unable to activate keep awake')) {
-        console.warn('[KEEP-AWAKE ERROR CAUGHT]:', errorMessage);
         return;
       }
       // Check for nested errors in CodedError
       if (error?.cause?.message?.includes('Unable to activate keep awake')) {
-        console.warn('[KEEP-AWAKE CAUSE ERROR CAUGHT]:', error.cause.message);
         return;
       }
       originalErrorHandler(error, isFatal);
@@ -51,7 +49,6 @@ export function globalPolyfill() {
       // If it's a CodedError from Expo, it might have the message in a different property or nested
       const errorMessage = error?.message || (typeof error === 'string' ? error : '');
       if (errorMessage.includes('Unable to activate keep awake')) {
-        console.warn('[KEEP-AWAKE PROMISE REJECTION CAUGHT]:', errorMessage);
         return;
       }
       if (originalRejectionHandler) {
@@ -107,32 +104,26 @@ export function setupNavigatorPolyfill() {
           id: typeof cred.id === 'string' ? cred.id : toBase64URL(toUint8Array(cred.id)),
         })),
       };
-      try {
-        const result = await Passkey.get(request as any);
-        if (!result) return null;
+      const result = await Passkey.get(request as any);
+      if (!result) return null;
 
-        const clientDataJSON = toArrayBuffer(result.response.clientDataJSON);
-        const authData = toArrayBuffer(result.response.authenticatorData);
+      const clientDataJSON = toArrayBuffer(result.response.clientDataJSON);
+      const authData = toArrayBuffer(result.response.authenticatorData);
 
-        return {
-          id: result.id,
-          rawId: toArrayBuffer(result.id),
-          response: {
-            clientDataJSON,
-            authenticatorData: authData,
-            signature: toArrayBuffer(result.response.signature),
-            userHandle: result.response.userHandle
-              ? toArrayBuffer(result.response.userHandle)
-              : null,
-            clientExtensionResults: result.clientExtensionResults || {},
-          },
-          authenticatorAttachment: result.authenticatorAttachment,
-          type: result.type,
-          getClientExtensionResults: () => result.clientExtensionResults || {},
-        };
-      } catch (error) {
-        throw error;
-      }
+      return {
+        id: result.id,
+        rawId: toArrayBuffer(result.id),
+        response: {
+          clientDataJSON,
+          authenticatorData: authData,
+          signature: toArrayBuffer(result.response.signature),
+          userHandle: result.response.userHandle ? toArrayBuffer(result.response.userHandle) : null,
+          clientExtensionResults: result.clientExtensionResults || {},
+        },
+        authenticatorAttachment: result.authenticatorAttachment,
+        type: result.type,
+        getClientExtensionResults: () => result.clientExtensionResults || {},
+      };
     },
     async create(obj: { publicKey?: PublicKeyCredentialCreationOptions }) {
       const publicKey = obj?.publicKey;
@@ -159,37 +150,33 @@ export function setupNavigatorPolyfill() {
       };
       // Android Credential Manager is very strict about the RP ID.
       // It must match the domain where the assetlinks.json is hosted.
-      try {
-        const result = await Passkey.create(request as any);
-        if (!result) return null;
+      const result = await Passkey.create(request as any);
+      if (!result) return null;
 
-        const clientDataJSON = toArrayBuffer(result.response.clientDataJSON);
+      const clientDataJSON = toArrayBuffer(result.response.clientDataJSON);
 
-        return {
-          id: result.id,
-          rawId: toArrayBuffer(result.id),
-          response: {
-            clientDataJSON,
-            attestationObject: toArrayBuffer(result.response.attestationObject),
-            getTransports: () => (result.response as any).transports || [],
-            getPublicKeyAlgorithm: () => (result.response as any).publicKeyAlgorithm || -7,
-            getPublicKey: () =>
-              (result.response as any).publicKey
-                ? toArrayBuffer((result.response as any).publicKey)
-                : null,
-            getAuthenticatorData: () =>
-              (result.response as any).authenticatorData
-                ? toArrayBuffer((result.response as any).authenticatorData)
-                : null,
-            clientExtensionResults: result.clientExtensionResults || {},
-          },
-          authenticatorAttachment: result.authenticatorAttachment,
-          type: result.type,
-          getClientExtensionResults: () => result.clientExtensionResults || {},
-        };
-      } catch (error) {
-        throw error;
-      }
+      return {
+        id: result.id,
+        rawId: toArrayBuffer(result.id),
+        response: {
+          clientDataJSON,
+          attestationObject: toArrayBuffer(result.response.attestationObject),
+          getTransports: () => (result.response as any).transports || [],
+          getPublicKeyAlgorithm: () => (result.response as any).publicKeyAlgorithm || -7,
+          getPublicKey: () =>
+            (result.response as any).publicKey
+              ? toArrayBuffer((result.response as any).publicKey)
+              : null,
+          getAuthenticatorData: () =>
+            (result.response as any).authenticatorData
+              ? toArrayBuffer((result.response as any).authenticatorData)
+              : null,
+          clientExtensionResults: result.clientExtensionResults || {},
+        },
+        authenticatorAttachment: result.authenticatorAttachment,
+        type: result.type,
+        getClientExtensionResults: () => result.clientExtensionResults || {},
+      };
     },
   };
 }
