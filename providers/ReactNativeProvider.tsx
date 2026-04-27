@@ -7,10 +7,7 @@ import { WithIdentitiesKeystore } from '@/extensions/identities-keystore';
 import { Passkey, PasskeyStoreExtension, WithPasskeyStore } from '@/extensions/passkeys';
 import { WithPasskeysKeystore } from '@/extensions/passkeys-keystore';
 import type { keyStoreHooks } from '@/stores/before-after';
-import {
-  KeystoreAccount,
-  WithAccountsKeystore,
-} from '@algorandfoundation/accounts-keystore-extension';
+import { KeystoreAccount } from '@algorandfoundation/accounts-keystore-extension';
 import {
   Account,
   AccountStoreExtension,
@@ -27,7 +24,6 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithAccountStore,
     WithIdentityStore,
     WithPasskeyStore,
-    WithAccountsKeystore,
     WithPasskeysKeystore,
     WithIdentitiesKeystore,
     WithAlgorandAccounts,
