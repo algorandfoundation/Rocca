@@ -15,16 +15,14 @@
     }
   },
   "rules": {
-    "no-console": "warn",
+    "no-console": "off",
     "react-hooks/exhaustive-deps": "warn",
     "eslint/no-unused-vars": "warn"
   },
   "overrides": [
     {
       "files": ["**/__tests__/**", "**/*.test.*", "**/*-test.*"],
-      "rules": {
-        "no-console": "off"
-      }
+      "rules": {}
     }
   ],
   "ignorePatterns": ["dist/", "node_modules/", ".expo/", "android/", "ios/"]

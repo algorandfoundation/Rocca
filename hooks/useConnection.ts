@@ -105,6 +105,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
     if (isConnected) {
       heartbeatInterval = setInterval(() => {
         if (dataChannelRef.current && dataChannelRef.current.readyState === 'open') {
+          console.log('Sending heartbeat message');
           dataChannelRef.current.send('');
           if (active) setLastHeartbeat(Date.now());
         }
@@ -114,6 +115,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         const now = Date.now();
         const inactiveTime = now - lastUserActivityRef.current;
         if (inactiveTime >= 60000) {
+          console.log('Closing connection due to inactivity (1 minute)');
           if (dataChannelRef.current) {
             dataChannelRef.current.close();
           }
@@ -137,15 +139,18 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
     async function setupConnection() {
       if (!origin || !requestId) {
+        console.error('Missing origin or requestId');
         setIsLoading(false);
         return;
       }
 
       if (authFlowInProgressRef.current) {
+        console.log('Auth flow already in progress, skipping duplicate setup');
         return;
       }
 
       if (accountsStore.state.accounts.length === 0 || keyStore.state.keys.length === 0) {
+        console.log('Waiting for accounts and keys to load...');
         // If it's been loading for more than a few seconds, it might really be empty
         // but typically it's better to wait for them to be non-empty.
         return;
@@ -178,14 +183,34 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         let foundKey = currentKeys.find((k) => k.id === currentAccounts[0]?.metadata?.keyId);
         if (!foundKey && currentKeys.length > 0) {
           foundKey = currentKeys[0];
+          console.log('Falling back to the first available key for attestation');
         }
 
         if (!foundKey || !foundKey.publicKey) {
+          console.error(
+            'No key found for attestation. Keys:',
+            JSON.stringify(
+              currentKeys.map((k) => ({ id: k.id, type: k.type })),
+              null,
+              2,
+            ),
+          );
+          console.error(
+            'Accounts:',
+            JSON.stringify(
+              currentAccounts.map((a) => ({ address: a.address, keyId: a.metadata?.keyId })),
+              null,
+              2,
+            ),
+          );
           throw new Error('No key found for attestation');
         }
 
+        console.log('Found key for attestation:', foundKey.id, foundKey.type);
+
         const sessionCheck = await fetch(`${origin}/auth/session`);
         if (!active) return;
+        console.log('Initial session status:', sessionCheck.ok);
 
         const currentPasskeys = await passkey.store.getPasskeys();
         const relevantPasskeys = currentPasskeys.filter((p) => {
@@ -204,7 +229,10 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
         if (relevantPasskeys.length > 0) {
           const firstPasskey = relevantPasskeys[0];
-
+          console.log(
+            'Found existing passkeys for origin, using first one for options request:',
+            firstPasskey.id,
+          );
           // TODO: move options upstream
           const optionsResponse = await fetch(`${origin}/assertion/request/${firstPasskey.id}`, {
             method: 'POST',
@@ -272,7 +300,9 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           if (credential.response?.userHandle) {
             try {
               selectedAddress = encodeAddress(new Uint8Array(credential.response.userHandle));
-            } catch {}
+            } catch (e) {
+              console.error('Failed to encode address from userHandle', e);
+            }
           }
 
           if (!selectedAddress) {
@@ -292,11 +322,14 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
                 if (handleArray) {
                   selectedAddress = encodeAddress(handleArray);
                 }
-              } catch {}
+              } catch (e) {
+                console.error('Failed to encode address from stored userHandle', e);
+              }
             }
           }
 
           if (selectedAddress) {
+            console.log('Selected address from passkey:', selectedAddress);
             setAddress(selectedAddress);
             addressRef.current = selectedAddress;
             liquidOptions.address = selectedAddress;
@@ -311,10 +344,12 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             );
 
             if (selectedKey) {
+              console.log('Found key for selected address, re-signing challenge');
               liquidOptions.signature = toBase64URL(
                 await key.store.sign(selectedKey.id, challenge),
               );
             } else {
+              console.warn('Could not find key for selected address', selectedAddress);
             }
           }
 
@@ -351,9 +386,13 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
                 keyData.metadata = { ...keyData.metadata, registered: true };
                 await commit({ store: keyStore as any, keyData });
               }
-            } catch {}
+            } catch (error) {
+              console.error('Failed to update key metadata after assertion:', error);
+            }
           }
         } else {
+          console.log('No existing passkey for origin, using attestation');
+
           const optionsResponse = await fetch(`${origin}/attestation/request`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -466,7 +505,9 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
                 keyData.metadata = { ...keyData.metadata, registered: true };
                 await commit({ store: keyStore as any, keyData });
               }
-            } catch {}
+            } catch (error) {
+              console.error('Failed to update key metadata after attestation:', error);
+            }
           }
         }
 
@@ -485,6 +526,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             addressRef.current = sessionData.address;
           }
         } else {
+          console.log('Session validation failed (ignored for debugging)');
         }
 
         let options: any = { autoConnect: true };
@@ -530,6 +572,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         dataChannelRef.current = datachannel;
 
         datachannel.onopen = () => {
+          console.log('Data channel opened');
           if (active) {
             setIsConnected(true);
             setIsLoading(false);
@@ -539,7 +582,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
         datachannel.onmessage = (event) => {
           if (!active) return;
-
+          console.log('Received message:', event.data);
           updateSessionActivity(requestId, origin);
           lastUserActivityRef.current = Date.now();
           setLastHeartbeat(Date.now());
@@ -555,6 +598,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         };
 
         datachannel.onclose = () => {
+          console.log('Data channel closed');
           updateSessionStatus(requestId, origin, 'closed');
           if (active) {
             setIsConnected(false);
@@ -562,8 +606,11 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           }
         };
 
-        datachannel.onerror = (error) => {};
+        datachannel.onerror = (error) => {
+          console.error('Data channel error:', error);
+        };
       } catch (err: any) {
+        console.error('Failed to setup connection:', err);
         clientRef.current = null;
         updateSessionStatus(requestId, origin, 'failed');
         if (active) {

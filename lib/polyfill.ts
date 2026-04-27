@@ -26,10 +26,12 @@ export function globalPolyfill() {
     ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
       const errorMessage = error?.message || (typeof error === 'string' ? error : '');
       if (errorMessage.includes('Unable to activate keep awake')) {
+        console.warn('[KEEP-AWAKE ERROR CAUGHT]:', errorMessage);
         return;
       }
       // Check for nested errors in CodedError
       if (error?.cause?.message?.includes('Unable to activate keep awake')) {
+        console.warn('[KEEP-AWAKE CAUSE ERROR CAUGHT]:', error.cause.message);
         return;
       }
       originalErrorHandler(error, isFatal);
@@ -49,6 +51,7 @@ export function globalPolyfill() {
       // If it's a CodedError from Expo, it might have the message in a different property or nested
       const errorMessage = error?.message || (typeof error === 'string' ? error : '');
       if (errorMessage.includes('Unable to activate keep awake')) {
+        console.warn('[KEEP-AWAKE PROMISE REJECTION CAUGHT]:', errorMessage);
         return;
       }
       if (originalRejectionHandler) {
