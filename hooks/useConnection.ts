@@ -1,31 +1,30 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { NativeModules, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useStore } from '@tanstack/react-store';
-import {
-  SignalClient,
-  toBase64URL,
-  fromBase64Url,
-  decodeAssertionRequestOptions,
-  encodeCredential,
-} from '@algorandfoundation/liquid-client';
-import { encodeAddress } from '@algorandfoundation/keystore';
-import { decodeAddress } from '@/utils/algorand';
-import { toUrlSafe } from '@/utils/base64';
-import type { KeyData, KeyStoreState } from '@algorandfoundation/keystore';
-import { fetchSecret, getMasterKey, commit } from '@algorandfoundation/react-native-keystore';
-import { keyStore } from '@/stores/keystore';
-import { accountsStore } from '@/stores/accounts';
-import { passkeysStore } from '@/stores/passkeys';
 import { useProvider } from '@/hooks/useProvider';
+import { accountsStore } from '@/stores/accounts';
+import { keyStore } from '@/stores/keystore';
 import { addMessage } from '@/stores/messages';
 import {
-  sessionsStore,
   addSession,
-  updateSessionStatus,
-  updateSessionActivity,
   Session,
+  sessionsStore,
+  updateSessionActivity,
+  updateSessionStatus,
 } from '@/stores/sessions';
+import { decodeAddress } from '@/utils/algorand';
+import { toUrlSafe } from '@/utils/base64';
+import type { KeyData } from '@algorandfoundation/keystore';
+import { encodeAddress } from '@algorandfoundation/keystore';
+import {
+  decodeAssertionRequestOptions,
+  encodeCredential,
+  fromBase64Url,
+  SignalClient,
+  toBase64URL,
+} from '@algorandfoundation/liquid-client';
+import { commit, fetchSecret, getMasterKey } from '@algorandfoundation/react-native-keystore';
+import { useStore } from '@tanstack/react-store';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, NativeModules } from 'react-native';
 
 interface UseConnectionResult {
   session: Session | undefined;
@@ -223,7 +222,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
               : storedOrigin;
             const currentHost = origin.includes('://') ? new URL(origin).host : origin;
             return storedHost === currentHost;
-          } catch (e) {
+          } catch {
             return storedOrigin === origin;
           }
         });
@@ -281,7 +280,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             requestId,
             origin,
             type: 'algorand',
-            address: encodeAddress(foundKey?.publicKey!),
+            address: encodeAddress(foundKey?.publicKey),
             signature: toBase64URL(await key.store.sign(foundKey.id, challenge)),
             device: 'Demo Web Wallet',
           };
@@ -358,7 +357,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           //@ts-ignore
           encodedCredential.clientExtensionResults = {
             //@ts-ignore
-            ...(encodedCredential.clientExtensionResults || {}),
+            ...encodedCredential.clientExtensionResults,
             liquid: liquidOptions,
           };
 
@@ -427,7 +426,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             requestId,
             origin: origin,
             type: 'algorand',
-            address: encodeAddress(foundKey?.publicKey!),
+            address: encodeAddress(foundKey?.publicKey),
             signature: toBase64URL(await key.store.sign(foundKey.id, challenge)),
             device: 'Demo Web Wallet',
           };
