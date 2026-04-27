@@ -1,4 +1,3 @@
-import { KeystoreAccount } from '@algorandfoundation/accounts-keystore-extension';
 import {
   Account,
   AccountStoreOptions,
@@ -17,7 +16,7 @@ export interface AlgorandAccountsExtensionOptions
     hooks?: HookCollection<any>;
   };
   accounts: {
-    store: Store<AccountStoreState<KeystoreAccount>>;
+    store: Store<AccountStoreState<Account>>;
     hooks: HookCollection<any>;
   };
 }

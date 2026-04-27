@@ -1,4 +1,4 @@
-import { AccountAsset } from '@/extensions/accounts';
+import { AccountAsset } from '@algorandfoundation/accounts-store';
 import { AlgorandSubscriber } from '@algorandfoundation/algokit-subscriber';
 import { AlgorandClient } from '@algorandfoundation/algokit-utils';
 
