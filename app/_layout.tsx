@@ -55,6 +55,7 @@ const provider = new ReactNativeProvider(
       authentication: biometricOptions,
     },
     algorand: {
+      network: process.env.EXPO_PUBLIC_GENESIS_ID ?? 'mainnet-v1.0',
       algodConfig: {
         token: process.env.EXPO_PUBLIC_ALGOD_TOKEN ?? '',
         server: process.env.EXPO_PUBLIC_ALGOD_SERVER || 'https://mainnet-api.4160.nodely.dev',

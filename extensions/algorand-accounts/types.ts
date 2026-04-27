@@ -12,6 +12,8 @@ import { HookCollection } from 'before-after-hook';
 export interface AlgorandAccountsExtensionOptions
   extends ExtensionOptions, KeyStoreOptions, AccountStoreOptions<Account> {
   algorand: {
+    /* Genesis ID e.g. testnet-v1.0 */
+    network: string;
     algodConfig: AlgoClientConfig;
     hooks?: HookCollection<any>;
   };
