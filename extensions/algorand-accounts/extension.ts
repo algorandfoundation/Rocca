@@ -6,7 +6,7 @@ import { Account, AccountAsset, AccountStoreState } from '@algorandfoundation/ac
 import { AlgorandClient } from '@algorandfoundation/algokit-utils';
 import { encodeAddress, Key, KeyStoreState, XHDDerivedKeyData } from '@algorandfoundation/keystore';
 import { base64 } from '@scure/base';
-import { Store } from '@tanstack/react-store';
+import { Store } from '@tanstack/store';
 import Hook from 'before-after-hook';
 import {
   AlgorandAccount,
