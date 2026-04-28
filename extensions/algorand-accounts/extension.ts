@@ -92,7 +92,7 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
     // Add algorand accounts for added keys
     await Promise.all(
       addedKeys.map(async (k) => {
-        if (k.type === 'hd-derived-ed25519' && k.publicKey) {
+        if (k.type === 'hd-derived-ed25519' && k.publicKey && k.metadata?.context === 0) {
           const address = base64.encode(k.publicKey);
 
           console.log(`Checking algorand account balances for key ${k.id}-${k.type}... ${address}`);
@@ -105,12 +105,6 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
             r = await getAlgorandBalances(algorandClient, algorandAddress);
           } catch (error) {
             console.error('Failed to fetch algorand balances for address:', algorandAddress, error);
-            return;
-          }
-
-          // Only treat accounts with balance > 0.1 ALGO as active accounts to add to the store
-          if (r.balance < 100000n) {
-            console.log(`Balance < 0.1 ALGO found for address: ${address}, skipping...`);
             return;
           }
 
