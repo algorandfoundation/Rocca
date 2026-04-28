@@ -48,7 +48,7 @@ export default function AccountsScreen() {
                   <Text style={styles.balance}>
                     ${account.balance.toString()}{' '}
                     {account.assets?.length ? `(${account.assets.length} assets)` : ''}
-                    {account.assets.map(
+                    {account.assets?.map(
                       (asset) => `\n- ${asset.name}: ${asset.balance.toString()}`,
                     )}
                   </Text>
