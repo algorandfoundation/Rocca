@@ -1,33 +1,21 @@
-import { createContext, type ReactNode } from 'react';
 import { Provider } from '@algorandfoundation/wallet-provider';
+import { createContext, type ReactNode } from 'react';
 
-import { WithKeyStore } from '@algorandfoundation/react-native-keystore';
+import { AlgorandAccount, WithAlgorandAccounts } from '@/extensions/algorand-accounts';
+import { Identity, IdentityStoreExtension, WithIdentityStore } from '@/extensions/identities';
+import { WithIdentitiesKeystore } from '@/extensions/identities-keystore';
+import { Passkey, PasskeyStoreExtension, WithPasskeyStore } from '@/extensions/passkeys';
+import { WithPasskeysKeystore } from '@/extensions/passkeys-keystore';
+import type { keyStoreHooks } from '@/stores/before-after';
+import { KeystoreAccount } from '@algorandfoundation/accounts-keystore-extension';
 import {
   Account,
   AccountStoreExtension,
   WithAccountStore,
 } from '@algorandfoundation/accounts-store';
-import {
-  Identity,
-  IdentityStoreApi,
-  IdentityStoreExtension,
-  WithIdentityStore,
-} from '@/extensions/identities';
-import {
-  Passkey,
-  PasskeyStoreApi,
-  PasskeyStoreExtension,
-  WithPasskeyStore,
-} from '@/extensions/passkeys';
-import type { KeyStoreAPI, Key } from '@algorandfoundation/keystore';
-import { type LogMessage, WithLogStore, type LogStoreApi } from '@algorandfoundation/log-store';
-import type { keyStoreHooks } from '@/stores/before-after';
-import {
-  KeystoreAccount,
-  WithAccountsKeystore,
-} from '@algorandfoundation/accounts-keystore-extension';
-import { WithIdentitiesKeystore } from '@/extensions/identities-keystore';
-import { WithPasskeysKeystore } from '@/extensions/passkeys-keystore';
+import type { Key, KeyStoreAPI } from '@algorandfoundation/keystore';
+import { WithLogStore, type LogMessage, type LogStoreApi } from '@algorandfoundation/log-store';
+import { WithKeyStore } from '@algorandfoundation/react-native-keystore';
 
 export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXTENSIONS> {
   static EXTENSIONS = [
@@ -36,9 +24,9 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithAccountStore,
     WithIdentityStore,
     WithPasskeyStore,
-    WithAccountsKeystore,
     WithPasskeysKeystore,
     WithIdentitiesKeystore,
+    WithAlgorandAccounts,
   ] as const;
 
   keys!: Key[];
@@ -48,7 +36,7 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
   logs!: LogMessage[];
   status!: string;
 
-  account!: AccountStoreExtension<Account | KeystoreAccount>['account'];
+  account!: AccountStoreExtension<Account | KeystoreAccount | AlgorandAccount>['account'];
   identity!: IdentityStoreExtension['identity'];
   passkey!: PasskeyStoreExtension['passkey'];
   // The generic Keystore Interface

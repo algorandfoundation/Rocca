@@ -1,9 +1,10 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useProvider } from '@/hooks/useProvider';
+import { encodeAddress } from '@algorandfoundation/keystore';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Stack, useRouter } from 'expo-router';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AccountsScreen() {
   const router = useRouter();
@@ -40,9 +41,17 @@ export default function AccountsScreen() {
                 </View>
                 <View style={styles.details}>
                   <Text style={styles.address} numberOfLines={1} ellipsizeMode="middle">
-                    {account.address}
+                    {account.type === 'algorand-account'
+                      ? encodeAddress(Buffer.from(account.address, 'base64'))
+                      : account.address}
                   </Text>
-                  <Text style={styles.balance}>${account.balance.toString()}</Text>
+                  <Text style={styles.balance}>
+                    ${account.balance.toString()}{' '}
+                    {account.assets?.length ? `(${account.assets.length} assets)` : ''}
+                    {account.assets?.map(
+                      (asset) => `\n- ${asset.name}: ${asset.balance.toString()}`,
+                    )}
+                  </Text>
                 </View>
                 <TouchableOpacity onPress={() => alert('Address copied!')}>
                   <MaterialIcons name="content-copy" size={20} color="#64748B" />

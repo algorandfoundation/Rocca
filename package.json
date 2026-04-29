@@ -30,6 +30,8 @@
   "dependencies": {
     "@algorandfoundation/accounts-keystore-extension": "^1.0.0-canary.4",
     "@algorandfoundation/accounts-store": "^1.0.0-canary.2",
+    "@algorandfoundation/algokit-subscriber": "^3.2.0",
+    "@algorandfoundation/algokit-utils": "^9.2.0",
     "@algorandfoundation/keystore": "^1.0.0-canary.15",
     "@algorandfoundation/liquid-client": "1.0.0-canary.3",
     "@algorandfoundation/log-store": "^1.0.0-canary.3",
@@ -98,6 +100,9 @@
     "postinstall-postinstall": "^2.1.0",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.8.3"
+  },
+  "optionalDependencies": {
+    "@oxfmt/binding-linux-x64-gnu": "0.44.0"
   },
   "overrides": {
     "@algorandfoundation/keystore": "^1.0.0-canary.15",

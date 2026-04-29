@@ -94,6 +94,18 @@ The following extensions are used to provide the wallet's functionality:
   - `log.error(message: string)`: Add an error log entry.
   - `log.clear()`: Remove all log entries.
 
+### 5. AlgorandAccounts Extension (`@/extensions/algorand-accounts`)
+
+- **Purpose**: Automatically discovers and manages Algorand blockchain accounts associated with generated keys, providing real-time balance tracking and transaction signing capabilities.
+- **Functionality**:
+  - Monitors KeyStore for new Ed25519 keys and checks if they correspond to funded Algorand accounts (balance > 0.1 ALGO).
+  - Automatically adds discovered Algorand accounts to the AccountStore with balance and asset information.
+  - Provides a `sign(txns: Uint8Array[])` method on account objects for signing Algorand transactions.
+  - Subscribes to real-time balance changes for all Algorand accounts using `AlgorandSubscriber`.
+  - Automatically updates account balances and assets when blockchain changes are detected.
+  - Removes Algorand accounts when their associated keys are deleted from the KeyStore.
+  - Supports custom hooks for transaction signing operations.
+
 ## Suggested Extensions (New)
 
 To further integrate with identity primitives, the following extensions are suggested:

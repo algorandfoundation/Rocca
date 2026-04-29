@@ -1,19 +1,19 @@
+import { bootstrap } from '@/lib/bootstrap';
+import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
+import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
+import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
+import { accountsStore } from '@/stores/accounts';
+import { keyStoreHooks } from '@/stores/before-after';
+import { identitiesStore } from '@/stores/identities';
+import { keyStore } from '@/stores/keystore';
+import { passkeysStore } from '@/stores/passkeys';
+import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
+import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 import { useEventListener } from 'expo';
 import { Stack } from 'expo-router';
-import { install } from 'react-native-quick-crypto';
-import { keyStore } from '@/stores/keystore';
-import { keyStoreHooks } from '@/stores/before-after';
-import { accountsStore } from '@/stores/accounts';
-import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
-import { identitiesStore } from '@/stores/identities';
-import { passkeysStore } from '@/stores/passkeys';
-import { registerGlobals } from 'react-native-webrtc';
-import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
-import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
-import { bootstrap } from '@/lib/bootstrap';
-import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import React from 'react';
-import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
+import { install } from 'react-native-quick-crypto';
+import { registerGlobals } from 'react-native-webrtc';
 
 globalPolyfill();
 registerGlobals();
@@ -53,6 +53,14 @@ const provider = new ReactNativeProvider(
       store: keyStore,
       hooks: keyStoreHooks,
       authentication: biometricOptions,
+    },
+    algorand: {
+      network: process.env.EXPO_PUBLIC_GENESIS_ID ?? 'mainnet-v1.0',
+      algodConfig: {
+        token: process.env.EXPO_PUBLIC_ALGOD_TOKEN ?? '',
+        server: process.env.EXPO_PUBLIC_ALGOD_SERVER || 'https://mainnet-api.4160.nodely.dev',
+        port: process.env.EXPO_PUBLIC_ALGOD_PORT ? Number(process.env.EXPO_PUBLIC_ALGOD_PORT) : 443,
+      },
     },
   },
 );
