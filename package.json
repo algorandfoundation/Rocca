@@ -102,6 +102,9 @@
     "react-test-renderer": "19.1.0",
     "typescript": "~5.8.3"
   },
+  "optionalDependencies": {
+    "@oxfmt/binding-linux-x64-gnu": "0.44.0"
+  },
   "overrides": {
     "@algorandfoundation/keystore": "^1.0.0-canary.15",
     "lightningcss": "1.30.1",
