@@ -1,3 +1,4 @@
+import theme from '@/features/world-chess/theme/theme';
 import { bootstrap } from '@/lib/bootstrap';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
@@ -12,6 +13,7 @@ import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey
 import { useEventListener } from 'expo';
 import { Stack } from 'expo-router';
 import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { install } from 'react-native-quick-crypto';
 import { registerGlobals } from 'react-native-webrtc';
 
@@ -91,10 +93,30 @@ export default function RootLayout() {
   });
 
   return (
-    <PreventScreenshotProvider>
-      <WalletProvider provider={provider}>
-        <Stack />
-      </WalletProvider>
-    </PreventScreenshotProvider>
+    <GestureHandlerRootView>
+      <PreventScreenshotProvider>
+        <WalletProvider provider={provider}>
+          <Stack
+            initialRouteName="auth/login"
+            screenOptions={{
+              headerShown: true,
+              headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] as string },
+              headerTintColor: theme.semantic.fg['brand-secondary'] as string,
+              headerTitleStyle: {
+                color: theme.semantic.fg['high-emphasis'] as string,
+                fontFamily: theme.primitives.font.family.header,
+                fontSize: theme.primitives.font.size['h5'],
+              },
+              headerBackTitle: 'Back',
+            }}
+          >
+            <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+            <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+            <Stack.Screen name="events" options={{ title: 'Events' }} />
+            <Stack.Screen name="games" options={{ title: 'Games' }} />
+          </Stack>
+        </WalletProvider>
+      </PreventScreenshotProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -2,6 +2,10 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
+if (!config.resolver.assetExts.includes('ttc')) {
+  config.resolver.assetExts.push('ttc');
+}
+
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'crypto' || moduleName === 'node:crypto') {
     // when importing crypto, resolve to react-native-quick-crypto

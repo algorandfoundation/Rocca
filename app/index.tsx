@@ -1,19 +1,36 @@
-import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Redirect } from 'expo-router';
-import Constants from 'expo-constants';
-import { useStore } from '@tanstack/react-store';
-import { logsStore } from '@/stores/logs';
 import Logo from '@/components/Logo';
 import { useProvider } from '@/hooks/useProvider';
+import { logsStore } from '@/stores/logs';
+import { useStore } from '@tanstack/react-store';
+import Constants from 'expo-constants';
+import { useFonts } from 'expo-font';
+import { Redirect } from 'expo-router';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+
 export default function Index() {
-  const { keys, status } = useProvider();
+  const { status } = useProvider();
   const logs = useStore(logsStore, (state) => state.logs);
   const lastLog = logs.length > 0 ? logs[0].message : 'Initializing...';
 
   const config = Constants.expoConfig?.extra?.provider || {
     primaryColor: '#3B82F6',
   };
+
+  const [loaded] = useFonts({
+    'PP Right Grotesk Tall Medium': require('../assets/fonts/PP-Right-Grotesk-Tall-Medium.ttf'),
+    Gerbera: require('../assets/fonts/Gerbera.ttc'),
+  });
+
+  if (!loaded) {
+    return (
+      <View style={styles.container}>
+        <Logo size={100} style={styles.logo} />
+        <ActivityIndicator size="large" color={config.primaryColor} />
+        <Text style={styles.text}>Loading fonts...</Text>
+      </View>
+    );
+  }
 
   if (status === 'loading') {
     return (
@@ -28,8 +45,7 @@ export default function Index() {
     );
   }
 
-  if (keys.length > 0) return <Redirect href="/landing" />;
-  return <Redirect href="/onboarding" />;
+  return <Redirect href="/auth/login" />;
 }
 
 const styles = StyleSheet.create({
