@@ -1,3 +1,6 @@
+// This file is auto-generated. Do not edit manually.
+// Run: node scripts/build-theme.js
+
 const primitives = {
   color: {
     brand: {
@@ -199,167 +202,65 @@ const primitives = {
       'p-xs': 0,
     },
   },
-};
+} as const;
 
-const semanticRefs = {
+const semantic = {
   fg: {
-    black: {
-      $ref: 'color.neutral.Black',
-    },
-    white: {
-      $ref: 'color.neutral.White',
-    },
-    'high-emphasis': {
-      $ref: 'color.neutral.White',
-    },
-    'medium-emphasis': {
-      $ref: 'color.neutral.40',
-    },
-    'low-emphasis': {
-      $ref: 'color.neutral.60',
-    },
-    'lowest-emphasis': {
-      $ref: 'color.neutral.70',
-    },
-    disabled: {
-      $ref: 'color.neutral.80',
-    },
-    placeholder: {
-      $ref: 'color.neutral.50',
-    },
-    label: {
-      $ref: 'color.neutral.15',
-    },
-    'brand-primary': {
-      $ref: 'color.brand.primary',
-    },
-    'brand-secondary': {
-      $ref: 'color.brand.secondary',
-    },
-    'brand-tertiary': {
-      $ref: 'color.brand.tertiary',
-    },
-    'inverse-high-emphasis': {
-      $ref: 'color.neutral.Black',
-    },
-    'inverse-medium-emphasis': {
-      $ref: 'color.neutral.60',
-    },
-    'inverse-low-emphasis': {
-      $ref: 'color.neutral.50',
-    },
-    'inverse-lowest-emphasis': {
-      $ref: 'color.neutral.40',
-    },
-    'inverse-disabled': {
-      $ref: 'color.neutral.30',
-    },
-    'inverse-brand-primary': {
-      $ref: 'color.brand.primary-alpha',
-    },
-    'inverse-brand-secondary': {
-      $ref: 'color.brand.secondary-alpha',
-    },
-    'inverse-brand-tertiary': {
-      $ref: 'color.brand.tertiary-alpha',
-    },
-    information: {
-      $ref: 'color.information.40',
-    },
-    success: {
-      $ref: 'color.success.40',
-    },
-    warning: {
-      $ref: 'color.warning.40',
-    },
-    error: {
-      $ref: 'color.error.40',
-    },
+    black: '#000000',
+    white: '#FFFFFF',
+    'high-emphasis': '#FFFFFF',
+    'medium-emphasis': '#8A8A8A',
+    'low-emphasis': '#575757',
+    'lowest-emphasis': '#454545',
+    disabled: '#333333',
+    placeholder: '#757575',
+    label: '#DBDBDB',
+    'brand-primary': '#BCFE00',
+    'brand-secondary': '#A7815A',
+    'brand-tertiary': '#FF6136',
+    'inverse-high-emphasis': '#000000',
+    'inverse-medium-emphasis': '#575757',
+    'inverse-low-emphasis': '#757575',
+    'inverse-lowest-emphasis': '#8A8A8A',
+    'inverse-disabled': '#B3B3B3',
+    'inverse-brand-primary': 'rgba(188, 254, 0, 0.16)',
+    'inverse-brand-secondary': 'rgba(167, 129, 90, 0.16)',
+    'inverse-brand-tertiary': 'rgba(255, 97, 54, 0.16)',
+    information: '#379CDB',
+    success: '#339D73',
+    warning: '#FFD033',
+    error: '#FF3333',
   },
   bg: {
-    'app-bg': {
-      $ref: 'color.neutral.Black',
-    },
-    'surface-1': {
-      $ref: 'color.neutral.85',
-    },
-    overlay: {
-      $ref: 'color.neutral.Overlay',
-    },
-    'brand-primary': {
-      $ref: 'color.brand.primary',
-    },
-    'brand-secondary': {
-      $ref: 'color.brand.secondary',
-    },
-    'brand-tertiary': {
-      $ref: 'color.brand.tertiary',
-    },
-    'inverse-brand-primary': {
-      $ref: 'color.brand.primary-alpha',
-    },
-    'inverse-brand-secondary': {
-      $ref: 'color.brand.secondary-alpha',
-    },
-    'inverse-brand-tertiary': {
-      $ref: 'color.brand.tertiary-alpha',
-    },
-    disabled: {
-      $ref: 'color.neutral.75',
-    },
-    information: {
-      $ref: 'color.information.95',
-    },
-    success: {
-      $ref: 'color.success.95',
-    },
-    warning: {
-      $ref: 'color.warning.95',
-    },
-    error: {
-      $ref: 'color.error.95',
-    },
+    'app-bg': '#000000',
+    'surface-1': '#292929',
+    overlay: 'rgba(0, 0, 0, 0.5)',
+    'brand-primary': '#BCFE00',
+    'brand-secondary': '#A7815A',
+    'brand-tertiary': '#FF6136',
+    'inverse-brand-primary': 'rgba(188, 254, 0, 0.16)',
+    'inverse-brand-secondary': 'rgba(167, 129, 90, 0.16)',
+    'inverse-brand-tertiary': 'rgba(255, 97, 54, 0.16)',
+    disabled: '#3D3D3D',
+    information: '#011522',
+    success: '#00120B',
+    warning: '#291F00',
+    error: '#240000',
   },
   stroke: {
-    transparent: {
-      $ref: 'color.neutral.Transparent',
-    },
-    'high-emphasis': {
-      $ref: 'color.neutral.White',
-    },
-    'medium-emphasis': {
-      $ref: 'color.neutral.40',
-    },
-    'low-emphasis': {
-      $ref: 'color.neutral.60',
-    },
-    'lowest-emphasis': {
-      $ref: 'color.neutral.70',
-    },
-    disabled: {
-      $ref: 'color.neutral.75',
-    },
-    'brand-primary': {
-      $ref: 'color.brand.primary',
-    },
-    'brand-secondary': {
-      $ref: 'color.brand.secondary',
-    },
-    'brand-tertiary': {
-      $ref: 'color.brand.tertiary',
-    },
-    information: {
-      $ref: 'color.information.40',
-    },
-    warning: {
-      $ref: 'color.warning.40',
-    },
-    success: {
-      $ref: 'color.success.40',
-    },
-    error: {
-      $ref: 'color.error.40',
-    },
+    transparent: 'rgba(0, 0, 0, 0)',
+    'high-emphasis': '#FFFFFF',
+    'medium-emphasis': '#8A8A8A',
+    'low-emphasis': '#575757',
+    'lowest-emphasis': '#454545',
+    disabled: '#3D3D3D',
+    'brand-primary': '#BCFE00',
+    'brand-secondary': '#A7815A',
+    'brand-tertiary': '#FF6136',
+    information: '#379CDB',
+    warning: '#FFD033',
+    success: '#339D73',
+    error: '#FF3333',
   },
   shadow: {
     'shadow-lg_03': 'rgba(10, 13, 18, 0.04)',
@@ -380,111 +281,14 @@ const semanticRefs = {
     'shadow-lg_02': 'rgba(10, 13, 18, 0.03)',
     'shadow-xl_02': 'rgba(10, 13, 18, 0.03)',
   },
-};
-
-type PrimitiveTheme = typeof primitives;
-type SemanticReference = { $ref: string };
-type ThemePrimitive = string | number;
-type ThemeNode = ThemePrimitive | SemanticReference | ThemeObject | ThemeNode[];
-type ThemeObject = { [key: string]: ThemeNode };
-
-type ResolveSemanticRefs<T> = T extends SemanticReference
-  ? ThemePrimitive
-  : T extends readonly (infer U)[]
-    ? ResolveSemanticRefs<U>[]
-    : T extends object
-      ? { [K in keyof T]: ResolveSemanticRefs<T[K]> }
-      : T;
-
-export type WorldChessPrimitives = PrimitiveTheme;
-export type WorldChessSemanticRefs = typeof semanticRefs;
-export type WorldChessSemantic = ResolveSemanticRefs<WorldChessSemanticRefs>;
-
-function deepGet(obj: unknown, pathStr: string): unknown {
-  return pathStr
-    .split('.')
-    .reduce<unknown>(
-      (acc, key) =>
-        typeof acc === 'object' && acc !== null ? acc[key as keyof typeof acc] : undefined,
-      obj,
-    );
-}
-
-function isSemanticReference(node: unknown): node is SemanticReference {
-  return (
-    typeof node === 'object' && node !== null && '$ref' in node && typeof node.$ref === 'string'
-  );
-}
-
-function resolveSemantic<T extends ThemeNode>(
-  node: T,
-  source: PrimitiveTheme,
-): ResolveSemanticRefs<T> {
-  if (Array.isArray(node)) {
-    return node.map((item) => resolveSemantic(item, source)) as ResolveSemanticRefs<T>;
-  }
-
-  if (typeof node === 'object' && node !== null) {
-    if (isSemanticReference(node) && Object.keys(node).length === 1) {
-      const resolved = deepGet(source, node.$ref);
-
-      if (resolved === undefined) {
-        throw new Error('Unresolved semantic reference: ' + node.$ref);
-      }
-
-      return resolved as ResolveSemanticRefs<T>;
-    }
-
-    const out: Record<string, unknown> = {};
-
-    for (const key in node as Record<string, ThemeNode>) {
-      out[key] = resolveSemantic((node as Record<string, ThemeNode>)[key], source);
-    }
-
-    return out as ResolveSemanticRefs<T>;
-  }
-
-  return node as ResolveSemanticRefs<T>;
-}
-
-const semantic = resolveSemantic(semanticRefs, primitives);
-
-type ThemeData = {
-  primitives: typeof primitives;
-  semantic: typeof semantic;
-  semanticRefs: typeof semanticRefs;
-};
-
-type DotJoin<K extends string, P extends string> = `${K}.${P}`;
-
-type Paths<T> = T extends object
-  ? {
-      [K in Extract<keyof T, string>]: T[K] extends object ? K | DotJoin<K, Paths<T[K]>> : K;
-    }[Extract<keyof T, string>]
-  : never;
-
-type PathValue<T, P extends string> = P extends `${infer K}.${infer Rest}`
-  ? K extends keyof T
-    ? PathValue<T[K], Rest>
-    : never
-  : P extends keyof T
-    ? T[P]
-    : never;
-
-export type ThemePath = Paths<ThemeData>;
-
-const themeData: ThemeData = {
-  primitives,
-  semantic,
-  semanticRefs,
-};
+} as const;
 
 const theme = {
-  ...themeData,
-  get<P extends ThemePath>(path: P): PathValue<ThemeData, P> {
-    return deepGet(themeData, path) as PathValue<ThemeData, P>;
-  },
+  primitives,
+  semantic,
 };
 
 export type WorldChessTheme = typeof theme;
+export type WorldChessPrimitives = typeof primitives;
+export type WorldChessSemantic = typeof semantic;
 export default theme;

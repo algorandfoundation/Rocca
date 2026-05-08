@@ -1,14 +1,17 @@
 import theme from '@/features/world-chess/theme/theme';
-import { Image, ImageSourcePropType, Text, TouchableOpacity } from 'react-native';
+import { ReactNode } from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 type Variant = 'primary' | 'secondary' | 'danger';
+type Size = 'small' | 'large';
 
 interface ButtonProps {
   label: string;
   onPress?: () => void;
   variant?: Variant;
-  leftIcon?: ImageSourcePropType;
-  rightIcon?: ImageSourcePropType;
+  size?: Size;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
   disabled?: boolean;
 }
 
@@ -47,11 +50,29 @@ export default function Button({
   label,
   onPress,
   variant = 'primary',
+  size = 'large',
   leftIcon,
   rightIcon,
   disabled = false,
 }: ButtonProps) {
   const styles = variantStyles[variant];
+
+  const sizeStyles =
+    size === 'small'
+      ? {
+          paddingVertical: theme.primitives.spacing['4'],
+          paddingHorizontal: theme.primitives.spacing['8'],
+          gap: 7,
+          fontSize: theme.primitives.font.size['p-md'],
+          fontWeight: '500' as const,
+        }
+      : {
+          paddingVertical: theme.primitives.spacing['12'],
+          paddingHorizontal: theme.primitives.spacing['12'],
+          gap: 0,
+          fontSize: theme.primitives.font.size['p-lg'],
+          fontWeight: 'bold' as const,
+        };
 
   return (
     <TouchableOpacity
@@ -63,48 +84,32 @@ export default function Button({
         borderColor: disabled ? 'transparent' : styles.borderColor,
         borderWidth: styles.borderWidth ?? 0,
         borderRadius: theme.primitives.radius['6'],
-        paddingVertical: theme.primitives.spacing['12'],
-        paddingHorizontal: theme.primitives.spacing['12'],
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingVertical: sizeStyles.paddingVertical,
+        paddingHorizontal: sizeStyles.paddingHorizontal,
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      {leftIcon ? (
-        <Image
-          source={leftIcon}
-          style={{
-            width: 20,
-            height: 20,
-            marginRight: theme.primitives.spacing['8'],
-            tintColor: disabled ? (theme.semantic.fg.disabled as string) : styles.iconTint,
-          }}
-          resizeMode="contain"
-        />
-      ) : null}
-      <Text
+      <View
         style={{
-          color: disabled ? (theme.semantic.fg.disabled as string) : styles.textColor,
-          fontFamily: theme.primitives.font.family.header,
-          fontWeight: 'bold',
-          fontSize: theme.primitives.font.size['p-lg'],
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: sizeStyles.gap,
         }}
       >
-        {label}
-      </Text>
-      {rightIcon ? (
-        <Image
-          source={rightIcon}
+        {leftIcon}
+        <Text
           style={{
-            width: 20,
-            height: 20,
-            marginLeft: theme.primitives.spacing['8'],
-            tintColor: disabled ? (theme.semantic.fg.disabled as string) : styles.iconTint,
+            color: disabled ? (theme.semantic.fg.disabled as string) : styles.textColor,
+            fontFamily: theme.primitives.font.family.header,
+            fontWeight: sizeStyles.fontWeight,
+            fontSize: sizeStyles.fontSize,
           }}
-          resizeMode="contain"
-        />
-      ) : null}
+        >
+          {label}
+        </Text>
+        {rightIcon}
+      </View>
     </TouchableOpacity>
   );
 }

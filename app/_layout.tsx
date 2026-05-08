@@ -113,7 +113,7 @@ export default function RootLayout() {
             <Stack.Screen name="auth/login" options={{ headerShown: false }} />
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />
             <Stack.Screen name="events" options={{ title: 'Events' }} />
-            <Stack.Screen name="games" options={{ title: 'Games' }} />
+            <Stack.Screen name="activities" options={{ title: 'Activities' }} />
           </Stack>
         </WalletProvider>
       </PreventScreenshotProvider>

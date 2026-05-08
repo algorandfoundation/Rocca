@@ -9,14 +9,10 @@ export default function BackNavButton({ onPress }: { onPress: () => void }) {
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       style={{ flexDirection: 'row', alignItems: 'center' }}
     >
-      <Entypo
-        name="chevron-small-left"
-        size={24}
-        color={theme.semantic.fg['brand-secondary'] as string}
-      />
+      <Entypo name="chevron-small-left" size={24} color={theme.semantic.fg['brand-secondary']} />
       <Text
         style={{
-          color: theme.semantic.fg['brand-secondary'] as string,
+          color: theme.semantic.fg['brand-secondary'],
           fontSize: theme.primitives.font.size['p-lg'],
           fontFamily: theme.primitives.font.family.p,
         }}
