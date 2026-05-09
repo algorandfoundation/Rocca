@@ -5,7 +5,7 @@ import theme from '@/features/world-chess/theme/theme';
 import MaterialIcons from '@expo/vector-icons/build/MaterialIcons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { ImageSourcePropType, Text, TouchableOpacity, View } from 'react-native';
 
 export interface Activity {
   id: string;
@@ -20,7 +20,7 @@ export interface Event {
   location: string;
   points: number;
   position: string;
-  logo: ReturnType<typeof require>;
+  logo: ImageSourcePropType;
 }
 
 interface ActivityTabsProps {
