@@ -1,6 +1,6 @@
 import ActivityItem, { Divider } from '@/components/world-chess/activity-item';
 import Button from '@/components/world-chess/button';
-import theme from '@/features/world-chess/theme/theme';
+import theme from '@/theme/theme';
 import { Entypo } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';

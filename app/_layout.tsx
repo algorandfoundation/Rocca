@@ -1,4 +1,3 @@
-import theme from '@/features/world-chess/theme/theme';
 import { bootstrap } from '@/lib/bootstrap';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
@@ -8,6 +7,7 @@ import { keyStoreHooks } from '@/stores/before-after';
 import { identitiesStore } from '@/stores/identities';
 import { keyStore } from '@/stores/keystore';
 import { passkeysStore } from '@/stores/passkeys';
+import theme from '@/theme/theme';
 import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 import { useEventListener } from 'expo';

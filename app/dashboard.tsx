@@ -1,6 +1,6 @@
 import ActivityTabs, { Activity, Event } from '@/components/world-chess/activity-tabs';
 import ProfileOverview from '@/components/world-chess/profile-overview';
-import theme from '@/features/world-chess/theme/theme';
+import theme from '@/theme/theme';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

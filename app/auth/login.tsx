@@ -4,7 +4,7 @@ import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 import { ChessCheckerboard } from '@/components/world-chess/checkerboard';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import theme from '../../features/world-chess/theme/theme';
+import theme from '../../theme/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 

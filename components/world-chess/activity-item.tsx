@@ -1,5 +1,5 @@
 import ItemBadge from '@/components/world-chess/item-badge';
-import theme from '@/features/world-chess/theme/theme';
+import theme from '@/theme/theme';
 import { Text, View } from 'react-native';
 
 const ITEM_HEIGHT = 80;

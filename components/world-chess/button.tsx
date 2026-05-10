@@ -1,4 +1,4 @@
-import theme from '@/features/world-chess/theme/theme';
+import theme from '@/theme/theme';
 import { ReactNode } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
