@@ -5,14 +5,14 @@ const ENV = process.env.APP_ENV || 'debug';
 const getBundleIdentifier = () => {
   switch (ENV) {
     case 'development':
-      return 'com.anonymous.chess-passport.dev';
+      return 'com.anonymous.chesspassport.dev';
     case 'testing':
-      return 'com.anonymous.chess-passport.test';
+      return 'com.anonymous.chesspassport.test';
     case 'production':
-      return 'com.anonymous.chess-passport';
+      return 'com.anonymous.chesspassport';
     case 'debug':
     default:
-      return 'com.anonymous.chess-passport.debug';
+      return 'com.anonymous.chesspassport.debug';
   }
 };
 
@@ -119,7 +119,7 @@ module.exports = {
       },
       router: {},
       eas: {
-        projectId: 'f1e6cb1b-642d-49fa-b276-53b4403f62d6',
+        projectId: '4a9f2713-f0ed-40f1-afb9-44cc5342fc3b',
       },
     },
     runtimeVersion: {
