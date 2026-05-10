@@ -25,16 +25,20 @@ export default function EventItem({ logo, name, location, points, position }: Ev
         height: ITEM_HEIGHT,
       }}
     >
-      <Image
-        source={logo}
+      <View
         style={{
           width: 40,
           height: 40,
           borderRadius: 20,
           marginRight: theme.primitives.spacing['12'],
+          backgroundColor: theme.semantic.bg['surface-1'] as string,
+          overflow: 'hidden',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
-        resizeMode="cover"
-      />
+      >
+        <Image source={logo} style={{ width: 40, height: 40 }} resizeMode="contain" />
+      </View>
       <View style={{ flex: 1 }}>
         <Text
           style={{
