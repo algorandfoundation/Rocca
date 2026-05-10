@@ -2,7 +2,7 @@ import ActivityTabs, { Activity, Event } from '@/components/world-chess/activity
 import ProfileOverview from '@/components/world-chess/profile-overview';
 import theme from '@/theme/theme';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
-import { Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const activities: Activity[] = [
@@ -81,8 +81,12 @@ export default function Dashboard() {
             gap: theme.primitives.spacing['12'],
           }}
         >
-          <Ionicons name="scan-outline" size={24} color={theme.semantic.fg['high-emphasis']} />
-          <Ionicons name="menu-outline" size={32} color={theme.semantic.fg['high-emphasis']} />
+          <Pressable onPress={() => Alert.alert('Not yet implemented!')} hitSlop={8}>
+            <Ionicons name="scan-outline" size={24} color={theme.semantic.fg['high-emphasis']} />
+          </Pressable>
+          <Pressable onPress={() => Alert.alert('Not yet implemented!')} hitSlop={8}>
+            <Ionicons name="menu-outline" size={32} color={theme.semantic.fg['high-emphasis']} />
+          </Pressable>
         </View>
       </View>
 
