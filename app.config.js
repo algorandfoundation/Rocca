@@ -5,38 +5,38 @@ const ENV = process.env.APP_ENV || 'debug';
 const getBundleIdentifier = () => {
   switch (ENV) {
     case 'development':
-      return 'com.anonymous.rocca.dev';
+      return 'com.anonymous.chess-passport.dev';
     case 'testing':
-      return 'com.anonymous.rocca.test';
+      return 'com.anonymous.chess-passport.test';
     case 'production':
-      return 'com.anonymous.rocca';
+      return 'com.anonymous.chess-passport';
     case 'debug':
     default:
-      return 'com.anonymous.rocca';
+      return 'com.anonymous.chess-passport.debug';
   }
 };
 
 const getAppName = () => {
   switch (ENV) {
     case 'development':
-      return 'Rocca Dev';
+      return 'Chess Passport Dev';
     case 'testing':
-      return 'Rocca Test';
+      return 'Chess Passport Test';
     case 'production':
-      return 'Rocca';
+      return 'Chess Passport';
     case 'debug':
     default:
-      return 'Rocca Debug';
+      return 'Chess Passport Debug';
   }
 };
 
 module.exports = {
   expo: {
     name: getAppName(),
-    slug: 'rocca',
+    slug: 'chess-passport',
     version: version,
     orientation: 'portrait',
-    scheme: 'rocca',
+    scheme: 'chess-passport',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
@@ -106,7 +106,7 @@ module.exports = {
     },
     extra: {
       provider: {
-        name: 'Rocca',
+        name: 'Chess Passport',
         primaryColor: '#3B82F6',
         secondaryColor: '#E1EFFF',
         accentColor: '#10B981',
