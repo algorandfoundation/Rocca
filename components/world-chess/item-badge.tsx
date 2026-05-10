@@ -18,6 +18,9 @@ export default function ItemBadge({
         paddingVertical: theme.primitives.spacing['4'],
         paddingHorizontal: theme.primitives.spacing['12'],
         marginLeft: theme.primitives.spacing['12'],
+        minWidth: 72,
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       <Text

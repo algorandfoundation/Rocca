@@ -15,7 +15,7 @@ export function Divider() {
     <View
       style={{
         height: 1,
-        backgroundColor: theme.semantic.stroke['lowest-emphasis'] as string,
+        backgroundColor: theme.semantic.stroke['lowest-emphasis'],
       }}
     />
   );
@@ -37,7 +37,7 @@ export default function ActivityItem({ title, datetime, points }: ActivityItemPr
       <View style={{ flex: 1 }}>
         <Text
           style={{
-            color: theme.semantic.fg['high-emphasis'] as string,
+            color: theme.semantic.fg['high-emphasis'],
             fontSize: theme.primitives.font.size['p-lg'],
             fontFamily: theme.primitives.font.family.header,
           }}
@@ -46,8 +46,8 @@ export default function ActivityItem({ title, datetime, points }: ActivityItemPr
         </Text>
         <Text
           style={{
-            color: theme.semantic.fg['medium-emphasis'] as string,
-            fontSize: theme.primitives.font.size['p-md'],
+            color: theme.semantic.fg['medium-emphasis'],
+            fontSize: theme.primitives.font.size['p-lg'],
             fontFamily: theme.primitives.font.family.p,
             marginTop: 2,
           }}

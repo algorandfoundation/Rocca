@@ -1,6 +1,7 @@
 import ActivityItem, { Divider } from '@/components/world-chess/activity-item';
-import BackNavButton from '@/components/world-chess/back-nav-button';
+import Button from '@/components/world-chess/button';
 import theme from '@/features/world-chess/theme/theme';
+import { Entypo } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 
@@ -24,7 +25,21 @@ export default function Activities() {
     <>
       <Stack.Screen
         options={{
-          headerLeft: () => <BackNavButton onPress={() => router.back()} />,
+          headerLeft: () => (
+            <Button
+              label="Back"
+              variant="link"
+              size="large"
+              onPress={() => router.back()}
+              leftIcon={
+                <Entypo
+                  name="chevron-small-left"
+                  size={24}
+                  color={theme.semantic.fg['brand-secondary']}
+                />
+              }
+            />
+          ),
         }}
       />
 

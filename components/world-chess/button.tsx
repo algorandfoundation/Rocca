@@ -2,7 +2,7 @@ import theme from '@/features/world-chess/theme/theme';
 import { ReactNode } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
-type Variant = 'primary' | 'secondary' | 'danger';
+type Variant = 'primary' | 'secondary' | 'danger' | 'link';
 type Size = 'small' | 'large';
 
 interface ButtonProps {
@@ -44,6 +44,11 @@ const variantStyles: Record<
     textColor: theme.semantic.fg.error as string,
     iconTint: theme.semantic.fg.error as string,
   },
+  link: {
+    backgroundColor: 'transparent',
+    textColor: theme.semantic.fg['brand-secondary'] as string,
+    iconTint: theme.semantic.fg['brand-secondary'] as string,
+  },
 };
 
 export default function Button({
@@ -83,8 +88,8 @@ export default function Button({
         backgroundColor: disabled ? (theme.semantic.bg.disabled as string) : styles.backgroundColor,
         borderColor: disabled ? 'transparent' : styles.borderColor,
         borderWidth: styles.borderWidth ?? 0,
-        borderRadius: theme.primitives.radius['6'],
-        paddingVertical: sizeStyles.paddingVertical,
+        borderRadius: variant === 'link' ? 0 : theme.primitives.radius['6'],
+        paddingVertical: variant === 'link' ? 0 : sizeStyles.paddingVertical,
         paddingHorizontal: sizeStyles.paddingHorizontal,
         opacity: disabled ? 0.5 : 1,
       }}

@@ -48,8 +48,8 @@ export default function EventItem({ logo, name, location, points, position }: Ev
         </Text>
         <Text
           style={{
-            color: theme.semantic.fg['medium-emphasis'] as string,
-            fontSize: theme.primitives.font.size['p-md'],
+            color: theme.semantic.fg['medium-emphasis'],
+            fontSize: theme.primitives.font.size['p-lg'],
             fontFamily: theme.primitives.font.family.p,
           }}
           numberOfLines={1}
@@ -58,14 +58,12 @@ export default function EventItem({ logo, name, location, points, position }: Ev
         </Text>
         <Text
           style={{
-            color: theme.semantic.fg['brand-primary'] as string,
-            fontSize: theme.primitives.font.size['p-sm'],
-            fontFamily: theme.primitives.font.family.numeric,
-            fontWeight: 'bold',
-            marginTop: 2,
+            color: theme.semantic.fg['medium-emphasis'],
+            fontSize: theme.primitives.font.size['p-lg'],
+            fontFamily: theme.primitives.font.family.p,
           }}
         >
-          +{points} pts
+          +{points} points
         </Text>
       </View>
       <ItemBadge label={position} />

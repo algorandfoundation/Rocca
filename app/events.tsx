@@ -1,9 +1,10 @@
 import { Divider } from '@/components/world-chess/activity-item';
-import BackNavButton from '@/components/world-chess/back-nav-button';
+import Button from '@/components/world-chess/button';
 import EventItem from '@/components/world-chess/event-item';
 import theme from '@/features/world-chess/theme/theme';
+import { Entypo } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { ImageSourcePropType, ScrollView, View } from 'react-native';
 
 const events: {
   id: string;
@@ -11,7 +12,7 @@ const events: {
   location: string;
   points: number;
   position: string;
-  logo: ReturnType<typeof require>;
+  logo: ImageSourcePropType;
 }[] = [
   {
     id: '1',
@@ -69,7 +70,21 @@ export default function Events() {
     <>
       <Stack.Screen
         options={{
-          headerLeft: () => <BackNavButton onPress={() => router.back()} />,
+          headerLeft: () => (
+            <Button
+              label="Back"
+              variant="link"
+              size="large"
+              onPress={() => router.back()}
+              leftIcon={
+                <Entypo
+                  name="chevron-small-left"
+                  size={24}
+                  color={theme.semantic.fg['brand-secondary']}
+                />
+              }
+            />
+          ),
         }}
       />
 
