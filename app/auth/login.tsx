@@ -51,6 +51,13 @@ export default function LoginScreen() {
       {/* Buttons section */}
       <View style={styles.buttonsSection}>
         <Button
+          label="Continue with Email"
+          variant="secondary"
+          onPress={() => {
+            router.push('/auth/email');
+          }}
+        />
+        <Button
           label="Continue with Google"
           variant="secondary"
           onPress={() => {

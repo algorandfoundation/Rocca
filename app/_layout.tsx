@@ -105,35 +105,43 @@ export default function RootLayout() {
     <GestureHandlerRootView>
       <BottomSheetModalProvider>
         <PreventScreenshotProvider>
-            <QueryClientProvider client={queryClient}>
-              <WalletProvider provider={provider}>
-                <Stack
-                  initialRouteName="index"
-                  screenOptions={{
-                    headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] },
-                    headerTintColor: theme.semantic.fg['brand-secondary'],
-                    headerTitleStyle: {
-                      color: theme.semantic.fg['high-emphasis'],
-                      fontFamily: theme.primitives.font.family.header,
-                      fontSize: theme.primitives.font.size['p-lg'],
-                    },
-                    headerTitleAlign: 'center', // Consistent position across Android and iOS
-                  }}
-                >
-                  <Stack.Screen name="index" options={{ headerShown: false }} />
-                  <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-                  <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="events"
-                    options={{ title: 'Events', headerLeft: () => <HeaderBackButton /> }}
-                  />
-                  <Stack.Screen
-                    name="activities"
-                    options={{ title: 'Activities', headerLeft: () => <HeaderBackButton /> }}
-                  />
-                </Stack>
-              </WalletProvider>
-            </QueryClientProvider>
+          <QueryClientProvider client={queryClient}>
+            <WalletProvider provider={provider}>
+              <Stack
+                initialRouteName="index"
+                screenOptions={{
+                  headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] },
+                  headerTintColor: theme.semantic.fg['brand-secondary'],
+                  headerTitleStyle: {
+                    color: theme.semantic.fg['high-emphasis'],
+                    fontFamily: theme.primitives.font.family.header,
+                    fontSize: theme.primitives.font.size['p-lg'],
+                  },
+                  headerTitleAlign: 'center', // Consistent position across Android and iOS
+                }}
+              >
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="auth/email"
+                  options={{ title: 'Sign in', headerLeft: () => <HeaderBackButton /> }}
+                />
+                <Stack.Screen
+                  name="auth/otp"
+                  options={{ title: 'Verify', headerLeft: () => <HeaderBackButton /> }}
+                />
+                <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="events"
+                  options={{ title: 'Events', headerLeft: () => <HeaderBackButton /> }}
+                />
+                <Stack.Screen
+                  name="activities"
+                  options={{ title: 'Activities', headerLeft: () => <HeaderBackButton /> }}
+                />
+              </Stack>
+            </WalletProvider>
+          </QueryClientProvider>
         </PreventScreenshotProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

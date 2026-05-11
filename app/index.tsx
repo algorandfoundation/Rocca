@@ -1,4 +1,5 @@
 import { useProvider } from '@/hooks/useProvider';
+import { useSession } from '@/hooks/useSession';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Redirect } from 'expo-router';
@@ -7,6 +8,11 @@ import React from 'react';
 
 export default function Index() {
   const { status } = useProvider();
+  const {
+    isAuthenticated,
+    isLoading: isSessionLoading,
+    isFetched: isSessionFetched,
+  } = useSession();
 
   /* Create consistent aliases for font family names to avoid issues across platforms and bundlers */
   const [loaded] = useFonts({
@@ -16,7 +22,11 @@ export default function Index() {
     ...Ionicons.font,
   });
 
-  const isReady = status !== 'loading' && loaded;
+  // Wait for fonts, provider, and the initial session probe to resolve before
+  // deciding where to send the user. `isFetched` flips true on both success
+  // and error, so a failing gateway still releases the splash (treated as
+  // unauthenticated).
+  const isReady = status !== 'loading' && loaded && (isSessionFetched || !isSessionLoading);
 
   React.useEffect(() => {
     if (isReady) {
@@ -28,5 +38,5 @@ export default function Index() {
     return null; // Don't render anything, keep splash visible
   }
 
-  return <Redirect href="/auth/login" />;
+  return <Redirect href={isAuthenticated ? '/dashboard' : '/auth/login'} />;
 }
