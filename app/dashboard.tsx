@@ -112,7 +112,6 @@ export default function Dashboard() {
           eloRating={profile.elo}
           progressPoints={profile.progressPoints}
           avatar={profile.avatar}
-          onSharePress={() => {}}
         />
         <ActivityTabs activities={activities} events={events} />
       </View>

@@ -11,6 +11,7 @@ import { passkeysStore } from '@/stores/passkeys';
 import theme from '@/theme/theme';
 import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useEventListener } from 'expo';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -18,6 +19,7 @@ import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { install } from 'react-native-quick-crypto';
 import { registerGlobals } from 'react-native-webrtc';
+
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
@@ -98,35 +100,37 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView>
-      <PreventScreenshotProvider>
-        <WalletProvider provider={provider}>
-          <Stack
-            initialRouteName="index"
-            screenOptions={{
-              headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] },
-              headerTintColor: theme.semantic.fg['brand-secondary'],
-              headerTitleStyle: {
-                color: theme.semantic.fg['high-emphasis'],
-                fontFamily: theme.primitives.font.family.header,
-                fontSize: theme.primitives.font.size['p-lg'],
-              },
-              headerTitleAlign: 'center', // Consistent position across Android and iOS
-            }}
-          >
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-            <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="events"
-              options={{ title: 'Events', headerLeft: () => <HeaderBackButton /> }}
-            />
-            <Stack.Screen
-              name="activities"
-              options={{ title: 'Activities', headerLeft: () => <HeaderBackButton /> }}
-            />
-          </Stack>
-        </WalletProvider>
-      </PreventScreenshotProvider>
+      <BottomSheetModalProvider>
+        <PreventScreenshotProvider>
+          <WalletProvider provider={provider}>
+            <Stack
+              initialRouteName="index"
+              screenOptions={{
+                headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] },
+                headerTintColor: theme.semantic.fg['brand-secondary'],
+                headerTitleStyle: {
+                  color: theme.semantic.fg['high-emphasis'],
+                  fontFamily: theme.primitives.font.family.header,
+                  fontSize: theme.primitives.font.size['p-lg'],
+                },
+                headerTitleAlign: 'center', // Consistent position across Android and iOS
+              }}
+            >
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+              <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="events"
+                options={{ title: 'Events', headerLeft: () => <HeaderBackButton /> }}
+              />
+              <Stack.Screen
+                name="activities"
+                options={{ title: 'Activities', headerLeft: () => <HeaderBackButton /> }}
+              />
+            </Stack>
+          </WalletProvider>
+        </PreventScreenshotProvider>
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }
