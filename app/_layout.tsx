@@ -12,11 +12,14 @@ import theme from '@/theme/theme';
 import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 import { useEventListener } from 'expo';
-import { Stack } from 'expo-router';
+import { SplashScreen, Stack } from 'expo-router';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { install } from 'react-native-quick-crypto';
 import { registerGlobals } from 'react-native-webrtc';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 globalPolyfill();
 registerGlobals();
