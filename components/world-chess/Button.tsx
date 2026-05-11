@@ -69,14 +69,12 @@ export default function Button({
           paddingHorizontal: theme.primitives.spacing['8'],
           gap: 7,
           fontSize: theme.primitives.font.size['p-md'],
-          fontWeight: '500' as const,
         }
       : {
           paddingVertical: theme.primitives.spacing['12'],
           paddingHorizontal: theme.primitives.spacing['12'],
           gap: 0,
           fontSize: theme.primitives.font.size['p-lg'],
-          fontWeight: 'bold' as const,
         };
 
   return (
@@ -107,7 +105,6 @@ export default function Button({
           style={{
             color: disabled ? (theme.semantic.fg.disabled as string) : styles.textColor,
             fontFamily: theme.primitives.font.family.header,
-            fontWeight: sizeStyles.fontWeight,
             fontSize: sizeStyles.fontSize,
           }}
         >
