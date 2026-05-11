@@ -66,6 +66,12 @@ module.exports = {
     plugins: [
       'expo-router',
       [
+        'expo-font',
+        {
+          fonts: ['./assets/fonts/PP-Right-Grotesk-Tall-Medium.ttf', './assets/fonts/Gerbera.ttf'],
+        },
+      ],
+      [
         'expo-image-picker',
         {
           photosPermission: 'The app accesses your photos to let you share them with your friends.',

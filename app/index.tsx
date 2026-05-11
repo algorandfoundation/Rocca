@@ -3,7 +3,6 @@ import { useProvider } from '@/hooks/useProvider';
 import { logsStore } from '@/stores/logs';
 import { useStore } from '@tanstack/react-store';
 import Constants from 'expo-constants';
-import { useFonts } from 'expo-font';
 import { Redirect } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
@@ -16,21 +15,6 @@ export default function Index() {
   const config = Constants.expoConfig?.extra?.provider || {
     primaryColor: '#3B82F6',
   };
-
-  const [loaded] = useFonts({
-    'PP Right Grotesk Tall Medium': require('../assets/fonts/PP-Right-Grotesk-Tall-Medium.ttf'),
-    Gerbera: require('../assets/fonts/Gerbera.ttc'),
-  });
-
-  if (!loaded) {
-    return (
-      <View style={styles.container}>
-        <Logo size={100} style={styles.logo} />
-        <ActivityIndicator size="large" color={config.primaryColor} />
-        <Text style={styles.text}>Loading fonts...</Text>
-      </View>
-    );
-  }
 
   if (status === 'loading') {
     return (
