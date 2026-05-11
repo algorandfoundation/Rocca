@@ -28,7 +28,6 @@ export default function ItemBadge({
           color,
           fontFamily: theme.primitives.font.family.numeric,
           fontSize: theme.primitives.font.size.h3,
-          fontWeight: 'bold',
         }}
       >
         {label}

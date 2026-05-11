@@ -99,15 +99,13 @@ export default function RootLayout() {
           <Stack
             initialRouteName="auth/login"
             screenOptions={{
-              headerShown: true,
-              headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] as string },
-              headerTintColor: theme.semantic.fg['brand-secondary'] as string,
+              headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] },
+              headerTintColor: theme.semantic.fg['brand-secondary'],
               headerTitleStyle: {
-                color: theme.semantic.fg['high-emphasis'] as string,
+                color: theme.semantic.fg['high-emphasis'],
                 fontFamily: theme.primitives.font.family.header,
                 fontSize: theme.primitives.font.size['h5'],
               },
-              headerBackTitle: 'Back',
             }}
           >
             <Stack.Screen name="auth/login" options={{ headerShown: false }} />

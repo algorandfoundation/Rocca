@@ -21,7 +21,6 @@ export default function EventItem({ logo, name, location, points, position }: Ev
         justifyContent: 'space-between',
         backgroundColor: 'rgba(255,255,255,0.02)',
         paddingVertical: theme.primitives.spacing['8'],
-        paddingHorizontal: theme.primitives.spacing['12'],
         height: ITEM_HEIGHT,
       }}
     >

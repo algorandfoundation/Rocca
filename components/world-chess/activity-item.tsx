@@ -30,7 +30,6 @@ export default function ActivityItem({ title, datetime, points }: ActivityItemPr
         justifyContent: 'space-between',
         backgroundColor: 'rgba(255,255,255,0.02)',
         paddingVertical: theme.primitives.spacing['8'],
-        paddingHorizontal: theme.primitives.spacing['12'],
         height: ITEM_HEIGHT,
       }}
     >

@@ -62,7 +62,7 @@ export default function Dashboard() {
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingVertical: theme.primitives.spacing['8'],
-          paddingHorizontal: theme.primitives.spacing['8'],
+          paddingHorizontal: theme.primitives.spacing['16'],
         }}
       >
         <Text
