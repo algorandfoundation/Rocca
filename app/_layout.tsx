@@ -105,8 +105,9 @@ export default function RootLayout() {
               headerTitleStyle: {
                 color: theme.semantic.fg['high-emphasis'],
                 fontFamily: theme.primitives.font.family.header,
-                fontSize: theme.primitives.font.size['h5'],
+                fontSize: theme.primitives.font.size['p-lg'],
               },
+              headerTitleAlign: 'center', // Consistent position across Android and iOS
             }}
           >
             <Stack.Screen name="auth/login" options={{ headerShown: false }} />
