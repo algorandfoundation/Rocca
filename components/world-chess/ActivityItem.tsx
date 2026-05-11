@@ -54,7 +54,7 @@ export default function ActivityItem({ title, datetime, points }: ActivityItemPr
           {datetime}
         </Text>
       </View>
-      <ItemBadge label={`+${points} pts`} />
+      <ItemBadge label={`+${points} pts`} variant="activity" />
     </View>
   );
 }

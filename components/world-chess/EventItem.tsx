@@ -69,7 +69,7 @@ export default function EventItem({ logo, name, location, points, position }: Ev
           +{points} points
         </Text>
       </View>
-      <ItemBadge label={position} />
+      <ItemBadge label={position} variant="event" />
     </View>
   );
 }

@@ -16,7 +16,7 @@ const events: {
     name: 'FIDE Grand Prix 2026',
     location: 'Berlin, Germany · May 1, 2026',
     points: 50,
-    position: '#1ST',
+    position: '# 1st',
     logo: require('../assets/images/layer2.png'),
   },
   {
@@ -24,7 +24,7 @@ const events: {
     name: 'Norway Chess 2026',
     location: 'Stavanger, Norway · Apr 12, 2026',
     points: 35,
-    position: '#2ND',
+    position: '# 2nd',
     logo: require('../assets/images/layer2.png'),
   },
   {
@@ -32,7 +32,7 @@ const events: {
     name: 'Tata Steel Chess 2026',
     location: 'Wijk aan Zee, Netherlands · Jan 18, 2026',
     points: 50,
-    position: '#1ST',
+    position: '# 3rd',
     logo: require('../assets/images/layer2.png'),
   },
   {
@@ -40,7 +40,7 @@ const events: {
     name: 'Sinquefield Cup 2025',
     location: 'St. Louis, USA · Sep 3, 2025',
     points: 20,
-    position: '#4TH',
+    position: '# 4th',
     logo: require('../assets/images/layer2.png'),
   },
   {
@@ -48,7 +48,7 @@ const events: {
     name: 'Grand Chess Tour 2025',
     location: 'Paris, France · Jul 20, 2025',
     points: 25,
-    position: '#3RD',
+    position: '# 3rd',
     logo: require('../assets/images/layer2.png'),
   },
   {
@@ -56,7 +56,7 @@ const events: {
     name: 'Candidates Tournament 2025',
     location: 'Toronto, Canada · Apr 5, 2025',
     points: 35,
-    position: '#2ND',
+    position: '# 2nd',
     logo: require('../assets/images/layer2.png'),
   },
 ];
