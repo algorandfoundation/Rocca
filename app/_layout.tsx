@@ -12,12 +12,12 @@ import theme from '@/theme/theme';
 import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 import { useEventListener } from 'expo';
-import { SplashScreen, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { install } from 'react-native-quick-crypto';
 import { registerGlobals } from 'react-native-webrtc';
-
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
@@ -101,7 +101,7 @@ export default function RootLayout() {
       <PreventScreenshotProvider>
         <WalletProvider provider={provider}>
           <Stack
-            initialRouteName="auth/login"
+            initialRouteName="index"
             screenOptions={{
               headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] },
               headerTintColor: theme.semantic.fg['brand-secondary'],
@@ -113,6 +113,7 @@ export default function RootLayout() {
               headerTitleAlign: 'center', // Consistent position across Android and iOS
             }}
           >
+            <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="auth/login" options={{ headerShown: false }} />
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />
             <Stack.Screen
