@@ -1,4 +1,4 @@
-import HeaderBackButton from '@/components/HeaderBackButton';
+import HeaderBackButton from '@/components/world-chess/HeaderBackButton';
 import { bootstrap } from '@/lib/bootstrap';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
