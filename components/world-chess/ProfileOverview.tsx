@@ -101,12 +101,11 @@ export default function ProfileOverview({
         enableDynamicSizing={false}
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: theme.semantic.bg['surface-1'] }}
-        handleIndicatorStyle={{ backgroundColor: theme.semantic.fg['low-emphasis'] }}
+        handleIndicatorStyle={{ display: 'none' }}
       >
         <BottomSheetView
           style={{
             paddingHorizontal: theme.primitives.spacing['16'],
-            paddingTop: theme.primitives.spacing['8'],
             paddingBottom: theme.primitives.spacing['32'],
           }}
         >
