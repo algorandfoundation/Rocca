@@ -55,7 +55,6 @@ export default function ActivityTabs({ activities, events }: ActivityTabsProps) 
                     : (theme.semantic.fg['medium-emphasis'] as string),
                   fontSize: theme.primitives.font.size.h4,
                   fontFamily: theme.primitives.font.family.header,
-                  fontWeight: isActive ? 'bold' : 'normal',
                   textTransform: 'capitalize',
                 }}
               >
