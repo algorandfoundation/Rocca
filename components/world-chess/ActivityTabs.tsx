@@ -77,7 +77,7 @@ export default function ActivityTabs({ activities, events }: ActivityTabsProps) 
             ))}
           </View>
           <Button
-            label="See all"
+            label="See All"
             variant="secondary"
             rightIcon={
               <MaterialIcons
@@ -106,7 +106,7 @@ export default function ActivityTabs({ activities, events }: ActivityTabsProps) 
             ))}
           </View>
           <Button
-            label="See all"
+            label="See All"
             variant="secondary"
             rightIcon={
               <MaterialIcons
