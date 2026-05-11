@@ -1,3 +1,4 @@
+import HeaderBackButton from '@/components/HeaderBackButton';
 import { bootstrap } from '@/lib/bootstrap';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
@@ -110,8 +111,14 @@ export default function RootLayout() {
           >
             <Stack.Screen name="auth/login" options={{ headerShown: false }} />
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-            <Stack.Screen name="events" options={{ title: 'Events' }} />
-            <Stack.Screen name="activities" options={{ title: 'Activities' }} />
+            <Stack.Screen
+              name="events"
+              options={{ title: 'Events', headerLeft: () => <HeaderBackButton /> }}
+            />
+            <Stack.Screen
+              name="activities"
+              options={{ title: 'Activities', headerLeft: () => <HeaderBackButton /> }}
+            />
           </Stack>
         </WalletProvider>
       </PreventScreenshotProvider>

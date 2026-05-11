@@ -1,4 +1,4 @@
-import ItemBadge from '@/components/world-chess/item-badge';
+import ItemBadge from '@/components/world-chess/ItemBadge';
 import theme from '@/theme/theme';
 import { Image, ImageSourcePropType, Text, View } from 'react-native';
 

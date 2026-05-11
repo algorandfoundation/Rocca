@@ -1,8 +1,5 @@
-import ActivityItem, { Divider } from '@/components/world-chess/activity-item';
-import Button from '@/components/world-chess/button';
+import ActivityItem, { Divider } from '@/components/world-chess/ActivityItem';
 import theme from '@/theme/theme';
-import { Entypo } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 
 const activities: {
@@ -20,43 +17,20 @@ const activities: {
 ];
 
 export default function Activities() {
-  const router = useRouter();
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Button
-              label="Back"
-              variant="link"
-              size="large"
-              onPress={() => router.back()}
-              leftIcon={
-                <Entypo
-                  name="chevron-small-left"
-                  size={24}
-                  color={theme.semantic.fg['brand-secondary']}
-                />
-              }
-            />
-          ),
-        }}
-      />
-
-      <ScrollView
-        style={{ flex: 1, backgroundColor: theme.semantic.bg['app-bg'] as string }}
-        contentContainerStyle={{
-          paddingHorizontal: theme.primitives.spacing['8'],
-          paddingVertical: theme.primitives.spacing['8'],
-        }}
-      >
-        {activities.map((item) => (
-          <View key={item.id}>
-            <ActivityItem title={item.title} datetime={item.datetime} points={item.points} />
-            <Divider />
-          </View>
-        ))}
-      </ScrollView>
-    </>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.semantic.bg['app-bg'] as string }}
+      contentContainerStyle={{
+        paddingHorizontal: theme.primitives.spacing['8'],
+        paddingVertical: theme.primitives.spacing['8'],
+      }}
+    >
+      {activities.map((item) => (
+        <View key={item.id}>
+          <ActivityItem title={item.title} datetime={item.datetime} points={item.points} />
+          <Divider />
+        </View>
+      ))}
+    </ScrollView>
   );
 }

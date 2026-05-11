@@ -1,7 +1,7 @@
-import Button from '@/components/world-chess/button';
+import Button from '@/components/world-chess/Button';
 import { Dimensions, Image, StyleSheet, Text, View } from 'react-native';
 
-import { ChessCheckerboard } from '@/components/world-chess/checkerboard';
+import { ChessCheckerboard } from '@/components/world-chess/Checkerboard';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import theme from '../../theme/theme';

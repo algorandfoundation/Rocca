@@ -1,9 +1,6 @@
-import { Divider } from '@/components/world-chess/activity-item';
-import Button from '@/components/world-chess/button';
-import EventItem from '@/components/world-chess/event-item';
+import { Divider } from '@/components/world-chess/ActivityItem';
+import EventItem from '@/components/world-chess/EventItem';
 import theme from '@/theme/theme';
-import { Entypo } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
 import { ImageSourcePropType, ScrollView, View } from 'react-native';
 
 const events: {
@@ -65,49 +62,26 @@ const events: {
 ];
 
 export default function Events() {
-  const router = useRouter();
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <Button
-              label="Back"
-              variant="link"
-              size="large"
-              onPress={() => router.back()}
-              leftIcon={
-                <Entypo
-                  name="chevron-small-left"
-                  size={24}
-                  color={theme.semantic.fg['brand-secondary']}
-                />
-              }
-            />
-          ),
-        }}
-      />
-
-      <ScrollView
-        style={{ flex: 1, backgroundColor: theme.semantic.bg['app-bg'] as string }}
-        contentContainerStyle={{
-          paddingHorizontal: theme.primitives.spacing['8'],
-          paddingVertical: theme.primitives.spacing['8'],
-        }}
-      >
-        {events.map((event) => (
-          <View key={event.id}>
-            <EventItem
-              logo={event.logo}
-              name={event.name}
-              location={event.location}
-              points={event.points}
-              position={event.position}
-            />
-            <Divider />
-          </View>
-        ))}
-      </ScrollView>
-    </>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.semantic.bg['app-bg'] as string }}
+      contentContainerStyle={{
+        paddingHorizontal: theme.primitives.spacing['8'],
+        paddingVertical: theme.primitives.spacing['8'],
+      }}
+    >
+      {events.map((event) => (
+        <View key={event.id}>
+          <EventItem
+            logo={event.logo}
+            name={event.name}
+            location={event.location}
+            points={event.points}
+            position={event.position}
+          />
+          <Divider />
+        </View>
+      ))}
+    </ScrollView>
   );
 }

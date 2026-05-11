@@ -1,6 +1,6 @@
-import ActivityItem, { Divider } from '@/components/world-chess/activity-item';
-import Button from '@/components/world-chess/button';
-import EventItem from '@/components/world-chess/event-item';
+import ActivityItem, { Divider } from '@/components/world-chess/ActivityItem';
+import Button from '@/components/world-chess/Button';
+import EventItem from '@/components/world-chess/EventItem';
 import theme from '@/theme/theme';
 import MaterialIcons from '@expo/vector-icons/build/MaterialIcons';
 import { useRouter } from 'expo-router';

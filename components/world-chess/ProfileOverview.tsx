@@ -1,5 +1,5 @@
-import Button from '@/components/world-chess/button';
-import StatCard from '@/components/world-chess/stat-card';
+import Button from '@/components/world-chess/Button';
+import StatCard from '@/components/world-chess/StatCard';
 import theme from '@/theme/theme';
 import MaterialIcons from '@expo/vector-icons/build/MaterialIcons';
 import { Image, ImageSourcePropType, Text, View } from 'react-native';

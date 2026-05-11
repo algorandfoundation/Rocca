@@ -1,5 +1,5 @@
-import ActivityTabs, { Activity, Event } from '@/components/world-chess/activity-tabs';
-import ProfileOverview from '@/components/world-chess/profile-overview';
+import ActivityTabs, { Activity, Event } from '@/components/world-chess/ActivityTabs';
+import ProfileOverview from '@/components/world-chess/ProfileOverview';
 import theme from '@/theme/theme';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { Alert, Pressable, Text, View } from 'react-native';
