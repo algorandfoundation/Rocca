@@ -1,6 +1,7 @@
 import Logo from '@/components/Logo';
 import { useProvider } from '@/hooks/useProvider';
 import { logsStore } from '@/stores/logs';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useStore } from '@tanstack/react-store';
 import Constants from 'expo-constants';
 import { useFonts } from 'expo-font';
@@ -21,6 +22,8 @@ export default function Index() {
   const [loaded] = useFonts({
     'PP-Right-Grotesk-Tall-Medium': require('../assets/fonts/PP-Right-Grotesk-Tall-Medium.ttf'),
     Gerbera: require('../assets/fonts/Gerbera.ttf'),
+    ...MaterialIcons.font,
+    ...Ionicons.font,
   });
 
   if (status === 'loading' || !loaded) {
