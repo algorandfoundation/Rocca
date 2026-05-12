@@ -1,6 +1,7 @@
 import ActivityTabs, { Activity, Event } from '@/components/world-chess/ActivityTabs';
 import ProfileOverview from '@/components/world-chess/ProfileOverview';
-import { useInvalidateSession } from '@/hooks/useSession';
+import SessionDebug from '@/components/world-chess/SessionDebug';
+import { useInvalidateSession, useSession } from '@/hooks/useSession';
 import { chessGateway } from '@/lib/chess-gateway';
 import theme from '@/theme/theme';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const router = useRouter();
   const invalidateSession = useInvalidateSession();
   const menuSheetRef = useRef<BottomSheetModal>(null);
+  const session = useSession();
 
   const onScanPress = () => {
     Alert.alert('Not yet implemented!');
@@ -205,6 +207,8 @@ export default function Dashboard() {
               </Text>
             </Pressable>
           </View>
+
+          <SessionDebug session={session} />
 
           <Pressable
             onPress={onLogoutPress}
