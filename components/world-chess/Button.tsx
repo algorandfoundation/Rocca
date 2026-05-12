@@ -83,9 +83,9 @@ export default function Button({
       disabled={disabled}
       activeOpacity={0.8}
       style={{
-        backgroundColor: disabled ? (theme.semantic.bg.disabled as string) : styles.backgroundColor,
-        borderColor: disabled ? 'transparent' : styles.borderColor,
-        borderWidth: styles.borderWidth ?? 0,
+        backgroundColor: disabled ? theme.semantic.fg['brand-primary'] : styles.backgroundColor,
+        borderColor: disabled ? theme.semantic.fg['brand-primary'] : styles.borderColor,
+        borderWidth: disabled ? 1 : (styles.borderWidth ?? 0),
         borderRadius: variant === 'link' ? 0 : theme.primitives.radius['6'],
         paddingVertical: variant === 'link' ? 0 : sizeStyles.paddingVertical,
         paddingHorizontal: sizeStyles.paddingHorizontal,
