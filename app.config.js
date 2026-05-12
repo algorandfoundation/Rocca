@@ -111,6 +111,16 @@ module.exports = {
       reactCompiler: true,
     },
     extra: {
+      gateway: {
+        // When unset, the client derives the gateway URL from the Expo dev
+        // server's host (same machine Metro is served from) and port 3000,
+        // so `expo start` / `expo run` over LAN or tunnel works without a
+        // hardcoded IP. Override with EXPO_PUBLIC_GATEWAY_URL when needed.
+        url: process.env.EXPO_PUBLIC_GATEWAY_URL || null,
+        port: process.env.EXPO_PUBLIC_GATEWAY_PORT
+          ? Number(process.env.EXPO_PUBLIC_GATEWAY_PORT)
+          : 3000,
+      },
       provider: {
         name: 'Chess Passport',
         primaryColor: '#3B82F6',

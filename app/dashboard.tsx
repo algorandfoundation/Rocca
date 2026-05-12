@@ -1,7 +1,13 @@
 import ActivityTabs, { Activity, Event } from '@/components/world-chess/ActivityTabs';
 import ProfileOverview from '@/components/world-chess/ProfileOverview';
+import SessionDebug from '@/components/world-chess/SessionDebug';
+import { useInvalidateSession, useSession } from '@/hooks/useSession';
+import { chessGateway } from '@/lib/chess-gateway';
 import theme from '@/theme/theme';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { useRouter } from 'expo-router';
+import { useCallback, useRef } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -46,13 +52,46 @@ const profile = {
 };
 
 export default function Dashboard() {
+  const router = useRouter();
+  const invalidateSession = useInvalidateSession();
+  const menuSheetRef = useRef<BottomSheetModal>(null);
+  const session = useSession();
+
   const onScanPress = () => {
     Alert.alert('Not yet implemented!');
   };
 
-  const onMenuPress = () => {
-    Alert.alert('Not yet implemented!');
-  };
+  const onMenuPress = useCallback(() => {
+    menuSheetRef.current?.present();
+  }, []);
+
+  const onCancelMenuPress = useCallback(() => {
+    menuSheetRef.current?.dismiss();
+  }, []);
+
+  const onLogoutPress = useCallback(async () => {
+    menuSheetRef.current?.dismiss();
+    try {
+      chessGateway.clearCookie();
+      await invalidateSession();
+    } catch (error) {
+      console.error('[dashboard] logout error', error);
+    } finally {
+      router.replace('/auth/login');
+    }
+  }, [invalidateSession, router]);
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop
+        {...props}
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
 
   return (
     <SafeAreaView
@@ -115,6 +154,92 @@ export default function Dashboard() {
         />
         <ActivityTabs activities={activities} events={events} />
       </View>
+
+      {/* Hamburger menu sheet */}
+      <BottomSheetModal
+        ref={menuSheetRef}
+        snapPoints={['30%']}
+        index={0}
+        enablePanDownToClose
+        enableDynamicSizing={false}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: theme.semantic.bg['surface-1'] }}
+        handleIndicatorStyle={{ display: 'none' }}
+      >
+        <BottomSheetView
+          style={{
+            paddingHorizontal: theme.primitives.spacing['16'],
+            paddingBottom: theme.primitives.spacing['32'],
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: theme.primitives.spacing['16'],
+              position: 'relative',
+            }}
+          >
+            <Text
+              pointerEvents="none"
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                color: theme.semantic.fg['high-emphasis'] as string,
+                fontSize: theme.primitives.font.size['p-md'],
+                fontFamily: theme.primitives.font.family.p,
+                textAlign: 'center',
+              }}
+            >
+              Menu
+            </Text>
+            <Pressable onPress={onCancelMenuPress} hitSlop={8}>
+              <Text
+                style={{
+                  color: theme.semantic.fg['brand-secondary'] as string,
+                  fontSize: theme.primitives.font.size['p-lg'],
+                  fontFamily: theme.primitives.font.family.p,
+                  marginLeft: theme.primitives.spacing['8'],
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+          </View>
+
+          <SessionDebug session={session} />
+
+          <Pressable
+            onPress={onLogoutPress}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: theme.primitives.spacing['12'],
+              paddingHorizontal: theme.primitives.spacing['16'],
+              paddingVertical: theme.primitives.spacing['16'],
+              backgroundColor: theme.semantic.bg['surface-1'],
+              borderRadius: theme.primitives.radius['4'],
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={24}
+              color={theme.semantic.fg['brand-secondary']}
+            />
+            <Text
+              style={{
+                color: theme.semantic.fg['brand-secondary'] as string,
+                fontSize: theme.primitives.font.size['p-lg'],
+                fontFamily: theme.primitives.font.family.p,
+              }}
+            >
+              Log out
+            </Text>
+          </Pressable>
+        </BottomSheetView>
+      </BottomSheetModal>
     </SafeAreaView>
   );
 }
