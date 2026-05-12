@@ -41,6 +41,32 @@ const defaultLogger: Required<Pick<GatewayLogger, 'info' | 'warn' | 'error' | 'd
 };
 
 /**
+ * Resolves the pre-generated Vault client token used by the app to
+ * sign in to the gateway. Sourced from Expo config
+ * (`extra.gateway.userSecretToken`, populated from
+ * `EXPO_PUBLIC_GATEWAY_USER_SECRET_TOKEN`). Returns `null` when not
+ * configured so callers can short-circuit gracefully.
+ *
+ * The token is issued out-of-band via the Vault "UserRole" AppRole;
+ * the app no longer performs the AppRole login itself.
+ */
+export function resolveGatewayUserSecretToken(logger?: GatewayLogger): string | null {
+  const extra = Constants.expoConfig?.extra as
+    | { gateway?: { userSecretToken?: unknown } }
+    | undefined;
+  const token = extra?.gateway?.userSecretToken;
+  if (typeof token === 'string' && token.length > 0) {
+    return token;
+  }
+  (logger?.debug ?? defaultLogger.debug)(
+    'gateway user secret token not configured',
+    { hasToken: !!token },
+    LOG_CONTEXT,
+  );
+  return null;
+}
+
+/**
  * Resolves the gateway base URL.
  *
  * Resolution order:
@@ -90,7 +116,7 @@ export interface LinkSessionData {
   authenticated: boolean;
   user?: { id?: string; email?: string; emailVerified?: boolean } | null;
   verification?: { id?: string; email?: string } | null;
-  player?: { id?: string; [k: string]: any } | null;
+  player?: { id?: string; user_id?: string; [k: string]: any } | null;
 }
 
 export interface LinkChallenge {
@@ -108,6 +134,44 @@ export interface LinkResponseBody {
   integrityToken?: string;
   attestationObject?: string;
   keyId?: string;
+}
+
+/**
+ * Response from the gateway `POST /v1/auth/sign-in/` endpoint after a
+ * successful exchange of a vault token for an access token.
+ */
+export interface GatewaySignInResponse {
+  access_token: string;
+}
+
+/**
+ * Response from the gateway `GET /v1/wallet/users/:user_id/` endpoint.
+ * Mirrors `UserInfoResponseDto` on the gateway side.
+ */
+export interface GatewayUserInfo {
+  user_id: string;
+  public_address: string;
+  algoBalance: string;
+}
+
+/**
+ * A single asset holding entry as returned by the algod node and surfaced
+ * by the gateway under the `assets` array. The field names mirror the
+ * algod `AssetHolding` shape (kebab-case keys).
+ */
+export interface GatewayAssetHolding {
+  amount: number | string;
+  'asset-id': number;
+  'is-frozen': boolean;
+}
+
+/**
+ * Response from the gateway `GET /v1/wallet/assets/:user_id` endpoint.
+ * Mirrors `AccountAssetsDto` on the gateway side.
+ */
+export interface GatewayAccountAssets {
+  address: string;
+  assets: GatewayAssetHolding[];
 }
 
 /**
@@ -166,6 +230,14 @@ export interface ChessGatewayEventMap {
   challenge: { address: string; challenge: string };
   /** Fired after `postLinkResponse` succeeds. */
   linkResponse: { walletAddress: string; response: unknown };
+  /** Fired after `signIn` succeeds; payload includes the new bearer token. */
+  signedIn: { accessToken: string };
+  /** Fired when the bearer access token is explicitly cleared. */
+  signedOut: void;
+  /** Fired after `getUser` succeeds. */
+  user: GatewayUserInfo;
+  /** Fired after `getAssetHoldings` succeeds. */
+  assets: GatewayAccountAssets;
 }
 
 export type ChessGatewayEventName = keyof ChessGatewayEventMap;
@@ -176,6 +248,11 @@ export type ChessGatewayEventListener<E extends ChessGatewayEventName> = (
 export class ChessGatewayClient {
   readonly baseUrl: string;
   private cookie: string | null = null;
+  /**
+   * Bearer access token issued by `POST /v1/auth/sign-in/`, sent on
+   * subsequent authenticated calls (e.g. `GET /v1/wallet/users/:user_id/`).
+   */
+  private bearerToken: string | null = null;
   private readonly logger: GatewayLogger;
   private readonly listeners: {
     [E in ChessGatewayEventName]?: Set<ChessGatewayEventListener<E>>;
@@ -266,7 +343,10 @@ export class ChessGatewayClient {
   }
 
   private headers(extra: Record<string, string> = {}): Record<string, string> {
-    return this.cookie ? { ...extra, Cookie: this.cookie } : { ...extra };
+    const out: Record<string, string> = { ...extra };
+    if (this.cookie) out.Cookie = this.cookie;
+    if (this.bearerToken) out.Authorization = `Bearer ${this.bearerToken}`;
+    return out;
   }
 
   private async request(
@@ -404,6 +484,92 @@ export class ChessGatewayClient {
     });
     const data = await this.ensureOk(response, 'Linking Failed');
     this.emit('linkResponse', { walletAddress: body.walletAddress, response: data });
+    return data;
+  }
+
+  /**
+   * Exchange a pre-generated Vault client token for a gateway bearer
+   * JWT via `POST /v1/auth/sign-in/ { vault_token }` → `{ access_token }`.
+   *
+   * The vault token is issued out-of-band via the Vault "UserRole"
+   * AppRole and surfaced to the app through
+   * `EXPO_PUBLIC_GATEWAY_USER_SECRET_TOKEN`. The app no longer performs
+   * the AppRole login itself; callers can pass an explicit `vaultToken`
+   * to override the configured one.
+   */
+  async signIn(vaultToken?: string | null): Promise<string> {
+    const token = vaultToken ?? resolveGatewayUserSecretToken(this.logger);
+    if (!token) {
+      throw new ChessGatewayError(
+        'Missing gateway user secret token (set EXPO_PUBLIC_GATEWAY_USER_SECRET_TOKEN).',
+        0,
+        null,
+      );
+    }
+
+    const signInResponse = await this.request('signIn', '/v1/auth/sign-in/', {
+      method: 'POST',
+      jsonBody: { vault_token: token },
+    });
+    const data = (await this.ensureOk(
+      signInResponse,
+      'Gateway sign-in failed',
+    )) as GatewaySignInResponse | null;
+    if (!data?.access_token) {
+      throw new ChessGatewayError(
+        'Gateway sign-in returned no access_token',
+        signInResponse.status,
+        data,
+      );
+    }
+    this.bearerToken = data.access_token;
+    this.emit('signedIn', { accessToken: data.access_token });
+    return data.access_token;
+  }
+
+  /**
+   * GET /v1/wallet/users/:user_id/ — fetches a user's wallet info from the
+   * gateway database. Requires a previously issued bearer token (see
+   * `signIn`); when one is not yet held, a sign-in is transparently
+   * performed if `autoSignIn` is enabled (default `true`).
+   */
+  async getUser(userId: string, options: { autoSignIn?: boolean } = {}): Promise<GatewayUserInfo> {
+    const autoSignIn = options.autoSignIn ?? true;
+    if (!this.bearerToken && autoSignIn) {
+      await this.signIn();
+    }
+    const response = await this.request(
+      'getUser',
+      `/v1/wallet/users/${encodeURIComponent(userId)}/`,
+    );
+    const data = (await this.ensureOk(response, 'Failed to fetch user')) as GatewayUserInfo;
+    this.emit('user', data);
+    return data;
+  }
+
+  /**
+   * GET /v1/wallet/assets/:user_id — fetches the Algorand asset holdings
+   * (tokens) associated with a user's vault-managed account. Requires a
+   * bearer token; transparently signs in with the configured user
+   * secret token when missing (toggleable via `autoSignIn`).
+   */
+  async getAssetHoldings(
+    userId: string,
+    options: { autoSignIn?: boolean } = {},
+  ): Promise<GatewayAccountAssets> {
+    const autoSignIn = options.autoSignIn ?? true;
+    if (!this.bearerToken && autoSignIn) {
+      await this.signIn();
+    }
+    const response = await this.request(
+      'getAssetHoldings',
+      `/v1/wallet/assets/${encodeURIComponent(userId)}`,
+    );
+    const data = (await this.ensureOk(
+      response,
+      'Failed to fetch asset holdings',
+    )) as GatewayAccountAssets;
+    this.emit('assets', data);
     return data;
   }
 }

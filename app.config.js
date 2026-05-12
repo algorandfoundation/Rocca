@@ -120,6 +120,30 @@ module.exports = {
         port: process.env.EXPO_PUBLIC_GATEWAY_PORT
           ? Number(process.env.EXPO_PUBLIC_GATEWAY_PORT)
           : 3000,
+        // Pre-generated Vault client token (issued out-of-band via the
+        // "UserRole" AppRole). The app POSTs it to the gateway's
+        // `/v1/auth/sign-in/` endpoint to obtain a bearer JWT used for
+        // authenticated calls (e.g. `GET /v1/wallet/users/:user_id/`).
+        userSecretToken: process.env.EXPO_PUBLIC_GATEWAY_USER_SECRET_TOKEN || null,
+      },
+      algod: {
+        // Algorand node endpoint. Defaults to AlgoKit LocalNet's algod
+        // address; override with EXPO_PUBLIC_ALGOD_URL to point at a
+        // remote LocalNet (e.g. https://localnet.shore-tech.net).
+        url: process.env.EXPO_PUBLIC_ALGOD_URL || 'http://localhost:4001',
+        // AlgoKit LocalNet uses the well-known "A" * 64 token by default.
+        token: process.env.EXPO_PUBLIC_ALGOD_TOKEN || 'a'.repeat(64),
+      },
+      indexer: {
+        // Algorand Indexer endpoint. Used to fetch the transaction
+        // history rendered as the user's "Activities". Defaults to
+        // AlgoKit LocalNet's indexer; set EXPO_PUBLIC_INDEXER_URL to ''
+        // (or unset it) to disable the on-chain feed.
+        url:
+          process.env.EXPO_PUBLIC_INDEXER_URL !== undefined
+            ? process.env.EXPO_PUBLIC_INDEXER_URL
+            : 'http://localhost:8980',
+        token: process.env.EXPO_PUBLIC_INDEXER_TOKEN || 'a'.repeat(64),
       },
       provider: {
         name: 'Chess Passport',

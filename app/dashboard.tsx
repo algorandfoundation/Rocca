@@ -1,6 +1,7 @@
-import ActivityTabs, { Activity, Event } from '@/components/world-chess/ActivityTabs';
+import ActivityTabs, { Event } from '@/components/world-chess/ActivityTabs';
 import ProfileOverview from '@/components/world-chess/ProfileOverview';
 import SessionDebug from '@/components/world-chess/SessionDebug';
+import { useActivities } from '@/hooks/useActivities';
 import { useInvalidateSession, useSession } from '@/hooks/useSession';
 import { chessGateway } from '@/lib/chess-gateway';
 import theme from '@/theme/theme';
@@ -10,12 +11,6 @@ import { useRouter } from 'expo-router';
 import { useCallback, useRef } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const activities: Activity[] = [
-  { id: '1', title: 'Chess Rewards', datetime: 'May 7, 2026 · 3:42 PM', points: 5 },
-  { id: '2', title: 'Chess Rewards', datetime: 'May 6, 2026 · 11:15 AM', points: 10 },
-  { id: '3', title: 'Chess Rewards', datetime: 'May 5, 2026 · 7:30 PM', points: 3 },
-];
 
 const events: Event[] = [
   {
@@ -56,6 +51,8 @@ export default function Dashboard() {
   const invalidateSession = useInvalidateSession();
   const menuSheetRef = useRef<BottomSheetModal>(null);
   const session = useSession();
+
+  const { activities } = useActivities();
 
   const onScanPress = () => {
     Alert.alert('Not yet implemented!');
@@ -152,7 +149,7 @@ export default function Dashboard() {
           progressPoints={profile.progressPoints}
           avatar={profile.avatar}
         />
-        <ActivityTabs activities={activities} events={events} />
+        <ActivityTabs activities={activities.slice(0, 3)} events={events.slice(0, 3)} />
       </View>
 
       {/* Hamburger menu sheet */}
