@@ -85,7 +85,7 @@ export default function Button({
       style={{
         backgroundColor: disabled ? theme.semantic.fg['brand-primary'] : styles.backgroundColor,
         borderColor: disabled ? theme.semantic.fg['brand-primary'] : styles.borderColor,
-        borderWidth: disabled ? 1 : (styles.borderWidth ?? 0),
+        borderWidth: styles.borderWidth ?? 0,
         borderRadius: variant === 'link' ? 0 : theme.primitives.radius['6'],
         paddingVertical: variant === 'link' ? 0 : sizeStyles.paddingVertical,
         paddingHorizontal: sizeStyles.paddingHorizontal,
