@@ -28,6 +28,8 @@ import {
 } from '@algorandfoundation/accounts-keystore-extension';
 import { WithIdentitiesKeystore } from '@/extensions/identities-keystore';
 import { WithPasskeysKeystore } from '@/extensions/passkeys-keystore';
+import { WithDfnsKeystore, type DfnsKeystoreApi } from '@/extensions/dfns-keystore';
+import { type DfnsAccount, WithDfnsAccounts } from '@/extensions/dfns-accounts';
 
 export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXTENSIONS> {
   static EXTENSIONS = [
@@ -39,6 +41,8 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithAccountsKeystore,
     WithPasskeysKeystore,
     WithIdentitiesKeystore,
+    WithDfnsKeystore,
+    WithDfnsAccounts,
   ] as const;
 
   keys!: Key[];
@@ -48,13 +52,19 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
   logs!: LogMessage[];
   status!: string;
 
-  account!: AccountStoreExtension<Account | KeystoreAccount>['account'];
+  account!: AccountStoreExtension<Account | KeystoreAccount | DfnsAccount>['account'];
   identity!: IdentityStoreExtension['identity'];
   passkey!: PasskeyStoreExtension['passkey'];
-  // The generic Keystore Interface
+  // The generic Keystore Interface, augmented with DFNS under `key.dfns`.
   key!: {
     store: KeyStoreAPI & { clear: () => Promise<void>; hooks: typeof keyStoreHooks };
+    dfns: DfnsKeystoreApi;
   };
+  /**
+   * The DFNS accounts namespace contributed by `WithDfnsAccounts`.
+   * Exposes the wallets client, a manual refresh, and a type guard.
+   */
+  dfns!: ReturnType<typeof WithDfnsAccounts> extends { dfns: infer T } ? T : never;
   log!: LogStoreApi;
 }
 

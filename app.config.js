@@ -111,6 +111,15 @@ module.exports = {
         showIdentities: true,
         showConnections: true,
       },
+      // DFNS configuration. The end-user Personal Access Token (PAT) is read
+      // from `DFNS_PAT` at build/start time; leave empty to disable DFNS-backed
+      // accounts/keystore at runtime.
+      // See: https://docs.dfns.co/api-reference/auth/personal-access-tokens
+      dfns: {
+        pat: process.env.DFNS_PAT || '',
+        baseUrl: process.env.DFNS_BASE_URL || 'https://api.dfns.io',
+        appId: process.env.DFNS_APP_ID || '',
+      },
       router: {},
       eas: {
         projectId: 'f1e6cb1b-642d-49fa-b276-53b4403f62d6',
