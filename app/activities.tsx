@@ -1,22 +1,23 @@
 import ActivityItem, { Divider } from '@/components/world-chess/ActivityItem';
+import { useActivities } from '@/hooks/useActivities';
 import theme from '@/theme/theme';
-import { ScrollView, View } from 'react-native';
-
-const activities: {
-  id: string;
-  title: string;
-  datetime: string;
-  points: number;
-}[] = [
-  { id: '1', title: 'Chess Rewards', datetime: 'May 7, 2026 · 3:42 PM', points: 5 },
-  { id: '2', title: 'Chess Rewards', datetime: 'May 6, 2026 · 11:15 AM', points: 10 },
-  { id: '3', title: 'Chess Rewards', datetime: 'May 5, 2026 · 7:30 PM', points: 3 },
-  { id: '4', title: 'Chess Rewards', datetime: 'May 4, 2026 · 9:00 AM', points: 7 },
-  { id: '5', title: 'Chess Rewards', datetime: 'May 3, 2026 · 6:15 PM', points: 15 },
-  { id: '6', title: 'Chess Rewards', datetime: 'May 2, 2026 · 2:30 PM', points: 5 },
-];
+import { ScrollView, Text, View } from 'react-native';
 
 export default function Activities() {
+  const { activities, isLoading, error, address, indexerDisabled, missingPlayer } = useActivities();
+
+  const hint = (() => {
+    if (indexerDisabled) return 'Indexer disabled (EXPO_PUBLIC_INDEXER_URL is empty).';
+    if (missingPlayer) return 'Signed in but no vault player linked to this session yet.';
+    if (error) return `Failed to load activities: ${(error as Error)?.message ?? String(error)}`;
+    if (isLoading) return 'Loading activities…';
+    if (activities.length === 0)
+      return address
+        ? `No on-chain activity for ${address}.`
+        : 'No address resolved for this user.';
+    return null;
+  })();
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.semantic.bg['app-bg'] as string }}
@@ -25,6 +26,11 @@ export default function Activities() {
         paddingVertical: theme.primitives.spacing['8'],
       }}
     >
+      {hint && (
+        <View style={{ paddingVertical: theme.primitives.spacing['4'] }}>
+          <Text style={{ color: theme.semantic.fg['medium-emphasis'] as string }}>{hint}</Text>
+        </View>
+      )}
       {activities.map((item) => (
         <View key={item.id}>
           <ActivityItem title={item.title} datetime={item.datetime} points={item.points} />

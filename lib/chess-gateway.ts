@@ -10,6 +10,16 @@ import Constants from 'expo-constants';
  *   forwarding it on subsequent authenticated requests.
  * - Expose a typed method per gateway endpoint used by the client.
  *
+ * The bearer JWT used for authenticated wallet endpoints is supplied at
+ * construction time (via the `accessToken` option or, by default, the
+ * `EXPO_PUBLIC_GATEWAY_USER_SECRET_TOKEN` Expo config value). The client
+ * does NOT perform a runtime sign-in handshake; the token is installed
+ * once at construction.
+ *
+ * Observable events are emitted for the request/response lifecycle and
+ * for non-sign-in successes (cookie, session, OTP, link, social, user,
+ * assets). Subscribe via `client.on(event, handler)`.
+ *
  * Upstream gateway: https://github.com/algorandfoundation/chess-gateway
  */
 
@@ -39,6 +49,33 @@ const defaultLogger: Required<Pick<GatewayLogger, 'info' | 'warn' | 'error' | 'd
   debug: (message, metadata, context) =>
     console.debug(`[${context ?? LOG_CONTEXT}] ${message}`, metadata ?? ''),
 };
+
+/**
+ * Resolves the pre-minted gateway JWT used as the app's bearer token.
+ * Sourced from Expo config (`extra.gateway.userSecretToken`, populated
+ * from `EXPO_PUBLIC_GATEWAY_USER_SECRET_TOKEN`). Returns `null` when
+ * not configured so callers can short-circuit gracefully.
+ *
+ * The JWT is generated out-of-band by the gateway (against the
+ * pre-assigned UserRole) before the app launches; the app does not
+ * perform any sign-in round-trip and simply attaches this token to
+ * authenticated requests.
+ */
+export function resolveGatewayUserSecretToken(logger?: GatewayLogger): string | null {
+  const extra = Constants.expoConfig?.extra as
+    | { gateway?: { userSecretToken?: unknown } }
+    | undefined;
+  const token = extra?.gateway?.userSecretToken;
+  if (typeof token === 'string' && token.length > 0) {
+    return token;
+  }
+  (logger?.debug ?? defaultLogger.debug)(
+    'gateway user secret token not configured',
+    { hasToken: !!token },
+    LOG_CONTEXT,
+  );
+  return null;
+}
 
 /**
  * Resolves the gateway base URL.
@@ -90,7 +127,7 @@ export interface LinkSessionData {
   authenticated: boolean;
   user?: { id?: string; email?: string; emailVerified?: boolean } | null;
   verification?: { id?: string; email?: string } | null;
-  player?: { id?: string; [k: string]: any } | null;
+  player?: { id?: string; user_id?: string; [k: string]: any } | null;
 }
 
 export interface LinkChallenge {
@@ -111,6 +148,36 @@ export interface LinkResponseBody {
 }
 
 /**
+ * Response from the gateway `GET /v1/wallet/users/:user_id/` endpoint.
+ * Mirrors `UserInfoResponseDto` on the gateway side.
+ */
+export interface GatewayUserInfo {
+  user_id: string;
+  public_address: string;
+  algoBalance: string;
+}
+
+/**
+ * A single asset holding entry as returned by the algod node and surfaced
+ * by the gateway under the `assets` array. The field names mirror the
+ * algod `AssetHolding` shape (kebab-case keys).
+ */
+export interface GatewayAssetHolding {
+  amount: number | string;
+  'asset-id': number;
+  'is-frozen': boolean;
+}
+
+/**
+ * Response from the gateway `GET /v1/wallet/assets/:user_id` endpoint.
+ * Mirrors `AccountAssetsDto` on the gateway side.
+ */
+export interface GatewayAccountAssets {
+  address: string;
+  assets: GatewayAssetHolding[];
+}
+
+/**
  * Error thrown by `ChessGatewayClient` when the gateway returns a non-2xx
  * response. Includes status code and the parsed body (or raw text) for
  * surfacing in UI.
@@ -128,6 +195,13 @@ export class ChessGatewayError extends Error {
 
 export interface ChessGatewayClientOptions {
   baseUrl?: string;
+  /**
+   * Pre-minted gateway JWT to attach as `Authorization: Bearer` on
+   * authenticated calls. Defaults to `resolveGatewayUserSecretToken()`
+   * (i.e. `EXPO_PUBLIC_GATEWAY_USER_SECRET_TOKEN`). Pass `null` to
+   * construct a client with no bearer (e.g. for link-only endpoints).
+   */
+  accessToken?: string | null;
   /**
    * Logger compatible with `@algorandfoundation/log-store`'s `LogStoreApi`.
    * If omitted, falls back to a `console`-backed implementation.
@@ -166,9 +240,14 @@ export interface ChessGatewayEventMap {
   challenge: { address: string; challenge: string };
   /** Fired after `postLinkResponse` succeeds. */
   linkResponse: { walletAddress: string; response: unknown };
+  /** Fired after `getUser` succeeds. */
+  user: GatewayUserInfo;
+  /** Fired after `getAssetHoldings` succeeds. */
+  assets: GatewayAccountAssets;
 }
 
 export type ChessGatewayEventName = keyof ChessGatewayEventMap;
+
 export type ChessGatewayEventListener<E extends ChessGatewayEventName> = (
   payload: ChessGatewayEventMap[E],
 ) => void;
@@ -176,6 +255,12 @@ export type ChessGatewayEventListener<E extends ChessGatewayEventName> = (
 export class ChessGatewayClient {
   readonly baseUrl: string;
   private cookie: string | null = null;
+  /**
+   * Bearer access token attached to authenticated calls (e.g.
+   * `GET /v1/wallet/users/:user_id/`). Set once at construction time
+   * from `options.accessToken` or the resolved Expo config value.
+   */
+  private readonly bearerToken: string | null;
   private readonly logger: GatewayLogger;
   private readonly listeners: {
     [E in ChessGatewayEventName]?: Set<ChessGatewayEventListener<E>>;
@@ -184,9 +269,17 @@ export class ChessGatewayClient {
   constructor(options: ChessGatewayClientOptions = {}) {
     this.logger = options.logger ?? defaultLogger;
     this.baseUrl = options.baseUrl ?? resolveGatewayUrl(this.logger);
+    this.bearerToken =
+      options.accessToken !== undefined
+        ? options.accessToken
+        : resolveGatewayUserSecretToken(this.logger);
     this.logger.info?.(
       'resolved baseUrl',
-      { baseUrl: this.baseUrl, type: typeof this.baseUrl },
+      {
+        baseUrl: this.baseUrl,
+        type: typeof this.baseUrl,
+        hasBearer: !!this.bearerToken,
+      },
       LOG_CONTEXT,
     );
   }
@@ -266,7 +359,10 @@ export class ChessGatewayClient {
   }
 
   private headers(extra: Record<string, string> = {}): Record<string, string> {
-    return this.cookie ? { ...extra, Cookie: this.cookie } : { ...extra };
+    const out: Record<string, string> = { ...extra };
+    if (this.cookie) out.Cookie = this.cookie;
+    if (this.bearerToken) out.Authorization = `Bearer ${this.bearerToken}`;
+    return out;
   }
 
   private async request(
@@ -283,7 +379,11 @@ export class ChessGatewayClient {
     );
     const body = jsonBody !== undefined ? JSON.stringify(jsonBody) : (init.body as any);
     const method = (rest.method ?? 'GET').toUpperCase();
-    this.logger.info?.('request', { label, method, url, hasCookie: !!this.cookie }, LOG_CONTEXT);
+    this.logger.info?.(
+      'request',
+      { label, method, url, hasCookie: !!this.cookie, hasBearer: !!this.bearerToken },
+      LOG_CONTEXT,
+    );
     this.emit('request', { label, method, url, hasCookie: !!this.cookie });
     let response: Response;
     try {
@@ -404,6 +504,39 @@ export class ChessGatewayClient {
     });
     const data = await this.ensureOk(response, 'Linking Failed');
     this.emit('linkResponse', { walletAddress: body.walletAddress, response: data });
+    return data;
+  }
+
+  /**
+   * GET /v1/wallet/users/:user_id/ — fetches a user's wallet info from the
+   * gateway database. Requires the bearer token configured at construction
+   * time (`EXPO_PUBLIC_GATEWAY_USER_SECRET_TOKEN`).
+   */
+  async getUser(userId: string): Promise<GatewayUserInfo> {
+    const response = await this.request(
+      'getUser',
+      `/v1/wallet/users/${encodeURIComponent(userId)}/`,
+    );
+    const data = (await this.ensureOk(response, 'Failed to fetch user')) as GatewayUserInfo;
+    this.emit('user', data);
+    return data;
+  }
+
+  /**
+   * GET /v1/wallet/assets/:user_id — fetches the Algorand asset holdings
+   * (tokens) associated with a user's vault-managed account. Requires the
+   * bearer token configured at construction time.
+   */
+  async getAssetHoldings(userId: string): Promise<GatewayAccountAssets> {
+    const response = await this.request(
+      'getAssetHoldings',
+      `/v1/wallet/assets/${encodeURIComponent(userId)}`,
+    );
+    const data = (await this.ensureOk(
+      response,
+      'Failed to fetch asset holdings',
+    )) as GatewayAccountAssets;
+    this.emit('assets', data);
     return data;
   }
 }

@@ -2,6 +2,12 @@ import { Provider } from '@algorandfoundation/wallet-provider';
 import { createContext, type ReactNode } from 'react';
 
 import { AlgorandAccount, WithAlgorandAccounts } from '@/extensions/algorand-accounts';
+import type { AlgorandProviderClients } from '@/extensions/algorand-accounts/types';
+import {
+  IntermezzoAccount,
+  IntermezzoAccountApi,
+  WithIntermezzoAccount,
+} from '@/extensions/intermezzo-account';
 import { Identity, IdentityStoreExtension, WithIdentityStore } from '@/extensions/identities';
 import { WithIdentitiesKeystore } from '@/extensions/identities-keystore';
 import { Passkey, PasskeyStoreExtension, WithPasskeyStore } from '@/extensions/passkeys';
@@ -27,6 +33,7 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithPasskeysKeystore,
     WithIdentitiesKeystore,
     WithAlgorandAccounts,
+    WithIntermezzoAccount,
   ] as const;
 
   keys!: Key[];
@@ -36,7 +43,11 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
   logs!: LogMessage[];
   status!: string;
 
-  account!: AccountStoreExtension<Account | KeystoreAccount | AlgorandAccount>['account'];
+  account!: AccountStoreExtension<
+    Account | KeystoreAccount | AlgorandAccount | IntermezzoAccount
+  >['account'];
+  intermezzo!: IntermezzoAccountApi;
+  algorand!: AlgorandProviderClients;
   identity!: IdentityStoreExtension['identity'];
   passkey!: PasskeyStoreExtension['passkey'];
   // The generic Keystore Interface
