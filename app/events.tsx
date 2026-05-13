@@ -1,7 +1,10 @@
 import { Divider } from '@/components/world-chess/ActivityItem';
+import AddProofSheet from '@/components/world-chess/AddProofSheet';
 import EventItem from '@/components/world-chess/EventItem';
 import theme from '@/theme/theme';
-import { ImageSourcePropType, ScrollView, View } from 'react-native';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { useCallback, useRef } from 'react';
+import { ImageSourcePropType, Pressable, ScrollView, View } from 'react-native';
 
 const events: {
   id: string;
@@ -62,6 +65,16 @@ const events: {
 ];
 
 export default function Events() {
+  const proofSheetRef = useRef<BottomSheetModal>(null);
+
+  const onAddProofPress = useCallback(() => {
+    proofSheetRef.current?.present();
+  }, []);
+
+  const onProofSheetDismiss = useCallback(() => {
+    proofSheetRef.current?.dismiss();
+  }, []);
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.semantic.bg['app-bg'] as string }}
@@ -72,16 +85,19 @@ export default function Events() {
     >
       {events.map((event) => (
         <View key={event.id}>
-          <EventItem
-            logo={event.logo}
-            name={event.name}
-            location={event.location}
-            points={event.points}
-            position={event.position}
-          />
+          <Pressable onPress={onAddProofPress}>
+            <EventItem
+              logo={event.logo}
+              name={event.name}
+              location={event.location}
+              points={event.points}
+              position={event.position}
+            />
+          </Pressable>
           <Divider />
         </View>
       ))}
+      <AddProofSheet ref={proofSheetRef} onDismiss={onProofSheetDismiss} />
     </ScrollView>
   );
 }

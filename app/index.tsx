@@ -1,6 +1,6 @@
 import { useProvider } from '@/hooks/useProvider';
 import { useSession } from '@/hooks/useSession';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { Redirect } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -20,6 +20,7 @@ export default function Index() {
     Gerbera: require('../assets/fonts/Gerbera.ttf'),
     ...MaterialIcons.font,
     ...Ionicons.font,
+    ...Feather.font,
   });
 
   // Wait for fonts, provider, and the initial session probe to resolve before
