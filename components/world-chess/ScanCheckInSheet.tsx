@@ -1,16 +1,17 @@
 import theme from '@/theme/theme';
 import Ionicons from '@expo/vector-icons/build/Ionicons';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { forwardRef, useCallback, useMemo } from 'react';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 interface ScanCheckInSheetProps {
   onDismiss: () => void;
+  onQrCodeScanned?: (data: string) => void;
 }
 
 const ScanCheckInSheet = forwardRef<BottomSheetModal, ScanCheckInSheetProps>(
-  ({ onDismiss }, ref) => {
+  ({ onDismiss, onQrCodeScanned }, ref) => {
     const [cameraPermission, requestCameraPermission] = useCameraPermissions();
     const { height: windowHeight, width: windowWidth } = useWindowDimensions();
     // Explicit pixel height so CameraView renders inside Reanimated's BottomSheetView
@@ -32,6 +33,13 @@ const ScanCheckInSheet = forwardRef<BottomSheetModal, ScanCheckInSheetProps>(
         />
       ),
       [],
+    );
+
+    const onBarcodeScanned = useCallback(
+      ({ data }: BarcodeScanningResult) => {
+        onQrCodeScanned?.(data);
+      },
+      [onQrCodeScanned],
     );
 
     return (
@@ -155,6 +163,7 @@ const ScanCheckInSheet = forwardRef<BottomSheetModal, ScanCheckInSheetProps>(
                 style={{ flex: 1 }}
                 facing="back"
                 barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                onBarcodeScanned={onBarcodeScanned}
               />
             )}
           </View>

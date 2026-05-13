@@ -13,6 +13,57 @@ import { useCallback, useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+interface CheckInQrPayload {
+  name: string;
+  address: string;
+  assetId: number;
+  amount: number;
+  banner: string;
+}
+
+interface CheckInQrData {
+  slug: 'chess-passport';
+  version: 1;
+  payload: CheckInQrPayload;
+}
+
+function parseCheckInQrData(raw: string): CheckInQrData | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+
+    const data = parsed as {
+      slug?: unknown;
+      version?: unknown;
+      payload?: {
+        name?: unknown;
+        address?: unknown;
+        assetId?: unknown;
+        amount?: unknown;
+        banner?: unknown;
+      };
+    };
+
+    if (data.slug !== 'chess-passport' || data.version !== 1) return null;
+    if (!data.payload || typeof data.payload !== 'object') return null;
+
+    const { name, address, assetId, amount, banner } = data.payload;
+    if (typeof name !== 'string' || name.length === 0) return null;
+    if (typeof address !== 'string' || address.length === 0) return null;
+    if (typeof assetId !== 'number' || !Number.isFinite(assetId)) return null;
+    if (typeof amount !== 'number' || !Number.isFinite(amount)) return null;
+    if (typeof banner !== 'string' || banner.length === 0) return null;
+
+    return {
+      slug: 'chess-passport',
+      version: 1,
+      payload: { name, address, assetId, amount, banner },
+    };
+  } catch {
+    return null;
+  }
+}
+
 const events: Event[] = [
   {
     id: '1',
@@ -52,11 +103,13 @@ export default function Dashboard() {
   const invalidateSession = useInvalidateSession();
   const menuSheetRef = useRef<BottomSheetModal>(null);
   const scanSheetRef = useRef<BottomSheetModal>(null);
+  const hasHandledScanRef = useRef(false);
   const session = useSession();
 
   const { activities } = useActivities();
 
   const onScanPress = useCallback(() => {
+    hasHandledScanRef.current = false;
     scanSheetRef.current?.present();
   }, []);
 
@@ -69,8 +122,37 @@ export default function Dashboard() {
   }, []);
 
   const onScanDismiss = useCallback(() => {
+    hasHandledScanRef.current = false;
     scanSheetRef.current?.dismiss();
   }, []);
+
+  const onQrCodeScanned = useCallback(
+    (data: string) => {
+      if (hasHandledScanRef.current) return;
+
+      const checkInData = parseCheckInQrData(data);
+      if (!checkInData) {
+        console.warn('[dashboard] invalid QR format', data);
+        return;
+      }
+
+      hasHandledScanRef.current = true;
+      scanSheetRef.current?.dismiss();
+      router.push({
+        pathname: '/purchase-entry',
+        params: {
+          slug: checkInData.slug,
+          version: String(checkInData.version),
+          name: checkInData.payload.name,
+          address: checkInData.payload.address,
+          assetId: String(checkInData.payload.assetId),
+          amount: String(checkInData.payload.amount),
+          banner: checkInData.payload.banner,
+        },
+      } as never);
+    },
+    [router],
+  );
 
   const onLogoutPress = useCallback(async () => {
     menuSheetRef.current?.dismiss();
@@ -146,7 +228,11 @@ export default function Dashboard() {
         <ActivityTabs activities={activities.slice(0, 3)} events={events.slice(0, 3)} />
       </View>
 
-      <ScanCheckInSheet ref={scanSheetRef} onDismiss={onScanDismiss} />
+      <ScanCheckInSheet
+        ref={scanSheetRef}
+        onDismiss={onScanDismiss}
+        onQrCodeScanned={onQrCodeScanned}
+      />
       <MenuSheet
         ref={menuSheetRef}
         onDismiss={onMenuDismiss}

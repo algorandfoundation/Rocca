@@ -1,8 +1,8 @@
 import HeaderBackButton from '@/components/world-chess/HeaderBackButton';
 import { resolveAlgodClientConfig } from '@/lib/algod';
-import { resolveIndexerClientConfig } from '@/lib/indexer';
 import { bootstrap } from '@/lib/bootstrap';
 import { chessGateway } from '@/lib/chess-gateway';
+import { resolveIndexerClientConfig } from '@/lib/indexer';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
@@ -141,6 +141,15 @@ export default function RootLayout() {
                 <Stack.Screen
                   name="activities"
                   options={{ title: 'Activities', headerLeft: () => <HeaderBackButton /> }}
+                />
+                <Stack.Screen
+                  name="purchase-entry"
+                  options={{
+                    headerShown: false,
+                    presentation: 'transparentModal',
+                    animation: 'fade',
+                    contentStyle: { backgroundColor: 'transparent' },
+                  }}
                 />
               </Stack>
             </WalletProvider>
