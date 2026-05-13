@@ -1,5 +1,6 @@
 import { type UseSessionResult } from '@/hooks/useSession';
 import theme from '@/theme/theme';
+import { ellipseAddress } from '@/utils/algorand';
 import { Text, View } from 'react-native';
 
 interface SessionDebugProps {
@@ -63,6 +64,18 @@ export default function SessionDebug({ session }: SessionDebugProps) {
           }}
         >
           Player ID: {session.data.player.id || 'N/A'}
+        </Text>
+      )}
+
+      {session.data?.verification && (
+        <Text
+          style={{
+            color: theme.semantic.fg['high-emphasis'] as string,
+            fontSize: theme.primitives.font.size['p-md'],
+            fontFamily: theme.primitives.font.family.p,
+          }}
+        >
+          Linked Wallet: {ellipseAddress(session.data.verification.walletAddress!)}
         </Text>
       )}
     </View>

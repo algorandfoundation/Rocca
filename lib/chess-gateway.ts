@@ -126,7 +126,11 @@ export function resolveGatewayUrl(logger?: GatewayLogger): string {
 export interface LinkSessionData {
   authenticated: boolean;
   user?: { id?: string; email?: string; emailVerified?: boolean } | null;
-  verification?: { id?: string; email?: string } | null;
+  verification?: {
+    walletAddress?: string;
+    id?: string;
+    email?: string;
+  } | null;
   player?: { id?: string; user_id?: string; [k: string]: any } | null;
 }
 
