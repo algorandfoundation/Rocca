@@ -1,4 +1,8 @@
+import HeaderBackButton from '@/components/world-chess/HeaderBackButton';
+import { resolveAlgodClientConfig } from '@/lib/algod';
+import { resolveIndexerClientConfig } from '@/lib/indexer';
 import { bootstrap } from '@/lib/bootstrap';
+import { chessGateway } from '@/lib/chess-gateway';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
@@ -7,13 +11,21 @@ import { keyStoreHooks } from '@/stores/before-after';
 import { identitiesStore } from '@/stores/identities';
 import { keyStore } from '@/stores/keystore';
 import { passkeysStore } from '@/stores/passkeys';
+import theme from '@/theme/theme';
 import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEventListener } from 'expo';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { install } from 'react-native-quick-crypto';
 import { registerGlobals } from 'react-native-webrtc';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 globalPolyfill();
 registerGlobals();
@@ -56,16 +68,18 @@ const provider = new ReactNativeProvider(
     },
     algorand: {
       network: process.env.EXPO_PUBLIC_GENESIS_ID ?? 'mainnet-v1.0',
-      algodConfig: {
-        token: process.env.EXPO_PUBLIC_ALGOD_TOKEN ?? '',
-        server: process.env.EXPO_PUBLIC_ALGOD_SERVER || 'https://mainnet-api.4160.nodely.dev',
-        port: process.env.EXPO_PUBLIC_ALGOD_PORT ? Number(process.env.EXPO_PUBLIC_ALGOD_PORT) : 443,
-      },
+      algodConfig: resolveAlgodClientConfig(),
+      indexerConfig: resolveIndexerClientConfig() ?? undefined,
+    },
+    intermezzo: {
+      client: chessGateway,
     },
   },
 );
 
 setupNavigatorPolyfill();
+
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   React.useEffect(() => {
@@ -91,10 +105,48 @@ export default function RootLayout() {
   });
 
   return (
-    <PreventScreenshotProvider>
-      <WalletProvider provider={provider}>
-        <Stack />
-      </WalletProvider>
-    </PreventScreenshotProvider>
+    <GestureHandlerRootView>
+      <BottomSheetModalProvider>
+        <PreventScreenshotProvider>
+          <QueryClientProvider client={queryClient}>
+            <WalletProvider provider={provider}>
+              <Stack
+                initialRouteName="index"
+                screenOptions={{
+                  headerStyle: { backgroundColor: theme.semantic.bg['app-bg'] },
+                  headerTintColor: theme.semantic.fg['brand-secondary'],
+                  headerTitleStyle: {
+                    color: theme.semantic.fg['high-emphasis'],
+                    fontFamily: theme.primitives.font.family.header,
+                    fontSize: theme.primitives.font.size['p-lg'],
+                  },
+                  headerTitleAlign: 'center', // Consistent position across Android and iOS
+                }}
+              >
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="auth/email"
+                  options={{ title: 'Sign in', headerLeft: () => <HeaderBackButton /> }}
+                />
+                <Stack.Screen
+                  name="auth/otp"
+                  options={{ title: 'Verify', headerLeft: () => <HeaderBackButton /> }}
+                />
+                <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="events"
+                  options={{ title: 'Events', headerLeft: () => <HeaderBackButton /> }}
+                />
+                <Stack.Screen
+                  name="activities"
+                  options={{ title: 'Activities', headerLeft: () => <HeaderBackButton /> }}
+                />
+              </Stack>
+            </WalletProvider>
+          </QueryClientProvider>
+        </PreventScreenshotProvider>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }

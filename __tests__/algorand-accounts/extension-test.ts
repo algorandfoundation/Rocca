@@ -20,7 +20,9 @@ jest.mock('@/extensions/algorand-accounts/algorand', () => ({
 
 jest.mock('@algorandfoundation/algokit-utils', () => ({
   AlgorandClient: {
-    fromConfig: jest.fn().mockReturnValue({}),
+    fromConfig: jest.fn().mockReturnValue({
+      client: { algod: {}, indexerIfPresent: null },
+    }),
   },
 }));
 

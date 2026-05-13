@@ -31,8 +31,24 @@ export const WithAlgorandAccounts = (provider: any, options: AlgorandAccountsExt
     );
   }
 
-  // Create algorand client
-  const algorandClient = AlgorandClient.fromConfig({ algodConfig: options.algorand.algodConfig });
+  // Create algorand client. Pass both algod and (optional) indexer
+  // configs so downstream consumers can reach either via
+  // `provider.algorand`.
+  const algorandClient = AlgorandClient.fromConfig({
+    algodConfig: options.algorand.algodConfig,
+    indexerConfig: options.algorand.indexerConfig,
+  });
+
+  // Attach typed algod / indexer clients to `provider.algorand` (only
+  // if a previously-loaded Algorand-aware extension hasn't already
+  // done so). This lets hooks / screens reuse a single client pair
+  // instead of building their own from env config.
+  if (!provider.algorand) {
+    provider.algorand = {
+      algod: algorandClient.client.algod,
+      indexer: algorandClient.client.indexerIfPresent ?? null,
+    };
+  }
   // Get the store from the options
   const accountsStore: Store<AccountStoreState<Account>> = options.accounts.store;
   // Get the keystore from the options

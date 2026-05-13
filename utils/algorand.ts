@@ -27,3 +27,26 @@ export function decodeAddress(address: string): { publicKey: Uint8Array } {
 
   return { publicKey: new Uint8Array(publicKey) };
 }
+
+/**
+ * Shortens an Algorand address for UI display.
+ *
+ * Example:
+ * ellipseAddress(
+ *   "6Z5J6YQ2T3X5P4P5N6W2G3M4L7K8J9H1D2F3G4H5J6K7L8M9N0P1Q2R3S4"
+ * )
+ * => "6Z5J...Q2R3"
+ */
+
+export function ellipseAddress(address: string, width = 4): string {
+  if (!address || typeof address !== 'string') {
+    return '';
+  }
+
+  // Algorand addresses are typically 58 chars
+  if (address.length <= width * 2) {
+    return address;
+  }
+
+  return `${address.slice(0, width)}...${address.slice(-width)}`;
+}

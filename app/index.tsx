@@ -1,62 +1,42 @@
-import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Redirect } from 'expo-router';
-import Constants from 'expo-constants';
-import { useStore } from '@tanstack/react-store';
-import { logsStore } from '@/stores/logs';
-import Logo from '@/components/Logo';
 import { useProvider } from '@/hooks/useProvider';
+import { useSession } from '@/hooks/useSession';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
+import { Redirect } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import React from 'react';
+
 export default function Index() {
-  const { keys, status } = useProvider();
-  const logs = useStore(logsStore, (state) => state.logs);
-  const lastLog = logs.length > 0 ? logs[0].message : 'Initializing...';
+  const { status } = useProvider();
+  const {
+    isAuthenticated,
+    isLoading: isSessionLoading,
+    isFetched: isSessionFetched,
+  } = useSession();
 
-  const config = Constants.expoConfig?.extra?.provider || {
-    primaryColor: '#3B82F6',
-  };
+  /* Create consistent aliases for font family names to avoid issues across platforms and bundlers */
+  const [loaded] = useFonts({
+    'PP-Right-Grotesk-Tall-Medium': require('../assets/fonts/PP-Right-Grotesk-Tall-Medium.ttf'),
+    Gerbera: require('../assets/fonts/Gerbera.ttf'),
+    ...MaterialIcons.font,
+    ...Ionicons.font,
+  });
 
-  if (status === 'loading') {
-    return (
-      <View style={styles.container}>
-        <Logo size={100} style={styles.logo} />
-        <ActivityIndicator size="large" color={config.primaryColor} />
-        <View style={styles.content}>
-          <Text style={styles.text}>{lastLog}</Text>
-          <Text style={styles.subtext}>Securing your keys and passkeys</Text>
-        </View>
-      </View>
-    );
+  // Wait for fonts, provider, and the initial session probe to resolve before
+  // deciding where to send the user. `isFetched` flips true on both success
+  // and error, so a failing gateway still releases the splash (treated as
+  // unauthenticated).
+  const isReady = status !== 'loading' && loaded && (isSessionFetched || !isSessionLoading);
+
+  React.useEffect(() => {
+    if (isReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [isReady]);
+
+  if (!isReady) {
+    return null; // Don't render anything, keep splash visible
   }
 
-  if (keys.length > 0) return <Redirect href="/landing" />;
-  return <Redirect href="/onboarding" />;
+  return <Redirect href={isAuthenticated ? '/dashboard' : '/auth/login'} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    padding: 24,
-  },
-  logo: {
-    marginBottom: 40,
-  },
-  content: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    textAlign: 'center',
-  },
-  subtext: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-});

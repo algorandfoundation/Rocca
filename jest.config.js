@@ -7,5 +7,6 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^@algorandfoundation/(.*)$': '<rootDir>/node_modules/@algorandfoundation/$1',
+    '^react-native-worklets$': '<rootDir>/__mocks__/react-native-worklets.js',
   },
 };
