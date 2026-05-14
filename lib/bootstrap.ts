@@ -15,26 +15,95 @@ import {
 import { Store } from '@tanstack/store';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 import { keyStore } from '@/stores/keystore';
+import { passkeysStore } from '@/stores/passkeys';
 import { CredentialProviderService } from '@/lib/credentialProvider';
 import { addLog } from '@algorandfoundation/log-store';
 
-import * as Keychain from 'react-native-keychain';
-import { randomBytes } from 'react-native-quick-crypto';
 import { generateId } from '@algorandfoundation/wallet-provider';
 import { logsStore } from '@/stores/logs';
+import { toUrlSafe } from '@/utils/base64';
 
-/**
- * Bootstraps the app's keystore and native passkey autofill service.
- * This should be called on app start, and after any operation that changes the wallet's keys (e.g., import, create).
- *
- * @param options
- * @param showAlert - Whether to show an alert if the autofill service is not enabled.
- */
-export async function bootstrap(options?: AuthenticationOptions, showAlert = true) {
+type NativeStoredCredential = {
+  credentialId: string;
+  relyingPartyIdentifier: string;
+  userName: string;
+  userHandle: string;
+  publicKey?: string;
+  createdAt?: number;
+};
+
+function base64ToBytes(value: string): Uint8Array {
+  return new Uint8Array(Buffer.from(value, 'base64'));
+}
+
+async function syncNativeStoredPasskeys(logMsg: (message: string, level?: string) => void) {
+  const credentials = (await ReactNativePasskeyAutofill.getStoredCredentials().catch(
+    (e: unknown) => {
+      logMsg(`ReactNativePasskeyAutofill.getStoredCredentials error: ${e}`, 'error');
+      return [];
+    },
+  )) as NativeStoredCredential[];
+
+  logMsg(`Native passkey credentials visible to app: ${credentials.length}`);
+  await ReactNativePasskeyAutofill.refreshCredentialIdentities?.().catch((e: unknown) => {
+    logMsg(`ReactNativePasskeyAutofill.refreshCredentialIdentities error: ${e}`, 'error');
+  });
+  const diagnostics = await ReactNativePasskeyAutofill.getDiagnostics().catch((): string[] => []);
+  diagnostics.slice(-8).forEach((line: string) => {
+    logMsg(`PasskeyAutofill diagnostic: ${line}`);
+  });
+
+  if (credentials.length === 0) {
+    return;
+  }
+
+  passkeysStore.setState((state) => {
+    const nativePasskeys = credentials.map((credential) => {
+      const id = toUrlSafe(credential.credentialId);
+      const createdAt =
+        credential.createdAt && credential.createdAt < 10_000_000_000
+          ? credential.createdAt * 1000
+          : credential.createdAt;
+
+      return {
+        id,
+        name: credential.relyingPartyIdentifier,
+        userHandle: credential.userHandle,
+        origin: credential.relyingPartyIdentifier,
+        publicKey: credential.publicKey ? base64ToBytes(credential.publicKey) : new Uint8Array(),
+        algorithm: 'P256',
+        createdAt,
+        metadata: {
+          keyId: credential.credentialId,
+          nativeCredential: true,
+          registered: true,
+          userName: credential.userName,
+        },
+      };
+    });
+
+    const nativeIds = new Set(nativePasskeys.map((passkey) => passkey.id));
+    const retained = state.passkeys.filter((passkey) => !nativeIds.has(passkey.id));
+    return {
+      ...state,
+      passkeys: [...nativePasskeys, ...retained],
+    };
+  });
+}
+
+let activeBootstrap: Promise<void> | null = null;
+
+async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
   const logMsg = (message: string, level = 'info') => {
     addLog({
       store: logsStore,
-      log: { id: generateId(), level, context: 'Bootstrap', timestamp: new Date(), message },
+      log: {
+        id: generateId(),
+        level,
+        context: 'Bootstrap',
+        timestamp: new Date(),
+        message,
+      },
     });
     if (level === 'error') {
       console.error(`[Bootstrap ERROR] ${message}`);
@@ -44,7 +113,10 @@ export async function bootstrap(options?: AuthenticationOptions, showAlert = tru
   };
 
   try {
-    setStatus({ store: keyStore as unknown as Store<KeyStoreState>, status: 'loading' });
+    setStatus({
+      store: keyStore as unknown as Store<KeyStoreState>,
+      status: 'loading',
+    });
 
     const keyIds = storage.getAllKeys();
     logMsg(`Found ${keyIds.length} keys in storage`);
@@ -76,8 +148,13 @@ export async function bootstrap(options?: AuthenticationOptions, showAlert = tru
         logMsg(`ReactNativePasskeyAutofill.configureIntentActions error: ${e}`, 'error');
       });
 
+      await syncNativeStoredPasskeys(logMsg);
+
       logMsg('No keys found, setting keystore status to idle');
-      setStatus({ store: keyStore as unknown as Store<KeyStoreState>, status: 'idle' });
+      setStatus({
+        store: keyStore as unknown as Store<KeyStoreState>,
+        status: 'idle',
+      });
 
       return;
     }
@@ -99,7 +176,7 @@ export async function bootstrap(options?: AuthenticationOptions, showAlert = tru
 
     const keys = secrets
       .filter((k) => k !== null)
-      .map(({ privateKey, seed, ...rest }: any) => rest) as Key[];
+      .map(({ privateKey: _privateKey, seed: _seed, ...rest }: any) => rest) as Key[];
 
     logMsg(`Found ${keys.length} keys in storage`);
     keys.forEach((k) => {
@@ -134,6 +211,9 @@ export async function bootstrap(options?: AuthenticationOptions, showAlert = tru
       keys,
     });
 
+    const hdRootKeySecret = secrets.find(
+      (s) => s !== null && (s.type === 'hd-root-key' || s.type === 'xhd-root-key'),
+    );
     const hdRootKey =
       keys.find((k) => k.type === 'hd-root-key') ||
       keys.find((k) => k.type === 'xhd-root-key') ||
@@ -144,6 +224,17 @@ export async function bootstrap(options?: AuthenticationOptions, showAlert = tru
       await ReactNativePasskeyAutofill.setHdRootKeyId(hdRootKey.id).catch((e) => {
         logMsg(`ReactNativePasskeyAutofill.setHdRootKeyId error: ${e}`, 'error');
       });
+    }
+
+    if (hdRootKeySecret?.privateKey) {
+      logMsg('Setting derived main key material in native side');
+      await ReactNativePasskeyAutofill.setDerivedMainKey(
+        Buffer.from(hdRootKeySecret.privateKey).toString('hex'),
+      ).catch((e) => {
+        logMsg(`ReactNativePasskeyAutofill.setDerivedMainKey error: ${e}`, 'error');
+      });
+    } else {
+      logMsg('No HD root key material available for native passkey registration', 'error');
     }
 
     const isEnabled = await CredentialProviderService.isEnabledCredentialProviderService().catch(
@@ -180,15 +271,44 @@ export async function bootstrap(options?: AuthenticationOptions, showAlert = tru
       logMsg(`ReactNativePasskeyAutofill.configureIntentActions error: ${e}`, 'error');
     });
 
+    await syncNativeStoredPasskeys(logMsg);
+
     if (keys.length > 0) {
       logMsg('Setting keystore status to ready');
-      setStatus({ store: keyStore as unknown as Store<KeyStoreState>, status: 'ready' });
+      setStatus({
+        store: keyStore as unknown as Store<KeyStoreState>,
+        status: 'ready',
+      });
     } else {
       logMsg('No keys found, setting keystore status to idle');
-      setStatus({ store: keyStore as unknown as Store<KeyStoreState>, status: 'idle' });
+      setStatus({
+        store: keyStore as unknown as Store<KeyStoreState>,
+        status: 'idle',
+      });
     }
   } catch (e) {
     logMsg(`Bootstrap failed: ${e}`, 'error');
-    setStatus({ store: keyStore as unknown as Store<KeyStoreState>, status: 'error' });
+    setStatus({
+      store: keyStore as unknown as Store<KeyStoreState>,
+      status: 'error',
+    });
   }
+}
+
+/**
+ * Bootstraps the app's keystore and native passkey autofill service.
+ * This should be called on app start, and after any operation that changes the wallet's keys (e.g., import, create).
+ *
+ * @param options
+ * @param showAlert - Whether to show an alert if the autofill service is not enabled.
+ */
+export async function bootstrap(options?: AuthenticationOptions, showAlert = true) {
+  if (activeBootstrap) {
+    return activeBootstrap;
+  }
+
+  activeBootstrap = runBootstrap(options, showAlert).finally(() => {
+    activeBootstrap = null;
+  });
+  return activeBootstrap;
 }

@@ -9,8 +9,8 @@ export interface CredentialProvider {
 
 export const CredentialProviderService: CredentialProvider = {
   isEnabledCredentialProviderService: async () => {
-    if (Platform.OS !== 'android') return true;
-    if (!CredentialProviderModule) return true;
+    if (Platform.OS !== 'android') return false;
+    if (!CredentialProviderModule) return false;
     return await CredentialProviderModule.isEnabledCredentialProviderService();
   },
   showCredentialProviderSettings: async () => {

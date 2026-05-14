@@ -95,7 +95,7 @@ export function DidDocumentModal({
       {didDocument ? (
         <View>
           <JSONTree
-            data={didDocument}
+            data={didDocument as unknown as Record<string, unknown>}
             theme={{
               scheme: 'google',
               author: 'seth wright (http://sethawright.com)',

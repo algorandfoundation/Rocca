@@ -164,7 +164,7 @@ export default function ImportWalletScreen() {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Bootstrap to ensure native side is updated with new master key and keys
-      await bootstrap(false);
+      await bootstrap(undefined, false);
 
       const { identities } = identitiesStore.state;
       const { accounts } = accountsStore.state;

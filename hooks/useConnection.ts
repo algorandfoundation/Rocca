@@ -381,7 +381,10 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           if (matchedKey) {
             try {
               const masterKey = await getMasterKey();
-              const keyData = await fetchSecret<KeyData>({ keyId: matchedKey.id, masterKey });
+              const keyData = await fetchSecret<KeyData>({
+                keyId: matchedKey.id,
+                options: { masterKey },
+              });
               if (keyData) {
                 keyData.metadata = { ...keyData.metadata, registered: true };
                 await commit({ store: keyStore as any, keyData });
@@ -500,7 +503,10 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           if (matchedKey) {
             try {
               const masterKey = await getMasterKey();
-              const keyData = await fetchSecret<KeyData>({ keyId: matchedKey.id, masterKey });
+              const keyData = await fetchSecret<KeyData>({
+                keyId: matchedKey.id,
+                options: { masterKey },
+              });
               if (keyData) {
                 keyData.metadata = { ...keyData.metadata, registered: true };
                 await commit({ store: keyStore as any, keyData });
