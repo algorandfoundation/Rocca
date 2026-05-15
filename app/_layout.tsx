@@ -14,6 +14,8 @@ import { bootstrap } from '@/lib/bootstrap';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import React from 'react';
 import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
+import { useProvider } from '@/hooks/useProvider';
+import { useIncomingPdf } from '@/hooks/useIncomingPdf';
 
 globalPolyfill();
 registerGlobals();
@@ -59,6 +61,12 @@ const provider = new ReactNativeProvider(
 
 setupNavigatorPolyfill();
 
+function PdfIntentHandler() {
+  const { keys } = useProvider();
+  useIncomingPdf(keys.length);
+  return null;
+}
+
 export default function RootLayout() {
   React.useEffect(() => {
     bootstrap(biometricOptions).catch((e) => console.error('Bootstrap promise error:', e));
@@ -85,6 +93,7 @@ export default function RootLayout() {
   return (
     <PreventScreenshotProvider>
       <WalletProvider provider={provider}>
+        <PdfIntentHandler />
         <Stack />
       </WalletProvider>
     </PreventScreenshotProvider>

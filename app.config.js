@@ -86,6 +86,7 @@ module.exports = {
         },
       ],
       '@config-plugins/react-native-webrtc',
+      './plugins/with-pdf-intent.js',
       [
         '@algorandfoundation/react-native-passkey-autofill',
         {

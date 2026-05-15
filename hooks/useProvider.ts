@@ -7,6 +7,7 @@ import { accountsStore } from '@/stores/accounts';
 import { passkeysStore } from '@/stores/passkeys';
 import { sessionsStore } from '@/stores/sessions';
 import { identitiesStore } from '@/stores/identities';
+import { documentsStore } from '@/stores/documents';
 
 export function useProvider() {
   const provider = useContext(WalletProviderContext);
@@ -19,6 +20,7 @@ export function useProvider() {
   const passkeys = useStore(passkeysStore, (state) => state.passkeys);
   const sessions = useStore(sessionsStore, (state) => state.sessions);
   const identities = useStore(identitiesStore, (state) => state.identities);
+  const documents = useStore(documentsStore, (state) => state.documents);
 
-  return { ...provider, keys, status, accounts, passkeys, sessions, identities };
+  return { ...provider, keys, status, accounts, passkeys, sessions, identities, documents };
 }
