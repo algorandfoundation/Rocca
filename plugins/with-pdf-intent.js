@@ -91,6 +91,11 @@ function addIosPdfSupport(config) {
 
 /**
  * Expo config plugin to register Rocca as a PDF viewer app.
+ *
+ * ⚠️  SINGLE SOURCE OF TRUTH for Android PDF intent filters.
+ * Do NOT add PDF <intent-filter> blocks manually anywhere else
+ * (e.g. android/app/src/main/AndroidManifest.xml). They will drift.
+ * This plugin injects them at prebuild time.
  */
 module.exports = function withPdfIntent(config) {
   config = addAndroidPdfIntents(config);

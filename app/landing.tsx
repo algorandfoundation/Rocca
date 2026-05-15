@@ -42,7 +42,7 @@ export default function LandingScreen() {
     showIdentities,
     showConnections,
     showDocuments,
-  } = { showDocuments: true, ...config };
+  } = config;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#F8FAFC' }]}>

@@ -111,6 +111,7 @@ module.exports = {
         showPasskeys: true,
         showIdentities: true,
         showConnections: true,
+        showDocuments: true,
       },
       router: {},
       eas: {
