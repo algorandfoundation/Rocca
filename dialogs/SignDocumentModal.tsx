@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Modal from '../components/Modal';
 import type { Identity } from '@/extensions/identities/types';
@@ -10,50 +19,94 @@ interface SignDocumentModalProps {
   onClose: () => void;
   identity: Identity;
   onSign: (name: string) => void;
+  prefilledName?: string;
 }
 
-export function SignDocumentModal({ visible, onClose, identity, onSign }: SignDocumentModalProps) {
+export function SignDocumentModal({
+  visible,
+  onClose,
+  identity,
+  onSign,
+  prefilledName,
+}: SignDocumentModalProps) {
   const [name, setName] = useState('');
+  const savedName = getSigningName(identity.didDocument) || '';
+  const resolvedName = savedName || prefilledName || '';
 
   useEffect(() => {
     if (visible) {
-      const saved = getSigningName(identity.didDocument);
-      setName(saved ?? '');
+      setName(resolvedName);
     }
-  }, [visible, identity]);
+  }, [visible, resolvedName]);
 
   function handleConfirm() {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    onSign(trimmed);
+    const finalName = resolvedName.trim() || name.trim();
+    if (!finalName) return;
+    onSign(finalName);
   }
 
+  const hasName = !!resolvedName.trim();
+
   return (
-    <Modal visible={visible} onClose={onClose} title="Sign Document">
-      <View style={styles.body}>
-        <Text style={styles.label}>Type your name to sign</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="e.g. Alice Smith"
-          placeholderTextColor="#94A3B8"
-          autoCapitalize="words"
-        />
-
-        <TouchableOpacity
-          style={[styles.primaryButton, !name.trim() && styles.primaryButtonDisabled]}
-          onPress={handleConfirm}
-          disabled={!name.trim()}
+    <Modal
+      visible={visible}
+      onClose={onClose}
+      onRequestClose={() => {}}
+      title={hasName ? 'Confirm Signature' : 'Sign Document'}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingVertical: 8 }}
         >
-          <MaterialIcons name="fingerprint" size={20} color="#FFFFFF" />
-          <Text style={styles.primaryButtonText}>Sign with Biometrics</Text>
-        </TouchableOpacity>
+          <View style={styles.body}>
+            {hasName ? (
+              <>
+                <Text style={styles.confirmLabel}>Sign as</Text>
+                <Text style={styles.confirmName}>{resolvedName}</Text>
+                <Text style={styles.confirmHint}>
+                  {savedName
+                    ? 'Your signing name is saved in your identity.'
+                    : 'Name taken from your signature field.'}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.label}>Type your name to sign</Text>
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="e.g. Alice Smith"
+                  placeholderTextColor="#94A3B8"
+                  autoCapitalize="words"
+                />
+              </>
+            )}
 
-        <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity
+              style={[
+                styles.primaryButton,
+                !hasName && !name.trim() && styles.primaryButtonDisabled,
+              ]}
+              onPress={handleConfirm}
+              disabled={!hasName && !name.trim()}
+            >
+              <MaterialIcons name="fingerprint" size={20} color="#FFFFFF" />
+              <Text style={styles.primaryButtonText}>
+                {hasName ? 'Sign with Biometrics' : 'Confirm & Sign'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -78,6 +131,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0F172A',
     marginBottom: 20,
+  },
+  confirmLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  confirmName: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  confirmHint: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginBottom: 16,
   },
   primaryButton: {
     flexDirection: 'row',

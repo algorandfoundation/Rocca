@@ -1,7 +1,7 @@
 import { PDFDocument, PDFName, decodePDFRawStream } from 'pdf-lib';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Buffer } from 'buffer';
-import type { PDFDict, PDFArray, PDFRef, PDFHexString, PDFString } from 'pdf-lib';
+import type { PDFDict, PDFArray, PDFRef } from 'pdf-lib';
 import { ed25519 } from '@noble/curves/ed25519.js';
 import { hashDocument } from '@/utils/pdf-sign';
 import type { SignatureField } from '@/utils/pdf-sign';

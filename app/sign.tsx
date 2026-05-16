@@ -11,17 +11,25 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Sharing from 'expo-sharing';
 import Pdf from 'react-native-pdf';
+import { PDFDocument } from 'pdf-lib';
 import { useProvider } from '@/hooks/useProvider';
 import { SignDocumentModal } from '@/dialogs/SignDocumentModal';
-import { setSigningName } from '@/utils/did-signing-name';
+import { FieldTypeModal } from '@/dialogs/FieldTypeModal';
+import { FieldPlacementOverlay, type PlacedField } from '@/components/FieldPlacementOverlay';
+import { setSigningName, getSigningName } from '@/utils/did-signing-name';
 import { stampPdf, hashDocument, type SignatureField } from '@/utils/pdf-sign';
 import { verifyPdf, extractProof } from '@/utils/verify-pdf';
 import type { VerifyResult } from '@/utils/verify-pdf';
 import { addDocument } from '@/stores/documents';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { Buffer } from 'buffer';
+import type { PageSize } from '@/utils/pdf-form';
+
+function generateFieldId(): string {
+  return Math.random().toString(36).substring(2, 15);
+}
 
 export default function SignScreen() {
   const router = useRouter();
@@ -48,10 +56,19 @@ export default function SignScreen() {
   const toastOpacity = React.useRef(new Animated.Value(0)).current;
   const toastTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /* -- placement mode state -- */
+  const [appMode, setAppMode] = useState<'view' | 'place'>('view');
+  const [placedFields, setPlacedFields] = useState<PlacedField[]>([]);
+  const [pageSizes, setPageSizes] = useState<PageSize[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentZoom, setCurrentZoom] = useState(1);
+  const [showFieldTypeModal, setShowFieldTypeModal] = useState(false);
+  const [pendingTap, setPendingTap] = useState<{ x: number; y: number; page: number } | null>(null);
+
   const source = pdfUri ? { uri: pdfUri, cache: false } : undefined;
   const activeIdentity = identities[0];
 
-  // Detect if incoming PDF is already signed
+  /* -- detect existing signature / pre-scan pages -- */
   useEffect(() => {
     let cancelled = false;
     async function detect() {
@@ -70,8 +87,17 @@ export default function SignScreen() {
         } else {
           setDocMode('view');
         }
+
+        // Pre-scan page sizes
+        const pdfDoc = await PDFDocument.load(bytes);
+        const pages = pdfDoc.getPages();
+        const sizes: PageSize[] = pages.map((p) => ({
+          width: p.getWidth(),
+          height: p.getHeight(),
+        }));
+        setPageSizes(sizes);
       } catch (e) {
-        console.error('[SignScreen] Error detecting proof:', e);
+        console.error('[SignScreen] Error pre-scanning PDF:', e);
         if (!cancelled) setDocMode('sign');
       }
     }
@@ -126,6 +152,7 @@ export default function SignScreen() {
     }
   }
 
+  /* -- single-field fallback (backward compatible) -- */
   async function handleSign(signerName: string) {
     if (!pdfUri || !activeIdentity || !activeIdentity.sign) {
       setSignPhase('error');
@@ -184,6 +211,110 @@ export default function SignScreen() {
     }
   }
 
+  /* -- multi-field sign flow: one dialog, one signature, commit all -- */
+  async function commitMultiFieldSign(signerName: string) {
+    if (!pdfUri || !activeIdentity || !activeIdentity.sign || placedFields.length === 0) {
+      setSignPhase('error');
+      setSignError('Cannot sign: missing PDF, identity, or fields');
+      return;
+    }
+
+    setSignPhase('signing');
+    setShowNameModal(false);
+
+    try {
+      const pk = activeIdentity.didDocument?.verificationMethod?.[0]?.publicKeyMultibase;
+      const signerDid = pk || activeIdentity.did || activeIdentity.address || 'unknown';
+
+      const originalBase64 = await FileSystem.readAsStringAsync(pdfUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const originalBytes = new Uint8Array(Buffer.from(originalBase64, 'base64'));
+
+      const timestamp = new Date().toISOString();
+      const fields: SignatureField[] = placedFields.map((f) => ({
+        id: f.id,
+        page: f.page,
+        x: f.x,
+        y: f.y,
+        type: f.kind,
+        content: f.content,
+      }));
+      const hashPayload = hashDocument(originalBytes, fields, signerName, signerDid, timestamp);
+
+      const [signature] = await activeIdentity.sign([hashPayload]);
+
+      const stampedUri = await stampPdf(
+        pdfUri,
+        signerName,
+        signerDid,
+        hashPayload,
+        signature,
+        timestamp,
+        fields,
+      );
+
+      await handleNameUpdated(signerName);
+
+      setSignedUri(stampedUri);
+      setSignerNameState(signerName);
+      setSignerDidState(signerDid);
+      setHashPayloadState(hashPayload);
+      setSignPhase('success');
+      setAppMode('view');
+      setPlacedFields([]);
+      showToast('Document signed successfully');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[SignScreen] Multi-field signing error:', err);
+      setSignError(msg);
+      setSignPhase('error');
+    }
+  }
+
+  /* -- placement helpers -- */
+  function handleTapAt(pdfX: number, pdfY: number, page: number) {
+    setPendingTap({ x: pdfX, y: pdfY, page });
+    setShowFieldTypeModal(true);
+  }
+
+  function handleConfirmFieldType(
+    type: 'signature' | 'field',
+    label: string,
+    content?: string,
+    size?: number,
+  ) {
+    if (!pendingTap) return;
+    const field: PlacedField = {
+      id: generateFieldId(),
+      page: pendingTap.page,
+      x: pendingTap.x,
+      y: pendingTap.y,
+      kind: type,
+      label: label || (type === 'signature' ? 'Signature' : 'Text Field'),
+      content: type === 'field' ? content : undefined,
+      size,
+    };
+    setPlacedFields((prev) => [...prev, field]);
+    setPendingTap(null);
+    setShowFieldTypeModal(false);
+  }
+
+  function handleRemoveField(id: string) {
+    setPlacedFields((prev) => prev.filter((f) => f.id !== id));
+  }
+
+  function handleMoveField(id: string, pdfX: number, pdfY: number) {
+    setPlacedFields((prev) => prev.map((f) => (f.id === id ? { ...f, x: pdfX, y: pdfY } : f)));
+  }
+
+  function handleSetFieldSize(id: string, size: number) {
+    setPlacedFields((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, size: Math.min(32, Math.max(8, size)) } : f)),
+    );
+  }
+
+  /* -- share / wallet -- */
   async function handleShare() {
     if (!signedUri) return;
     try {
@@ -224,9 +355,27 @@ export default function SignScreen() {
           <MaterialIcons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
-          {isReadonly ? 'Document' : 'Sign Document'}
+          {isReadonly ? 'Document' : appMode === 'place' ? 'Place Fields' : 'Sign Document'}
         </Text>
-        <View style={styles.iconButton} />
+        {isReadonly && (
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={async () => {
+              if (!pdfUri) return;
+              try {
+                await Sharing.shareAsync(pdfUri, {
+                  mimeType: 'application/pdf',
+                  dialogTitle: 'Share Document',
+                });
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            <MaterialIcons name="share" size={24} color="#3B82F6" />
+          </TouchableOpacity>
+        )}
+        {!isReadonly && <View style={styles.iconButton} />}
       </View>
 
       {/* PDF */}
@@ -237,17 +386,32 @@ export default function SignScreen() {
         </View>
       ) : (
         <View style={styles.pdfContainer}>
-          <Pdf
-            source={source}
-            style={styles.pdf}
-            enableDoubleTapZoom
-            enablePaging={false}
-            spacing={10}
-            onError={(err) => {
-              console.error('[SignScreen] PDF load error:', err);
-              setError('Failed to load PDF. The file may be corrupted or unsupported.');
-            }}
-          />
+          <FieldPlacementOverlay
+            fields={placedFields}
+            pageSizes={pageSizes}
+            currentPage={currentPage}
+            currentZoom={currentZoom}
+            isActive={appMode === 'place'}
+            onTapAt={handleTapAt}
+            onMoveField={handleMoveField}
+            onRemoveField={handleRemoveField}
+            onSetFieldSize={handleSetFieldSize}
+          >
+            <Pdf
+              source={source}
+              style={styles.pdf}
+              enableDoubleTapZoom={appMode !== 'place'}
+              enablePaging={appMode === 'place'}
+              spacing={10}
+              fitPolicy={0}
+              onError={(err) => {
+                console.error('[SignScreen] PDF load error:', err);
+                setError('Failed to load PDF. The file may be corrupted or unsupported.');
+              }}
+              onPageChanged={(page) => setCurrentPage(page)}
+              onScaleChanged={(scale) => setCurrentZoom(scale)}
+            />
+          </FieldPlacementOverlay>
 
           {toastMsg && (
             <Animated.View style={[styles.toast, { opacity: toastOpacity }]}>
@@ -258,21 +422,59 @@ export default function SignScreen() {
         </View>
       )}
 
-      {/* Bottom bar */}
-      {!isReadonly && docMode === 'sign' && (
+      {/* Bottom bar — single Sign / Fill button to enter placement mode */}
+      {!isReadonly && docMode === 'sign' && appMode === 'view' && (
         <View style={styles.bottomBar}>
           <TouchableOpacity
             style={[styles.signButton, !activeIdentity && styles.signButtonDisabled]}
-            onPress={() => setShowNameModal(true)}
+            onPress={() => {
+              setAppMode('place');
+              setPlacedFields([]);
+            }}
             disabled={!activeIdentity}
           >
             <MaterialIcons name="edit" size={20} color="#FFFFFF" />
-            <Text style={styles.signButtonText}>Sign Document</Text>
+            <Text style={styles.signButtonText}>Sign</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {docMode === 'verify' && (
+      {/* Placement mode bottom bar */}
+      {appMode === 'place' && (
+        <View style={styles.bottomBar}>
+          <Text style={styles.placeHint}>
+            {placedFields.length === 0
+              ? 'Tap anywhere on the page to place a field'
+              : `${placedFields.length} field(s) placed. Tap to add more.`}
+          </Text>
+          <View style={styles.placeRow}>
+            <TouchableOpacity
+              style={[styles.signButton, { backgroundColor: '#64748B', flex: 1 }]}
+              onPress={() => {
+                setAppMode('view');
+                setPlacedFields([]);
+              }}
+            >
+              <Text style={styles.signButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.signButton, { flex: 2 }]}
+              onPress={() => {
+                if (placedFields.length === 0) {
+                  setAppMode('view');
+                  return;
+                }
+                setShowNameModal(true);
+              }}
+            >
+              <MaterialIcons name="done" size={20} color="#FFFFFF" />
+              <Text style={styles.signButtonText}>Confirm to Sign</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {docMode === 'verify' && appMode === 'view' && (
         <View style={styles.bottomBar}>
           <TouchableOpacity style={styles.signButton} onPress={handleVerify}>
             <MaterialIcons name="verified-user" size={20} color="#FFFFFF" />
@@ -417,15 +619,46 @@ export default function SignScreen() {
         </View>
       )}
 
-      {/* Name modal */}
-      {activeIdentity && !isReadonly && docMode === 'sign' && (
+      {/* Modals */}
+      {activeIdentity && !isReadonly && appMode === 'view' && docMode === 'sign' && (
         <SignDocumentModal
           visible={showNameModal}
           onClose={() => setShowNameModal(false)}
           identity={activeIdentity}
           onSign={handleSign}
+          prefilledName={getSigningName(activeIdentity.didDocument)}
         />
       )}
+
+      {activeIdentity && !isReadonly && appMode === 'place' && (
+        <SignDocumentModal
+          visible={showNameModal}
+          onClose={() => setShowNameModal(false)}
+          identity={activeIdentity}
+          onSign={commitMultiFieldSign}
+          prefilledName={
+            getSigningName(activeIdentity.didDocument) ||
+            placedFields.find((f) => f.kind === 'signature')?.label ||
+            ''
+          }
+        />
+      )}
+
+      <FieldTypeModal
+        visible={showFieldTypeModal}
+        onClose={() => {
+          setShowFieldTypeModal(false);
+          setPendingTap(null);
+        }}
+        onConfirm={(choice) => handleConfirmFieldType(choice.type, choice.label, choice.content)}
+        defaultLabel={
+          pendingTap
+            ? placedFields.some((f) => f.kind === 'signature')
+              ? `Field ${placedFields.filter((f) => f.kind === 'field').length + 1}`
+              : 'Signature'
+            : undefined
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -642,5 +875,15 @@ const styles = StyleSheet.create({
   knownBadgeText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  placeHint: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  placeRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
 });
