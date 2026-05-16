@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFString, rgb, StandardFonts } from 'pdf-lib';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Buffer } from 'buffer';
 import { sha256 } from '@noble/hashes/sha256';
@@ -51,6 +51,7 @@ export async function stampPdf(
   hashPayload: Uint8Array,
   signature: Uint8Array,
   timestamp: string,
+  fields: SignatureField[],
 ): Promise<string> {
   const pdfBytes = await readPdfBytes(sourceUri);
   const pdfDoc = await PDFDocument.load(pdfBytes);
@@ -132,7 +133,31 @@ export async function stampPdf(
     color: rgb(0.6, 0.6, 0.6),
   });
 
-  // --- embed metadata ---
+  // --- embed original PDF as attachment ---
+  await pdfDoc.attach(pdfBytes, 'original.pdf', {
+    mimeType: 'application/pdf',
+    description: 'The original document before signing',
+  });
+
+  // --- embed metadata into Info dict (guaranteed to survive save) ---
+  const proofObj = {
+    Version: '1.0',
+    SignatureType: 'Ed25519',
+    Signature: Buffer.from(signature).toString('hex').toUpperCase(),
+    PublicKey: rawPublicKeyHex,
+    SignerDid: signerDid,
+    SignerName: signerName,
+    DocumentHash: Buffer.from(hashPayload).toString('hex').toUpperCase(),
+    Timestamp: timestamp,
+    Fields: fields,
+  };
+
+  const infoDict = (pdfDoc as any).getInfoDict();
+  if (infoDict && typeof infoDict.set === 'function') {
+    infoDict.set(PDFName.of('RoccaProof'), PDFString.of(JSON.stringify(proofObj)));
+  }
+
+  // --- keep backward-compatible flat keys for old-format detection ---
   const dict = pdfDoc.context.obj({
     RoccaSignerName: signerName,
     RoccaPublicKey: rawPublicKeyHex,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,8 @@ import { useProvider } from '@/hooks/useProvider';
 import { SignDocumentModal } from '@/dialogs/SignDocumentModal';
 import { setSigningName } from '@/utils/did-signing-name';
 import { stampPdf, hashDocument, type SignatureField } from '@/utils/pdf-sign';
+import { verifyPdf, extractProof } from '@/utils/verify-pdf';
+import type { VerifyResult } from '@/utils/verify-pdf';
 import { addDocument } from '@/stores/documents';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Buffer } from 'buffer';
@@ -38,12 +40,46 @@ export default function SignScreen() {
   const [signerDidState, setSignerDidState] = useState<string | null>(null);
   const [hashPayloadState, setHashPayloadState] = useState<Uint8Array | null>(null);
 
+  const [docMode, setDocMode] = useState<'sign' | 'verify' | 'view'>('sign');
+  const [verifyPhase, setVerifyPhase] = useState<'idle' | 'verifying' | 'done'>('idle');
+  const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
+
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastOpacity = React.useRef(new Animated.Value(0)).current;
   const toastTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const source = pdfUri ? { uri: pdfUri, cache: false } : undefined;
   const activeIdentity = identities[0];
+
+  // Detect if incoming PDF is already signed
+  useEffect(() => {
+    let cancelled = false;
+    async function detect() {
+      if (!pdfUri) return;
+      try {
+        const base64 = await FileSystem.readAsStringAsync(pdfUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        const bytes = new Uint8Array(Buffer.from(base64, 'base64'));
+        const detected = await extractProof(bytes);
+        if (cancelled) return;
+        if (!detected) {
+          setDocMode('sign');
+        } else if (detected.type === 'rocca') {
+          setDocMode('verify');
+        } else {
+          setDocMode('view');
+        }
+      } catch (e) {
+        console.error('[SignScreen] Error detecting proof:', e);
+        if (!cancelled) setDocMode('sign');
+      }
+    }
+    detect();
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfUri]);
 
   const showToast = useCallback(
     (msg: string) => {
@@ -70,6 +106,23 @@ export default function SignScreen() {
     if (activeIdentity.didDocument) {
       const updatedDoc = setSigningName(activeIdentity.didDocument, name);
       await identity.store.updateDidDocument(activeIdentity.address, updatedDoc);
+    }
+  }
+
+  async function handleVerify() {
+    if (!pdfUri) return;
+    setVerifyPhase('verifying');
+    try {
+      const result = await verifyPdf(pdfUri, identities);
+      setVerifyResult(result);
+    } catch (err) {
+      setVerifyResult({
+        valid: false,
+        knownSigner: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setVerifyPhase('done');
     }
   }
 
@@ -112,6 +165,7 @@ export default function SignScreen() {
         hashPayload,
         signature,
         timestamp,
+        [field],
       );
 
       await handleNameUpdated(signerName);
@@ -205,7 +259,7 @@ export default function SignScreen() {
       )}
 
       {/* Bottom bar */}
-      {!isReadonly && (
+      {!isReadonly && docMode === 'sign' && (
         <View style={styles.bottomBar}>
           <TouchableOpacity
             style={[styles.signButton, !activeIdentity && styles.signButtonDisabled]}
@@ -214,6 +268,15 @@ export default function SignScreen() {
           >
             <MaterialIcons name="edit" size={20} color="#FFFFFF" />
             <Text style={styles.signButtonText}>Sign Document</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {docMode === 'verify' && (
+        <View style={styles.bottomBar}>
+          <TouchableOpacity style={styles.signButton} onPress={handleVerify}>
+            <MaterialIcons name="verified-user" size={20} color="#FFFFFF" />
+            <Text style={styles.signButtonText}>Verify Signature</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -285,8 +348,77 @@ export default function SignScreen() {
         </View>
       )}
 
+      {/* Verify overlay */}
+      {verifyPhase === 'verifying' && (
+        <View style={styles.overlay}>
+          <View style={styles.overlayCard}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text style={styles.overlayTitle}>Checking signature...</Text>
+          </View>
+        </View>
+      )}
+
+      {verifyPhase === 'done' && verifyResult && (
+        <View style={styles.overlay}>
+          <View style={styles.overlayCard}>
+            {verifyResult.valid ? (
+              <>
+                <MaterialIcons name="verified" size={56} color="#10B981" />
+                <Text style={styles.overlayTitle}>Signature Valid</Text>
+                {verifyResult.signerName && (
+                  <Text style={styles.overlaySub}>{verifyResult.signerName}</Text>
+                )}
+                {verifyResult.timestamp && (
+                  <Text style={styles.overlaySub}>
+                    {new Date(verifyResult.timestamp).toLocaleString()}
+                  </Text>
+                )}
+                <View
+                  style={[
+                    styles.knownBadge,
+                    {
+                      backgroundColor: verifyResult.knownSigner ? '#ECFDF5' : '#FEF3C7',
+                      borderColor: verifyResult.knownSigner ? '#10B981' : '#F59E0B',
+                    },
+                  ]}
+                >
+                  <MaterialIcons
+                    name={verifyResult.knownSigner ? 'verified-user' : 'person-outline'}
+                    size={18}
+                    color={verifyResult.knownSigner ? '#10B981' : '#F59E0B'}
+                  />
+                  <Text
+                    style={[
+                      styles.knownBadgeText,
+                      { color: verifyResult.knownSigner ? '#10B981' : '#F59E0B' },
+                    ]}
+                  >
+                    {verifyResult.knownSigner ? 'Known signer' : 'Unknown signer'}
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <MaterialIcons name="error" size={56} color="#EF4444" />
+                <Text style={styles.overlayTitle}>Signature Invalid</Text>
+                <Text style={styles.overlaySub}>{verifyResult.error || 'Verification failed'}</Text>
+              </>
+            )}
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => {
+                setVerifyPhase('idle');
+                setVerifyResult(null);
+              }}
+            >
+              <Text style={styles.retryButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Name modal */}
-      {activeIdentity && !isReadonly && (
+      {activeIdentity && !isReadonly && docMode === 'sign' && (
         <SignDocumentModal
           visible={showNameModal}
           onClose={() => setShowNameModal(false)}
@@ -495,6 +627,20 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#0F172A',
     fontSize: 15,
+    fontWeight: '600',
+  },
+  knownBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  knownBadgeText: {
+    fontSize: 14,
     fontWeight: '600',
   },
 });
