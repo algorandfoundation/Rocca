@@ -340,7 +340,10 @@ export default function SignScreen() {
         : '',
       status: 'signed',
     });
-    router.push('/documents' as any);
+    router.replace({
+      pathname: '/sign',
+      params: { pdfUri: signedUri, readonly: 'true' },
+    });
   }
 
   return (
@@ -515,8 +518,8 @@ export default function SignScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.viewButton} onPress={handleViewInWallet}>
-              <MaterialIcons name="folder-open" size={20} color="#3B82F6" />
-              <Text style={styles.viewButtonText}>View in Wallet</Text>
+              <MaterialIcons name="visibility" size={20} color="#3B82F6" />
+              <Text style={styles.viewButtonText}>View Document</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

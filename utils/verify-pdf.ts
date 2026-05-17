@@ -1,8 +1,8 @@
 import { PDFDocument, PDFName, decodePDFRawStream } from 'pdf-lib';
-import * as FileSystem from 'expo-file-system/legacy';
-import { Buffer } from 'buffer';
 import type { PDFDict, PDFArray, PDFRef } from 'pdf-lib';
 import { ed25519 } from '@noble/curves/ed25519.js';
+import { Buffer } from 'buffer';
+import * as FileSystem from 'expo-file-system/legacy';
 import { hashDocument } from '@/utils/pdf-sign';
 import type { SignatureField } from '@/utils/pdf-sign';
 import type { Identity } from '@/extensions/identities/types';
@@ -26,24 +26,10 @@ export interface RoccaProof {
   Fields: SignatureField[];
 }
 
-export interface OldFormatProof {
-  RoccaSignerName: string;
-  RoccaPublicKey: string;
-  RoccaHash: string;
-  RoccaSignature: string;
-  RoccaTimestamp: string;
-  RoccaSignerDid: string;
-}
-
-export type DetectedProof =
-  | { type: 'rocca'; proof: RoccaProof }
-  | { type: 'old'; proof: OldFormatProof }
-  | null;
+export type DetectedProof = { type: 'rocca'; proof: RoccaProof } | null;
 
 function stringFromPDF(obj: unknown): string {
   const anyObj = obj as any;
-  // PDFHexString has both decodeText (human-readable) and asString (raw hex).
-  // Must prefer decodeText so attachment names and metadata match.
   if (typeof anyObj?.decodeText === 'function') return anyObj.decodeText();
   if (typeof anyObj?.asString === 'function') return anyObj.asString();
   return String(obj ?? '');
@@ -56,20 +42,9 @@ function getInfoDict(pdfDoc: PDFDocument): PDFDict | undefined {
   return obj && typeof (obj as PDFDict).get === 'function' ? (obj as PDFDict) : undefined;
 }
 
-function getCustomTrailer(pdfDoc: PDFDocument): PDFDict | undefined {
-  const trailerInfo = (pdfDoc.context as any).trailerInfo as Record<string, any> | undefined;
-  if (!trailerInfo) return undefined;
-  let custom = trailerInfo.Custom;
-  if (custom && typeof (custom as PDFRef).objectNumber === 'number') {
-    custom = pdfDoc.context.lookup(custom as PDFRef);
-  }
-  return custom && typeof (custom as PDFDict).get === 'function' ? (custom as PDFDict) : undefined;
-}
-
 export async function extractProof(pdfBytes: Uint8Array): Promise<DetectedProof> {
   const pdfDoc = await PDFDocument.load(pdfBytes);
 
-  // 1) New format: Info dict -> RoccaProof
   const infoDict = getInfoDict(pdfDoc);
   const proofString = infoDict ? stringFromPDF(infoDict.get(PDFName.of('RoccaProof'))) : '';
   if (proofString && proofString.startsWith('{')) {
@@ -79,25 +54,6 @@ export async function extractProof(pdfBytes: Uint8Array): Promise<DetectedProof>
     } catch {
       // ignore malformed JSON
     }
-  }
-
-  // 2) Old format: trailer Custom dict
-  const custom = getCustomTrailer(pdfDoc);
-  if (!custom) return null;
-
-  const oldName = custom.get(PDFName.of('RoccaSignerName'));
-  if (oldName) {
-    return {
-      type: 'old',
-      proof: {
-        RoccaSignerName: stringFromPDF(oldName),
-        RoccaPublicKey: stringFromPDF(custom.get(PDFName.of('RoccaPublicKey'))),
-        RoccaHash: stringFromPDF(custom.get(PDFName.of('RoccaHash'))),
-        RoccaSignature: stringFromPDF(custom.get(PDFName.of('RoccaSignature'))),
-        RoccaTimestamp: stringFromPDF(custom.get(PDFName.of('RoccaTimestamp'))),
-        RoccaSignerDid: stringFromPDF(custom.get(PDFName.of('RoccaSignerDid'))),
-      },
-    };
   }
 
   return null;
@@ -170,9 +126,6 @@ export async function verifyPdf(
     const detected = await extractProof(pdfBytes);
     if (!detected) {
       return { valid: false, knownSigner: false, error: 'No signature found' };
-    }
-    if (detected.type === 'old') {
-      return { valid: false, knownSigner: false, error: 'Signed with older Rocca version' };
     }
 
     const proof = detected.proof;

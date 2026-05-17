@@ -235,7 +235,7 @@ function FieldMarker({
               Key: 0xABCD…EF | Sig: 0x1234…AB
             </Text>
             <Text style={[styles.previewTs, { fontSize: Math.max(6, currentSize * 0.38) }]}>
-              Rocca · Jan 1, 2024
+              Rocca · {new Date().toLocaleString()}
             </Text>
             {dragging && <Text style={styles.dragHint}>Release to place</Text>}
           </>

@@ -202,17 +202,6 @@ export async function stampPdf(
     infoDict.set(PDFName.of('RoccaProof'), PDFString.of(JSON.stringify(proofObj)));
   }
 
-  // --- keep backward-compatible flat keys for old-format detection ---
-  const dict = pdfDoc.context.obj({
-    RoccaSignerName: signerName,
-    RoccaPublicKey: rawPublicKeyHex,
-    RoccaHash: Buffer.from(hashPayload).toString('hex').toUpperCase(),
-    RoccaSignature: Buffer.from(signature).toString('hex').toUpperCase(),
-    RoccaTimestamp: timestamp,
-    RoccaSignerDid: signerDid,
-  });
-  (pdfDoc.context.trailerInfo as any).Custom = pdfDoc.context.register(dict);
-
   const signedBytes = await pdfDoc.save();
   const outUri = await writePdfBytes(signedBytes, 'signed');
   console.log(

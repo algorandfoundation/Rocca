@@ -47,7 +47,7 @@ export function FieldTypeModal({ visible, onClose, onConfirm, defaultLabel }: Fi
   const previewText = text.trim() || (isSignature ? 'Jane Doe' : 'Your text here');
 
   return (
-    <Modal visible={visible} onClose={handleClose} title="Add Field">
+    <Modal visible={visible} onClose={handleClose} onRequestClose={() => {}} title="Add Field">
       <View style={styles.body}>
         <Text style={styles.sectionLabel}>Field type</Text>
         <View style={styles.typeRow}>
@@ -88,6 +88,7 @@ export function FieldTypeModal({ visible, onClose, onConfirm, defaultLabel }: Fi
               <View style={styles.previewUnderline} />
               <Text style={styles.previewName}>{previewText}</Text>
               <Text style={styles.previewMeta}>Key: 0xABCD…EF | Sig: 0x1234…AB</Text>
+              <Text style={styles.previewMeta}>Rocca - {new Date().toLocaleDateString()}</Text>
             </>
           ) : (
             <Text style={styles.previewFieldText}>{previewText}</Text>
