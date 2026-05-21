@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useProvider } from '@/hooks/useProvider';
+import { AnchorIdentityModal } from '@/dialogs/AnchorIdentityModal';
+import { isAnchorUpToDate } from '@/utils/anchor';
 
 export default function IdentitiesScreen() {
   const router = useRouter();
   const { identities } = useProvider();
+  const [anchorTarget, setAnchorTarget] = useState<string | undefined>();
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
@@ -36,6 +39,15 @@ export default function IdentitiesScreen() {
                     {identity.did}
                   </Text>
                 </View>
+                {!isAnchorUpToDate(identity) && (
+                  <TouchableOpacity
+                    onPress={() => setAnchorTarget(identity.address)}
+                    style={styles.anchorButton}
+                    accessibilityLabel="Anchor identity on-chain"
+                  >
+                    <MaterialIcons name="anchor" size={20} color="#3B82F6" />
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={() => alert('DID copied!')}>
                   <MaterialIcons name="content-copy" size={20} color="#64748B" />
                 </TouchableOpacity>
@@ -45,6 +57,11 @@ export default function IdentitiesScreen() {
           </View>
         </View>
       </ScrollView>
+      <AnchorIdentityModal
+        visible={anchorTarget !== undefined}
+        identityAddress={anchorTarget}
+        onClose={() => setAnchorTarget(undefined)}
+      />
     </SafeAreaView>
   );
 }
@@ -100,5 +117,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#94A3B8',
     marginTop: 20,
+  },
+  anchorButton: {
+    marginRight: 12,
+    padding: 4,
   },
 });

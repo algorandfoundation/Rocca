@@ -23,7 +23,7 @@ const config = Constants.expoConfig?.extra?.provider || {
 
 export default function LandingScreen() {
   const router = useRouter();
-  const { key, identity, account, identities, accounts, passkey, passkeys, sessions } =
+  const { key, identity, account, identities, accounts, passkey, passkeys, sessions, credentials } =
     useProvider();
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -165,6 +165,16 @@ export default function LandingScreen() {
                   <Text style={styles.serviceSubLabel}>{sessions.length} Total</Text>
                 </TouchableOpacity>
               )}
+              <TouchableOpacity
+                style={styles.serviceItem}
+                onPress={() => router.push('/credentials')}
+              >
+                <View style={[styles.serviceIcon, { backgroundColor: '#EFF6FF' }]}>
+                  <MaterialIcons name="verified-user" size={28} color="#3B82F6" />
+                </View>
+                <Text style={styles.serviceLabel}>Credentials</Text>
+                <Text style={styles.serviceSubLabel}>{credentials.length} Total</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -205,6 +215,7 @@ export default function LandingScreen() {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         didDocument={activeIdentity?.didDocument}
+        identity={activeIdentity}
       />
     </SafeAreaView>
   );
