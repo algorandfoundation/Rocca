@@ -6,6 +6,8 @@ import {
   Modal as RNModal,
   TouchableOpacity,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   ModalProps as RNModalProps,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -26,17 +28,22 @@ export const Modal = ({ visible, onClose, title, children, ...props }: ModalProp
       onRequestClose={onClose}
       {...props}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            {title ? <Text style={styles.modalTitle}>{title}</Text> : <View />}
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <MaterialIcons name="close" size={24} color="#64748B" />
-            </TouchableOpacity>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              {title ? <Text style={styles.modalTitle}>{title}</Text> : <View />}
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <MaterialIcons name="close" size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>{children}</ScrollView>
           </View>
-          <ScrollView style={styles.modalBody}>{children}</ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </RNModal>
   );
 };
@@ -53,7 +60,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     width: '100%',
-    maxHeight: '80%',
+    maxHeight: '90%',
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -78,7 +85,6 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     padding: 20,
-    maxHeight: 400,
   },
 });
 

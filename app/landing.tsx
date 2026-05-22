@@ -19,11 +19,12 @@ const config = Constants.expoConfig?.extra?.provider || {
   showPasskeys: true,
   showIdentities: true,
   showConnections: true,
+  showDocuments: true,
 };
 
 export default function LandingScreen() {
   const router = useRouter();
-  const { key, identity, account, identities, accounts, passkey, passkeys, sessions } =
+  const { key, identity, account, identities, accounts, passkey, passkeys, sessions, documents } =
     useProvider();
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -40,6 +41,7 @@ export default function LandingScreen() {
     showPasskeys,
     showIdentities,
     showConnections,
+    showDocuments,
   } = config;
 
   return (
@@ -111,7 +113,7 @@ export default function LandingScreen() {
           </View>
         </View>
 
-        {(showAccounts || showPasskeys || showIdentities || showConnections) && (
+        {(showAccounts || showPasskeys || showIdentities || showConnections || showDocuments) && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Provider Services</Text>
@@ -163,6 +165,18 @@ export default function LandingScreen() {
                   </View>
                   <Text style={styles.serviceLabel}>Connections</Text>
                   <Text style={styles.serviceSubLabel}>{sessions.length} Total</Text>
+                </TouchableOpacity>
+              )}
+              {showDocuments && (
+                <TouchableOpacity
+                  style={styles.serviceItem}
+                  onPress={() => router.push('/documents' as any)}
+                >
+                  <View style={[styles.serviceIcon, { backgroundColor: '#FEF3C7' }]}>
+                    <MaterialIcons name="folder" size={28} color="#F59E0B" />
+                  </View>
+                  <Text style={styles.serviceLabel}>Documents</Text>
+                  <Text style={styles.serviceSubLabel}>{documents.length} Total</Text>
                 </TouchableOpacity>
               )}
             </View>

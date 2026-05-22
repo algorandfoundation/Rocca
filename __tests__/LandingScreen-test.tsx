@@ -41,6 +41,7 @@ jest.mock('@/hooks/useProvider', () => ({
     accounts: [{ address: 'ADDR123...', balance: 100 }],
     passkeys: [],
     sessions: [],
+    documents: [],
   }),
 }));
 
