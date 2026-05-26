@@ -221,7 +221,7 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
 
     if (hdRootKey) {
       logMsg(`Setting HD root key ID in native side: ${hdRootKey.id}`);
-      await ReactNativePasskeyAutofill.setHdRootKeyId(hdRootKey.id).catch((e) => {
+      await ReactNativePasskeyAutofill.setHdRootKeyId(hdRootKey.id).catch((e: unknown) => {
         logMsg(`ReactNativePasskeyAutofill.setHdRootKeyId error: ${e}`, 'error');
       });
     }
@@ -230,7 +230,7 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
       logMsg('Setting derived main key material in native side');
       await ReactNativePasskeyAutofill.setDerivedMainKey(
         Buffer.from(hdRootKeySecret.privateKey).toString('hex'),
-      ).catch((e) => {
+      ).catch((e: unknown) => {
         logMsg(`ReactNativePasskeyAutofill.setDerivedMainKey error: ${e}`, 'error');
       });
     } else {
@@ -238,7 +238,7 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
     }
 
     const isEnabled = await CredentialProviderService.isEnabledCredentialProviderService().catch(
-      (e) => {
+      (e: unknown) => {
         logMsg(`CredentialProviderService.isEnabledCredentialProviderService error: ${e}`, 'error');
         return false;
       },
