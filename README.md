@@ -115,9 +115,6 @@ To further integrate with identity primitives, the following extensions are sugg
 
 ## Getting Started
 
-> [!NOTE]
-> The iOS passkey AutoFill integration in this branch depends on the next published version of `@algorandfoundation/react-native-passkey-autofill` that includes iOS Credential Provider support. Keep any Rocca PR as a draft until that package is published, then update the dependency version before marking the PR ready.
-
 1. Install dependencies
 
    ```bash
