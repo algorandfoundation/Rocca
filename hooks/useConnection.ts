@@ -2,6 +2,10 @@ import { useProvider } from '@/hooks/useProvider';
 import { accountsStore } from '@/stores/accounts';
 import { keyStore } from '@/stores/keystore';
 import { addMessage } from '@/stores/messages';
+import { addAc2Message } from '@/stores/ac2Messages';
+import { Ac2Client } from '@algorandfoundation/ac2-sdk';
+import { rtcDataChannelTransport } from '@algorandfoundation/ac2-sdk/transport';
+import type { AC2BaseMessage as Ac2Message } from '@algorandfoundation/ac2-sdk/schema';
 import {
   addSession,
   Session,
@@ -14,11 +18,9 @@ import { toUrlSafe } from '@/utils/base64';
 import type { KeyData } from '@algorandfoundation/keystore';
 import { encodeAddress } from '@algorandfoundation/keystore';
 import {
-  decodeAssertionRequestOptions,
-  encodeCredential,
-  fromBase64Url,
+  assertion,
+  encoding,
   SignalClient,
-  toBase64URL,
 } from '@algorandfoundation/liquid-client';
 import { commit, fetchSecret, getMasterKey } from '@algorandfoundation/react-native-keystore';
 import { useStore } from '@tanstack/react-store';
@@ -29,7 +31,22 @@ import { Alert, NativeModules } from 'react-native';
 interface UseConnectionResult {
   session: Session | undefined;
   address: string | null;
+  /** Send a free-text chat message over the DataChannel. */
   send: (text: string) => void;
+  /**
+   * Send an AC2 protocol message (validated DIDComm v2 envelope) over the
+   * same DataChannel. Use this for the signing trio and any extension
+   * message type. The envelope is mirrored into the `ac2Messages` store as
+   * `outbound`.
+   */
+  sendAc2: (message: Ac2Message) => void;
+  /**
+   * Underlying `Ac2Client` (from `@ac2/ac2-sdk`) bound to the active
+   * DataChannel. `null` until the channel is open. Use this for
+   * `requestSignature` and other typed helpers.
+   */
+  ac2Client: Ac2Client | null;
+  activeStreamText: string;
   error: Error | null;
   isError: boolean;
   isLoading: boolean;
@@ -55,19 +72,46 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
   const [error, setError] = useState<Error | null>(null);
 
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
+  const streamChannelRef = useRef<RTCDataChannel | null>(null);
   const clientRef = useRef<SignalClient | null>(null);
   const lastUserActivityRef = useRef<number>(Date.now());
   const authFlowInProgressRef = useRef<boolean>(false);
+
+  const [activeStreamText, setActiveStreamText] = useState<string>('');
+
+  // AC2 SDK wiring — bound to the active DataChannel once it opens. The
+  // SDK's `rtcDataChannelTransport` owns the channel's `onmessage` /
+  // `onopen` / `onclose` / `onerror` callbacks, splitting AC2 JSON
+  // envelopes (delivered via `transport.onMessage`) from free-text chat
+  // frames (delivered via `transport.onRawMessage`).
+  const [ac2Client, setAc2Client] = useState<Ac2Client | null>(null);
+  const ac2ClientRef = useRef<Ac2Client | null>(null);
 
   const session = useStore(sessionsStore, (state) =>
     state.sessions.find((s) => s.id === requestId && s.origin === origin),
   );
 
   const reset = useCallback(() => {
+    if (ac2ClientRef.current) {
+      // Closing the client closes the underlying transport, which closes
+      // the DataChannel. Guard against double-close below.
+      try {
+        ac2ClientRef.current.close();
+      } catch {
+        /* noop */
+      }
+      ac2ClientRef.current = null;
+      setAc2Client(null);
+    }
     if (dataChannelRef.current) {
       dataChannelRef.current.close();
       dataChannelRef.current = null;
     }
+    if (streamChannelRef.current) {
+      streamChannelRef.current.close();
+      streamChannelRef.current = null;
+    }
+    setActiveStreamText('');
     setIsConnected(false);
     setIsLoading(false);
     setError(null);
@@ -76,13 +120,14 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
   const send = useCallback(
     (text: string) => {
+      const channel = streamChannelRef.current || dataChannelRef.current;
       if (
         text.trim() &&
-        dataChannelRef.current &&
-        dataChannelRef.current.readyState === 'open' &&
+        channel &&
+        channel.readyState === 'open' &&
         address
       ) {
-        dataChannelRef.current.send(text.trim());
+        channel.send(text.trim());
         addMessage({
           text: text.trim(),
           sender: 'me',
@@ -95,6 +140,26 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
       }
     },
     [requestId, origin, address],
+  );
+
+  const sendAc2 = useCallback(
+    (message: Ac2Message) => {
+      const client = ac2ClientRef.current;
+      if (!client) {
+        throw new Error('AC2 client not ready (DataChannel not open)');
+      }
+      client.send(message);
+      addAc2Message({
+        origin,
+        requestId,
+        address: address ?? '',
+        direction: 'outbound',
+        envelope: message,
+      });
+      updateSessionActivity(requestId, origin);
+      lastUserActivityRef.current = Date.now();
+    },
+    [origin, requestId, address],
   );
 
   useEffect(() => {
@@ -252,7 +317,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
           const options = await optionsResponse.json();
           if (!active) return;
-          const decodedOptions = decodeAssertionRequestOptions(options);
+          const decodedOptions = assertion.encoder.decodeOptions(options);
 
           // Ensure all relevant passkeys are allowed in the options to allow user selection in the intent
           if (relevantPasskeys.length > 1) {
@@ -261,27 +326,27 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             }
             const existingIds = new Set(
               decodedOptions.allowCredentials.map((c) =>
-                toBase64URL(new Uint8Array(c.id as ArrayBuffer)),
+                encoding.toBase64URL(new Uint8Array(c.id as ArrayBuffer)),
               ),
             );
             relevantPasskeys.forEach((p) => {
               if (!existingIds.has(p.id)) {
                 decodedOptions.allowCredentials!.push({
-                  id: fromBase64Url(p.id),
+                  id: encoding.fromBase64Url(p.id),
                   type: 'public-key',
                 });
               }
             });
           }
 
-          const challenge = fromBase64Url(options.challenge);
+          const challenge = encoding.fromBase64Url(options.challenge);
 
           const liquidOptions = {
             requestId,
             origin,
             type: 'algorand',
             address: encodeAddress(foundKey?.publicKey),
-            signature: toBase64URL(await key.store.sign(foundKey.id, challenge)),
+            signature: encoding.toBase64URL(await key.store.sign(foundKey.id, challenge)),
             device: 'Demo Web Wallet',
           };
 
@@ -345,7 +410,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
             if (selectedKey) {
               console.log('Found key for selected address, re-signing challenge');
-              liquidOptions.signature = toBase64URL(
+              liquidOptions.signature = encoding.toBase64URL(
                 await key.store.sign(selectedKey.id, challenge),
               );
             } else {
@@ -353,13 +418,11 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
             }
           }
 
-          const encodedCredential = encodeCredential(credential);
-          //@ts-ignore
+          const encodedCredential = assertion.encoder.encodeCredential(credential);
           encodedCredential.clientExtensionResults = {
-            //@ts-ignore
             ...encodedCredential.clientExtensionResults,
             liquid: liquidOptions,
-          };
+          } as any;
 
           const submitResponse = await fetch(`${origin}/assertion/response`, {
             method: 'POST',
@@ -420,14 +483,14 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
           const encodedAttestationOptions = await optionsResponse.json();
           if (!active) return;
-          const challenge = fromBase64Url(encodedAttestationOptions.challenge);
+          const challenge = encoding.fromBase64Url(encodedAttestationOptions.challenge);
 
           const liquidOptions = {
             requestId,
             origin: origin,
             type: 'algorand',
             address: encodeAddress(foundKey?.publicKey),
-            signature: toBase64URL(await key.store.sign(foundKey.id, challenge)),
+            signature: encoding.toBase64URL(await key.store.sign(foundKey.id, challenge)),
             device: 'Demo Web Wallet',
           };
 
@@ -439,10 +502,10 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
               name: liquidOptions.address,
               displayName: liquidOptions.address,
             },
-            challenge: fromBase64Url(encodedAttestationOptions.challenge),
+            challenge: encoding.fromBase64Url(encodedAttestationOptions.challenge),
             excludeCredentials: encodedAttestationOptions.excludeCredentials?.map((cred: any) => ({
               ...cred,
-              id: fromBase64Url(cred.id),
+              id: encoding.fromBase64Url(cred.id),
             })),
           };
 
@@ -462,11 +525,11 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           const response = credential.response;
           const encodedCredential = {
             id: credential.id,
-            rawId: toBase64URL(credential.rawId),
+            rawId: encoding.toBase64URL(credential.rawId),
             type: credential.type,
             response: {
-              clientDataJSON: toBase64URL(response.clientDataJSON),
-              attestationObject: toBase64URL(response.attestationObject),
+              clientDataJSON: encoding.toBase64URL(response.clientDataJSON),
+              attestationObject: encoding.toBase64URL(response.attestationObject),
               clientExtensionResults: response.clientExtensionResults || {},
             },
             clientExtensionResults: {
@@ -548,6 +611,40 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         //@ts-ignore
         client.authenticated = true;
 
+        client.on('data-channel', (channel: RTCDataChannel) => {
+          console.log(`[ac2] Discovered channel: ${channel.label}`);
+          if (channel.label === 'ac2-stream') {
+            streamChannelRef.current = channel;
+            
+            let streamTimeout: ReturnType<typeof setTimeout>;
+            channel.onmessage = (event) => {
+              if (!active) return;
+              const raw = event.data;
+              if (typeof raw === 'string') {
+                setActiveStreamText((prev) => prev + raw);
+                if (streamTimeout) clearTimeout(streamTimeout);
+                streamTimeout = setTimeout(() => {
+                  setActiveStreamText((currentText) => {
+                    if (currentText.trim() && addressRef.current) {
+                      addMessage({
+                        text: currentText.trim(),
+                        sender: 'peer',
+                        address: addressRef.current,
+                        origin,
+                        requestId,
+                      });
+                    }
+                    return '';
+                  });
+                }, 1500);
+              }
+            };
+            
+            channel.onopen = () => console.log('Stream channel opened');
+            channel.onclose = () => console.log('Stream channel closed');
+          }
+        });
+
         const datachannel = await client.peer(requestId, 'answer', {
           iceServers: [
             {
@@ -562,6 +659,11 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
               credential: 'sqmcP4MiTKMT4TGEDSk9jgHY',
             },
           ],
+        }, {
+          dataChannels: {
+            'ac2-v1': { ordered: true },
+            'ac2-stream': { ordered: true },
+          }
         });
 
         if (!active) {
@@ -571,44 +673,87 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
         dataChannelRef.current = datachannel;
 
-        datachannel.onopen = () => {
+        // Wrap the real RTCDataChannel with the SDK's transport adapter.
+        // Now that liquid-auth-js (canary.6+) supports requesting channels
+        // by spec-mandated label (`ac2-v1`), the adapter accepts the raw
+        // channel directly — no wrapper, no label rewrite. `onMessage`
+        // delivers parsed AC2 envelopes; `onRawMessage` delivers plain-text
+        // chat frames; the SDK validates JSON shape internally.
+        // React Native's `RTCDataChannel` (from `react-native-webrtc`)
+        // structurally satisfies the SDK's `RtcDataChannelLike` at
+        // runtime, but its event-handler signatures differ slightly from
+        // the DOM lib types TypeScript checks against. The cast bridges
+        // that gap without changing behavior.
+        const ac2Transport = rtcDataChannelTransport(
+          datachannel as unknown as Parameters<typeof rtcDataChannelTransport>[0],
+        );
+
+        const ac2 = new Ac2Client(ac2Transport);
+        ac2ClientRef.current = ac2;
+
+        // NOTE: Wallet-side responders (`ac2.onSigningRequest` /
+        // `ac2.onKeyRequest`) are intentionally NOT installed here.
+        // Inbound `SigningRequest` / `KeyRequest` envelopes are mirrored
+        // into the `ac2MessagesStore` via `ac2Transport.onMessage` below,
+        // and the chat UI (`app/chat.tsx`) handles approve/reject
+        // interactively against the user-visible store entry. Installing
+        // a responder here would race with that interactive flow.
+
+        // Mirror inbound AC2 envelopes into the ac2Messages store so the
+        // wallet UI can render them. Responders (above) still run via the
+        // type-keyed dispatcher; this is a side-channel for observability.
+        ac2Transport.onMessage((envelope: Ac2Message) => {
+          addAc2Message({
+            origin,
+            requestId,
+            address: addressRef.current ?? '',
+            direction: 'inbound',
+            envelope,
+          });
+          updateSessionActivity(requestId, origin);
+          lastUserActivityRef.current = Date.now();
+          setLastHeartbeat(Date.now());
+        });
+
+        // Free-text chat frames bypass the AC2 framing and land here.
+        ac2Transport.onRawMessage?.((raw: string) => {
+          if (!raw.trim() || !addressRef.current) return;
+          addMessage({
+            text: raw.trim(),
+            sender: 'peer',
+            address: addressRef.current,
+            origin,
+            requestId,
+          });
+          updateSessionActivity(requestId, origin);
+          lastUserActivityRef.current = Date.now();
+          setLastHeartbeat(Date.now());
+        });
+
+        ac2Transport.onError((e: Error) => {
+          console.warn('[AC2] client error:', e.message);
+        });
+
+        ac2Transport.onOpen(() => {
           console.log('Data channel opened');
           if (active) {
             setIsConnected(true);
             setIsLoading(false);
+            setAc2Client(ac2);
             updateSessionStatus(requestId, origin, 'active');
           }
-        };
+        });
 
-        datachannel.onmessage = (event) => {
-          if (!active) return;
-          console.log('Received message:', event.data);
-          updateSessionActivity(requestId, origin);
-          lastUserActivityRef.current = Date.now();
-          setLastHeartbeat(Date.now());
-          if (event.data && event.data.trim() && addressRef.current) {
-            addMessage({
-              text: event.data.trim(),
-              sender: 'peer',
-              address: addressRef.current,
-              origin,
-              requestId,
-            });
-          }
-        };
-
-        datachannel.onclose = () => {
+        ac2Transport.onClose(() => {
           console.log('Data channel closed');
           updateSessionStatus(requestId, origin, 'closed');
           if (active) {
             setIsConnected(false);
+            setAc2Client(null);
+            ac2ClientRef.current = null;
             router.back();
           }
-        };
-
-        datachannel.onerror = (error) => {
-          console.error('Data channel error:', error);
-        };
+        });
       } catch (err: any) {
         console.error('Failed to setup connection:', err);
         clientRef.current = null;
@@ -631,6 +776,14 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
     return () => {
       active = false;
+      if (ac2ClientRef.current) {
+        try {
+          ac2ClientRef.current.close();
+        } catch {
+          /* noop */
+        }
+        ac2ClientRef.current = null;
+      }
       if (dataChannelRef.current) {
         dataChannelRef.current.close();
         dataChannelRef.current = null;
@@ -646,6 +799,9 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
     session,
     address,
     send,
+    sendAc2,
+    ac2Client,
+    activeStreamText,
     error,
     isError: !!error,
     isLoading,
