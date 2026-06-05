@@ -1,12 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Redirect } from 'expo-router';
-import Constants from 'expo-constants';
-import { useStore } from '@tanstack/react-store';
-import { logsStore } from '@/stores/logs';
 import Logo from '@/components/Logo';
 import { useProvider } from '@/hooks/useProvider';
+import { logsStore } from '@/stores/logs';
+import { useStore } from '@tanstack/react-store';
+import Constants from 'expo-constants';
+import { useFonts } from 'expo-font';
+import { Redirect } from 'expo-router';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 export default function Index() {
+  const [fontsLoaded] = useFonts({
+    'PlusJakartaSans-Regular': require('../assets/fonts/PlusJakartaSans-VariableFont_wght.ttf'),
+    'PlusJakartaSans-Medium': require('../assets/fonts/PlusJakartaSans-VariableFont_wght.ttf'),
+    'PlusJakartaSans-SemiBold': require('../assets/fonts/PlusJakartaSans-VariableFont_wght.ttf'),
+    'PlusJakartaSans-Bold': require('../assets/fonts/PlusJakartaSans-VariableFont_wght.ttf'),
+    'PlusJakartaSans-Italic': require('../assets/fonts/PlusJakartaSans-Italic-VariableFont_wght.ttf'),
+  });
   const { keys, status } = useProvider();
   const logs = useStore(logsStore, (state) => state.logs);
   const lastLog = logs.length > 0 ? logs[0].message : 'Initializing...';
@@ -15,7 +23,7 @@ export default function Index() {
     primaryColor: '#3B82F6',
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || !fontsLoaded) {
     return (
       <View style={styles.container}>
         <Logo size={100} style={styles.logo} />

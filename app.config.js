@@ -66,6 +66,15 @@ module.exports = {
     plugins: [
       'expo-router',
       [
+        'expo-font',
+        {
+          fonts: [
+            './assets/fonts/PlusJakartaSans-VariableFont_wght.ttf',
+            './assets/fonts/PlusJakartaSans-Italic-VariableFont_wght.ttf',
+          ],
+        },
+      ],
+      [
         'expo-splash-screen',
         {
           image: './assets/images/splash-icon.png',
