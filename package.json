@@ -41,6 +41,7 @@
     "@algorandfoundation/log-store": "^1.0.0-canary.3",
     "@algorandfoundation/react-native-keystore": "^1.0.0-canary.11",
     "@algorandfoundation/react-native-passkey-autofill": "^1.0.0-canary.15",
+    "@algorandfoundation/wallet-provider": "1.0.0-canary.5",
     "@config-plugins/react-native-webrtc": "^13.0.0",
     "@expo/vector-icons": "^15.0.3",
     "@noble/hashes": "^1.8.0",
@@ -50,6 +51,7 @@
     "@scure/base": "^2.0.0",
     "@scure/bip39": "^2.0.1",
     "@tanstack/react-store": "0.9.1",
+    "@tanstack/store": "0.9.1",
     "before-after-hook": "^4.0.0",
     "buffer": "^6.0.3",
     "expo": "^54.0.33",
@@ -90,6 +92,7 @@
     "react-native-webrtc": "^124.0.7"
   },
   "devDependencies": {
+    "@babel/runtime": "^7.29.7",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
@@ -113,5 +116,10 @@
     "react-dom": "19.1.0",
     "react-test-renderer": "19.1.0"
   },
-  "packageManager": "pnpm@10.12.1"
+  "packageManager": "pnpm@10.12.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@algorandfoundation/liquid-client"
+    ]
+  }
 }

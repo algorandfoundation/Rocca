@@ -38,6 +38,9 @@ importers:
       '@algorandfoundation/react-native-passkey-autofill':
         specifier: ^1.0.0-canary.15
         version: 1.0.0-canary.17(@algorandfoundation/log-store@1.0.0-canary.3(@tanstack/store@0.9.1)(before-after-hook@4.0.0))(@tanstack/store@0.9.1)(before-after-hook@4.0.0)(expo-build-properties@55.0.14(expo@54.0.35))(expo@54.0.35)(react-native-nitro-modules@0.35.9(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native-quick-base64@2.2.2(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      '@algorandfoundation/wallet-provider':
+        specifier: 1.0.0-canary.5
+        version: 1.0.0-canary.5
       '@config-plugins/react-native-webrtc':
         specifier: ^13.0.0
         version: 13.0.0(expo@54.0.35)
@@ -65,6 +68,9 @@ importers:
       '@tanstack/react-store':
         specifier: 0.9.1
         version: 0.9.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@tanstack/store':
+        specifier: 0.9.1
+        version: 0.9.1
       before-after-hook:
         specifier: ^4.0.0
         version: 4.0.0
@@ -180,6 +186,9 @@ importers:
         specifier: ^124.0.7
         version: 124.0.7(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))
     devDependencies:
+      '@babel/runtime':
+        specifier: ^7.29.7
+        version: 7.29.7
       '@testing-library/jest-native':
         specifier: ^5.4.3
         version: 5.4.3(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react-test-renderer@19.1.0(react@19.1.0))(react@19.1.0)
