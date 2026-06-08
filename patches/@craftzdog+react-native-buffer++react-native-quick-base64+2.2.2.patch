@@ -1,0 +1,13 @@
+diff --git a/node_modules/@craftzdog/react-native-buffer/node_modules/react-native-quick-base64/lib/module/index.js b/node_modules/@craftzdog/react-native-buffer/node_modules/react-native-quick-base64/lib/module/index.js
+index 0000000..1111111 100644
+--- a/node_modules/@craftzdog/react-native-buffer/node_modules/react-native-quick-base64/lib/module/index.js
++++ b/node_modules/@craftzdog/react-native-buffer/node_modules/react-native-quick-base64/lib/module/index.js
+@@ -2,7 +2,7 @@
+ 
+ import { NativeModules } from 'react-native';
+ const Base64Module = NativeModules.QuickBase64;
+-if (Base64Module && typeof global.base64FromArrayBuffer !== 'function') {
++if (Base64Module && typeof Base64Module.install === 'function' && typeof global.base64FromArrayBuffer !== 'function') {
+   Base64Module.install();
+ }
+ 

@@ -17,11 +17,7 @@ import { decodeAddress } from '@/utils/algorand';
 import { toUrlSafe } from '@/utils/base64';
 import type { KeyData } from '@algorandfoundation/keystore';
 import { encodeAddress } from '@algorandfoundation/keystore';
-import {
-  assertion,
-  encoding,
-  SignalClient,
-} from '@algorandfoundation/liquid-client';
+import { assertion, encoding, SignalClient } from '@algorandfoundation/liquid-client';
 import { commit, fetchSecret, getMasterKey } from '@algorandfoundation/react-native-keystore';
 import { useStore } from '@tanstack/react-store';
 import { useRouter } from 'expo-router';
@@ -121,12 +117,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
   const send = useCallback(
     (text: string) => {
       const channel = streamChannelRef.current || dataChannelRef.current;
-      if (
-        text.trim() &&
-        channel &&
-        channel.readyState === 'open' &&
-        address
-      ) {
+      if (text.trim() && channel && channel.readyState === 'open' && address) {
         channel.send(text.trim());
         addMessage({
           text: text.trim(),
@@ -615,7 +606,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
           console.log(`[ac2] Discovered channel: ${channel.label}`);
           if (channel.label === 'ac2-stream') {
             streamChannelRef.current = channel;
-            
+
             let streamTimeout: ReturnType<typeof setTimeout>;
             channel.onmessage = (event) => {
               if (!active) return;
@@ -639,32 +630,37 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
                 }, 1500);
               }
             };
-            
+
             channel.onopen = () => console.log('Stream channel opened');
             channel.onclose = () => console.log('Stream channel closed');
           }
         });
 
-        const datachannel = await client.peer(requestId, 'answer', {
-          iceServers: [
-            {
-              urls: ['stun:geo.turn.algonode.xyz:80', 'stun:global.turn.nodely.io:443'],
+        const datachannel = await client.peer(
+          requestId,
+          'answer',
+          {
+            iceServers: [
+              {
+                urls: ['stun:geo.turn.algonode.xyz:80', 'stun:global.turn.nodely.io:443'],
+              },
+              {
+                urls: [
+                  'turn:geo.turn.algonode.xyz:80?transport=tcp',
+                  'turns:global.turn.nodely.io:443?transport=tcp',
+                ],
+                username: 'liquid-auth',
+                credential: 'sqmcP4MiTKMT4TGEDSk9jgHY',
+              },
+            ],
+          },
+          {
+            dataChannels: {
+              'ac2-v1': { ordered: true },
+              'ac2-stream': { ordered: true },
             },
-            {
-              urls: [
-                'turn:geo.turn.algonode.xyz:80?transport=tcp',
-                'turns:global.turn.nodely.io:443?transport=tcp',
-              ],
-              username: 'liquid-auth',
-              credential: 'sqmcP4MiTKMT4TGEDSk9jgHY',
-            },
-          ],
-        }, {
-          dataChannels: {
-            'ac2-v1': { ordered: true },
-            'ac2-stream': { ordered: true },
-          }
-        });
+          },
+        );
 
         if (!active) {
           client.close();

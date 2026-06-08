@@ -36,8 +36,17 @@ export default function ChatScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ origin: string; requestId: string }>();
   const [inputText, setInputText] = useState('');
-  const { isConnected, isLoading, isError, send, sendAc2, lastHeartbeat, reset, address, activeStreamText } =
-    useConnection(params.origin || '', params.requestId || '');
+  const {
+    isConnected,
+    isLoading,
+    isError,
+    send,
+    sendAc2,
+    lastHeartbeat,
+    reset,
+    address,
+    activeStreamText,
+  } = useConnection(params.origin || '', params.requestId || '');
   const { key } = useProvider();
 
   const textMessages = useStore(messagesStore, (state) =>
@@ -149,7 +158,7 @@ export default function ChatScreen() {
         address: address || '',
         origin: params.origin || '',
         requestId: params.requestId || '',
-      }
+      },
     });
   }
 
