@@ -5,9 +5,9 @@ import { StyleSheet } from 'react-native-unistyles';
 const typography = {
   fonts: {
     regular: 'PlusJakartaSans-Regular',
-    medium: 'PlusJakartaSans-Medium',
-    semiBold: 'PlusJakartaSans-SemiBold',
-    bold: 'PlusJakartaSans-Bold',
+    medium: 'PlusJakartaSans-Regular_Medium',
+    semiBold: 'PlusJakartaSans-Regular_SemiBold',
+    bold: 'PlusJakartaSans-Regular_Bold',
   },
   fontSizes: {
     xs: 9,
