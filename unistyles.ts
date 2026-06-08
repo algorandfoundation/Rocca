@@ -16,8 +16,6 @@ const typography = {
     base: 14,
     lg: 17,
     xl: 18,
-    '2xl': 22,
-    '3xl': 36,
   },
   lineHeights: {
     tight: 1.2,
@@ -40,9 +38,6 @@ const spacing = {
   base: 16,
   lg: 20,
   xl: 24,
-  '2xl': 32,
-  '3xl': 40,
-  '4xl': 48,
 };
 
 const radii = {
@@ -51,7 +46,6 @@ const radii = {
   md: 12,
   lg: 16,
   xl: 20,
-  '2xl': 24,
   full: 9999,
 };
 
@@ -86,69 +80,125 @@ const shadows = {
   },
 } as const;
 
+const primitiveFoundation = {
+  typography,
+  spacing,
+  radii,
+  shadows,
+} as const;
+
+type PrimitiveTokens = typeof primitiveFoundation & {
+  color: {
+    brand: {
+      primary: string;
+      hover: string;
+      soft: string;
+    };
+    neutral: {
+      '0': string;
+      '10': string;
+      '20': string;
+      '70': string;
+      '90': string;
+      '100': string;
+    };
+    state: {
+      success: string;
+      danger: string;
+      warning: string;
+    };
+    border: string;
+  };
+};
+
 // ─── Themes ───────────────────────────────────────────────────────────────────
 
-const lightTheme = {
-  colors: {
-    // Brand
-    primary: '#1a73e8',
-    primaryHover: '#1557b0',
-    primaryLight: '#e3f2fd',
-    success: '#34a853',
-    danger: '#ea4335',
-    warning: '#fbbc05',
-    // Backgrounds
-    bgApp: '#f1f3f4',
-    bgWhite: '#ffffff',
-    bgChat: '#f8f9fa',
-    bgDark: '#111111',
-    bgDarkAlt: '#202124',
-    // Text
-    textPrimary: '#202124',
-    textSecondary: '#5f6368',
-    textInverse: '#ffffff',
-    // UI
+const lightPrimitives: PrimitiveTokens = {
+  ...primitiveFoundation,
+  color: {
+    brand: {
+      primary: '#1a73e8',
+      hover: '#1557b0',
+      soft: '#e3f2fd',
+    },
+    neutral: {
+      '0': '#ffffff',
+      '10': '#f8f9fa',
+      '20': '#f1f3f4',
+      '70': '#5f6368',
+      '90': '#202124',
+      '100': '#111111',
+    },
+    state: {
+      success: '#34a853',
+      danger: '#ea4335',
+      warning: '#fbbc05',
+    },
     border: '#dadce0',
-    headerBg: '#111111',
-    // Chat bubbles
-    bubbleUser: '#e3f2fd',
-    bubbleBot: '#ffffff',
   },
-  typography,
-  spacing,
-  radii,
-  shadows,
-  // Kept for backwards compatibility
-  gap: (v: number) => v * 8,
 };
 
-const darkTheme: typeof lightTheme = {
-  colors: {
-    primary: '#4da3f7',
-    primaryHover: '#81c0ff',
-    primaryLight: '#1c2f4d',
-    success: '#5dba71',
-    danger: '#f28b82',
-    warning: '#fdd663',
-    bgApp: '#1e1e1e',
-    bgWhite: '#2d2d2d',
-    bgChat: '#242424',
-    bgDark: '#111111',
-    bgDarkAlt: '#202124',
-    textPrimary: '#e8eaed',
-    textSecondary: '#9aa0a6',
-    textInverse: '#111111',
+const darkPrimitives: PrimitiveTokens = {
+  ...primitiveFoundation,
+  color: {
+    brand: {
+      primary: '#4da3f7',
+      hover: '#81c0ff',
+      soft: '#1c2f4d',
+    },
+    neutral: {
+      '0': '#2d2d2d',
+      '10': '#242424',
+      '20': '#1e1e1e',
+      '70': '#9aa0a6',
+      '90': '#e8eaed',
+      '100': '#111111',
+    },
+    state: {
+      success: '#5dba71',
+      danger: '#f28b82',
+      warning: '#fdd663',
+    },
     border: '#3c4043',
-    headerBg: '#111111',
-    bubbleUser: '#1c2f4d',
-    bubbleBot: '#2d2d2d',
   },
-  typography,
-  spacing,
-  radii,
-  shadows,
-  gap: (v: number) => v * 8,
 };
+
+const createSemanticTokens = (primitives: PrimitiveTokens) => ({
+  fg: {
+    highEmphasis: primitives.color.neutral['90'],
+    mediumEmphasis: primitives.color.neutral['70'],
+    inverse: primitives.color.neutral['0'],
+    primary: primitives.color.brand.primary,
+    success: primitives.color.state.success,
+    danger: primitives.color.state.danger,
+    warning: primitives.color.state.warning,
+  },
+  bg: {
+    app: primitives.color.neutral['20'],
+    surface: primitives.color.neutral['0'],
+    chat: primitives.color.neutral['10'],
+    dark: primitives.color.neutral['100'],
+    darkAlt: primitives.color.neutral['90'],
+    header: primitives.color.neutral['100'],
+    bubbleUser: primitives.color.brand.soft,
+    bubbleBot: primitives.color.neutral['0'],
+  },
+  stroke: {
+    default: primitives.color.border,
+  },
+});
+
+const createTheme = (primitives: PrimitiveTokens) => {
+  const semantic = createSemanticTokens(primitives);
+
+  return {
+    primitives,
+    semantic,
+  };
+};
+
+const lightTheme = createTheme(lightPrimitives);
+const darkTheme = createTheme(darkPrimitives);
 
 const appThemes = {
   light: lightTheme,

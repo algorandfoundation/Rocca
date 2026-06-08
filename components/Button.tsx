@@ -5,7 +5,7 @@ import { AppText } from './Text';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'pill' | 'pillLight';
+type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'pill' | 'pillLight' | 'link';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
@@ -37,7 +37,7 @@ export function Button({
   stylesheet.useVariants({ variant, size });
 
   const isLight = variant === 'primary' || variant === 'pill';
-  const spinnerColor = isLight ? theme.colors.textInverse : theme.colors.primary;
+  const spinnerColor = isLight ? theme.semantic.fg.inverse : theme.primitives.color.brand.hover;
 
   return (
     <TouchableOpacity
@@ -46,6 +46,7 @@ export function Button({
       activeOpacity={0.8}
       style={[
         stylesheet.base,
+        variant === 'link' && stylesheet.linkReset,
         fullWidth && stylesheet.fullWidth,
         (disabled || loading) && stylesheet.disabled,
         style,
@@ -58,7 +59,15 @@ export function Button({
           {leftIcon}
           <AppText
             variant="label"
-            color={isLight ? 'inverse' : variant === 'ghost' ? 'muted' : 'neutral'}
+            color={
+              isLight
+                ? 'inverse'
+                : variant === 'ghost'
+                  ? 'muted'
+                  : variant === 'link'
+                    ? 'primary'
+                    : 'neutral'
+            }
           >
             {label}
           </AppText>
@@ -75,53 +84,63 @@ const stylesheet = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.sm,
+    gap: theme.primitives.spacing.sm,
     variants: {
       variant: {
         primary: {
-          backgroundColor: theme.colors.primary,
-          borderRadius: theme.radii.md,
-          ...theme.shadows.primary,
+          backgroundColor: theme.primitives.color.brand.primary,
+          borderRadius: theme.primitives.radii.md,
+          ...theme.primitives.shadows.primary,
         },
         outline: {
           backgroundColor: 'transparent',
-          borderRadius: theme.radii.md,
+          borderRadius: theme.primitives.radii.md,
           borderWidth: 1,
-          borderColor: theme.colors.border,
+          borderColor: theme.semantic.stroke.default,
         },
         ghost: {
           backgroundColor: 'transparent',
-          borderRadius: theme.radii.md,
+          borderRadius: theme.primitives.radii.md,
         },
         pill: {
-          backgroundColor: theme.colors.primary,
-          borderRadius: theme.radii.full,
-          ...theme.shadows.md,
+          backgroundColor: theme.primitives.color.brand.primary,
+          borderRadius: theme.primitives.radii.full,
+          ...theme.primitives.shadows.md,
         },
         pillLight: {
-          backgroundColor: theme.colors.bgWhite,
-          borderRadius: theme.radii.full,
-          ...theme.shadows.md,
+          backgroundColor: theme.semantic.bg.surface,
+          borderRadius: theme.primitives.radii.full,
+          ...theme.primitives.shadows.md,
+        },
+        link: {
+          backgroundColor: 'transparent',
+          borderRadius: 0,
+          paddingVertical: 0,
+          paddingHorizontal: 0,
         },
       },
       size: {
         sm: {
-          paddingVertical: theme.spacing.sm,
-          paddingHorizontal: theme.spacing.md,
+          paddingVertical: theme.primitives.spacing.sm,
+          paddingHorizontal: theme.primitives.spacing.md,
         },
         md: {
-          paddingVertical: theme.spacing.md,
-          paddingHorizontal: theme.spacing.base,
+          paddingVertical: theme.primitives.spacing.md,
+          paddingHorizontal: theme.primitives.spacing.base,
         },
         lg: {
-          paddingVertical: theme.spacing.base,
-          paddingHorizontal: theme.spacing.xl,
+          paddingVertical: theme.primitives.spacing.base,
+          paddingHorizontal: theme.primitives.spacing.xl,
         },
       },
     },
   },
   fullWidth: {
     width: '100%',
+  },
+  linkReset: {
+    borderRadius: 0,
+    paddingVertical: 0,
   },
   disabled: {
     opacity: 0.5,
