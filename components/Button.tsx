@@ -80,7 +80,7 @@ export function Button({
       ) : (
         <>
           {leftIcon}
-          <AppText variant="label" color={textColorMap[variant] as any}>
+          <AppText variant="label" color={textColorMap[variant] as any} bold>
             {label}
           </AppText>
         </>
