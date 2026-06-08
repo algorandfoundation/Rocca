@@ -1,19 +1,21 @@
+import { bootstrap } from '@/lib/bootstrap';
+import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
+import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
+import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
+import { accountsStore } from '@/stores/accounts';
+import { keyStoreHooks } from '@/stores/before-after';
+import { identitiesStore } from '@/stores/identities';
+import { keyStore } from '@/stores/keystore';
+import { passkeysStore } from '@/stores/passkeys';
+import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
+import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useEventListener } from 'expo';
 import { Stack } from 'expo-router';
-import { install } from 'react-native-quick-crypto';
-import { keyStore } from '@/stores/keystore';
-import { keyStoreHooks } from '@/stores/before-after';
-import { accountsStore } from '@/stores/accounts';
-import { identitiesStore } from '@/stores/identities';
-import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
-import { passkeysStore } from '@/stores/passkeys';
-import { registerGlobals } from 'react-native-webrtc';
-import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
-import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
-import { bootstrap } from '@/lib/bootstrap';
-import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import React from 'react';
-import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { install } from 'react-native-quick-crypto';
+import { registerGlobals } from 'react-native-webrtc';
 
 globalPolyfill();
 registerGlobals();
@@ -83,10 +85,14 @@ export default function RootLayout() {
   });
 
   return (
-    <PreventScreenshotProvider>
+    <GestureHandlerRootView>
       <WalletProvider provider={provider}>
-        <Stack />
+        <BottomSheetModalProvider>
+          <PreventScreenshotProvider>
+            <Stack />
+          </PreventScreenshotProvider>
+        </BottomSheetModalProvider>
       </WalletProvider>
-    </PreventScreenshotProvider>
+    </GestureHandlerRootView>
   );
 }
