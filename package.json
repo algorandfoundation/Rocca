@@ -31,13 +31,14 @@
     "export": "expo export"
   },
   "dependencies": {
+    "@algorandfoundation/ac2-sdk": "workspace:*",
     "@algorandfoundation/accounts-keystore-extension": "^1.0.0-canary.4",
     "@algorandfoundation/accounts-store": "^1.0.0-canary.2",
     "@algorandfoundation/identities-extension": "^1.0.0-canary.1",
     "@algorandfoundation/identities-keystore-extension": "^1.0.0-canary.1",
     "@algorandfoundation/identities-store": "^1.0.0-canary.1",
     "@algorandfoundation/keystore": "^1.0.0-canary.15",
-    "@algorandfoundation/liquid-client": "1.0.0-canary.3",
+    "@algorandfoundation/liquid-client": "workspace:*",
     "@algorandfoundation/log-store": "^1.0.0-canary.3",
     "@algorandfoundation/react-native-keystore": "^1.0.0-canary.11",
     "@algorandfoundation/react-native-passkey-autofill": "^1.0.0-canary.15",
