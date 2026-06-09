@@ -5,7 +5,7 @@ import { AppText } from './Text';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'pill' | 'pillLight' | 'link';
+type ButtonVariant = 'primary' | 'outline' | 'ghost' | 'pill' | 'pillLight' | 'white' | 'link';
 type ButtonSize = 'sm' | 'md' | 'lg';
 type ButtonColor = 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
 
@@ -41,8 +41,17 @@ export function Button({
 
   const colorValue = getColorValue(theme, color);
   const isFilled =
-    variant === 'primary' || variant === 'pill' || variant === 'outline' || variant === 'pillLight';
-  const spinnerColor = isFilled ? theme.semantic.fg.inverse : colorValue;
+    variant === 'primary' ||
+    variant === 'pill' ||
+    variant === 'outline' ||
+    variant === 'pillLight' ||
+    variant === 'white';
+  const spinnerColor =
+    variant === 'white'
+      ? theme.semantic.fg.onLight
+      : isFilled
+        ? theme.semantic.fg.inverse
+        : colorValue;
 
   const textColorMap: Record<ButtonVariant, string> = {
     primary: 'inverse',
@@ -50,6 +59,7 @@ export function Button({
     ghost: 'muted',
     pill: 'inverse',
     pillLight: 'inverse',
+    white: 'neutral',
     link: 'primary',
   };
 
@@ -58,6 +68,7 @@ export function Button({
       ? { backgroundColor: colorValue }
       : {}),
     ...(variant === 'outline' ? { borderColor: colorValue, backgroundColor: colorValue } : {}),
+    ...(variant === 'white' ? { backgroundColor: theme.semantic.bg.white } : {}),
     ...(variant === 'link' || variant === 'ghost' ? { backgroundColor: 'transparent' } : {}),
   };
 
@@ -80,7 +91,12 @@ export function Button({
       ) : (
         <>
           {leftIcon}
-          <AppText variant="label" color={textColorMap[variant] as any} bold>
+          <AppText
+            variant="label"
+            color={textColorMap[variant] as any}
+            style={variant === 'white' ? stylesheet.whiteLabel : undefined}
+            bold
+          >
             {label}
           </AppText>
         </>
@@ -136,6 +152,10 @@ const stylesheet = StyleSheet.create((theme) => ({
           borderRadius: theme.primitives.radii.full,
           ...theme.primitives.shadows.md,
         },
+        white: {
+          backgroundColor: theme.semantic.bg.white,
+          borderRadius: theme.primitives.radii.full,
+        },
         link: {
           backgroundColor: 'transparent',
           borderRadius: 0,
@@ -168,5 +188,8 @@ const stylesheet = StyleSheet.create((theme) => ({
   },
   disabled: {
     opacity: 0.5,
+  },
+  whiteLabel: {
+    color: theme.semantic.fg.onLight,
   },
 }));

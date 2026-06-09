@@ -168,6 +168,7 @@ const createSemanticTokens = (primitives: PrimitiveTokens) => ({
     highEmphasis: primitives.color.neutral['90'],
     mediumEmphasis: primitives.color.neutral['70'],
     inverse: primitives.color.neutral['0'],
+    onLight: primitives.color.neutral['100'],
     primary: primitives.color.brand.primary,
     success: primitives.color.state.success,
     danger: primitives.color.state.danger,
@@ -176,6 +177,7 @@ const createSemanticTokens = (primitives: PrimitiveTokens) => ({
   bg: {
     app: primitives.color.neutral['20'],
     surface: primitives.color.neutral['0'],
+    white: '#ffffff',
     chat: primitives.color.neutral['10'],
     dark: primitives.color.neutral['100'],
     darkAlt: primitives.color.neutral['90'],
