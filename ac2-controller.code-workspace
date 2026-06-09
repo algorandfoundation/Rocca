@@ -4,10 +4,6 @@
       "name": "ROOT",
       "path": ".",
     },
-    {
-      "name": "ac2-sdk",
-      "path": "packages/ac2-sdk",
-    },
   ],
   "settings": {
     "npm.packageManager": "pnpm",
