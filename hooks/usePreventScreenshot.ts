@@ -1,4 +1,4 @@
-import { screenshotManager } from '@/lib/screenshotManager';
+import { screenshotManager } from '@/lib/runtime/screenshot-manager';
 import { useEffect } from 'react';
 
 export function usePreventScreenshot(enabled = true) {

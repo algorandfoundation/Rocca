@@ -87,7 +87,7 @@ jest.mock('react-native-reanimated', () => {
 });
 
 // Mock bootstrap
-jest.mock('@/lib/bootstrap', () => ({
+jest.mock('@/lib/keystore/bootstrap', () => ({
   bootstrap: jest.fn().mockResolvedValue(undefined),
 }));
 

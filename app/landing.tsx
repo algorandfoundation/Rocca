@@ -4,7 +4,8 @@
  * Surface is intentionally tiny:
  *   - identifies the controller by its first identity DID,
  *   - links to `scan` to pair a new Liquid Auth session,
- *   - links to `connections` to chat over established DataChannels.
+ *   - links to `connections` (the diagnostics panel) to inspect connections,
+ *     their granted agent identity keys, and per-thread conversations.
  *
  * Everything else (accounts, passkeys browser, identities browser, import,
  * balance/activity cards) was removed to keep this app as a reference for
@@ -49,9 +50,11 @@ export default function LandingScreen() {
             <Text style={styles.actionSub}>Scan to connect</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/connections')}>
-            <MaterialIcons name="link" size={28} color="#10B981" />
-            <Text style={styles.actionLabel}>Connections</Text>
-            <Text style={styles.actionSub}>{sessions.length} active</Text>
+            <MaterialIcons name="insights" size={28} color="#10B981" />
+            <Text style={styles.actionLabel}>Diagnostics</Text>
+            <Text style={styles.actionSub}>
+              {sessions.length} connection{sessions.length === 1 ? '' : 's'}
+            </Text>
           </TouchableOpacity>
         </View>
 

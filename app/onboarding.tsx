@@ -22,7 +22,7 @@ import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as bip39 from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider';
 import { mnemonicToSeed } from '@scure/bip39';
-import { bootstrap } from '@/lib/bootstrap';
+import { bootstrap } from '@/lib/keystore/bootstrap';
 import { PreventScreenshot } from '@/components/PreventScreenshot';
 import * as DocumentPicker from 'expo-document-picker';
 

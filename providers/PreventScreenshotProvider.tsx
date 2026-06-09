@@ -1,4 +1,4 @@
-import { screenshotManager } from '@/lib/screenshotManager';
+import { screenshotManager } from '@/lib/runtime/screenshot-manager';
 import React, { useEffect } from 'react';
 
 // Not really a provider, but this is where we can do the safety reset on unmount

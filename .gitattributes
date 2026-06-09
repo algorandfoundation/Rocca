@@ -1,2 +1,45 @@
+# Normalize all text files to LF in the repository.
+# Working-tree line endings stay native on checkout (core.autocrlf respected),
+# but what gets stored in git is always LF.
+* text=auto eol=lf
+
+# Explicit text classification for common source/config types.
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.jsx       text eol=lf
+*.mjs       text eol=lf
+*.cjs       text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.sh        text eol=lf
+*.patch     text eol=lf
+*.txt       text eol=lf
+Dockerfile  text eol=lf
+.gitignore  text eol=lf
+.gitattributes text eol=lf
+
+# Binary types — never touch line endings.
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.webp      binary
+*.ttf       binary
+*.otf       binary
+*.woff      binary
+*.woff2     binary
+*.pdf       binary
+*.zip       binary
+*.tgz       binary
+*.gz        binary
+*.keystore  binary
+*.jks       binary
+
 # Git blame ignore revs file
 .git-blame-ignore-revs linguist-generated=true

@@ -1,14 +1,10 @@
 /**
- * Typed store for AC2 protocol messages (the signing trio and any other
- * `Ac2Message` the wallet observes on a DataChannel).
- *
- * Kept separate from the free-text chat store (`./messages.ts`) so the
- * protocol surface stays unambiguous: anything that flows through here is
- * a DIDComm v2 envelope validated by `@ac2/ac2-sdk`, never user-typed
- * text. The chat screen renders both stores in one timeline.
+ * MMKV-backed store for AC2 protocol messages (DIDComm v2 envelopes
+ * validated by `@algorandfoundation/ac2-sdk`). Separate from the free-text
+ * chat store (`./messages.ts`); the chat screen renders both in one timeline.
  */
 
-import type { Ac2Message } from '@ac2/ac2-sdk';
+import type { AC2BaseMessage as Ac2Message } from '@algorandfoundation/ac2-sdk/schema';
 import { Store } from '@tanstack/react-store';
 import { createMMKV } from 'react-native-mmkv';
 
@@ -24,6 +20,12 @@ export interface Ac2MessageEntry {
   requestId: string;
   /** Local controller address (when known), used for filtering. */
   address: string;
+  /**
+   * Conversation thread id (`ac2/ConversationOpen`); distinct from the
+   * envelope's own DIDComm `thid` (which threads a request/response pair).
+   * Legacy entries with no `thid` are treated as the `'default'` thread.
+   */
+  thid?: string;
   direction: Ac2Direction;
   /** The validated DIDComm v2 envelope. */
   envelope: Ac2Message;
@@ -75,5 +77,16 @@ export function clearAc2Messages(address: string, origin: string, requestId: str
     messages: state.messages.filter(
       (m) => m.address !== address || m.origin !== origin || m.requestId !== requestId,
     ),
+  }));
+}
+
+/**
+ * Removes every AC2 envelope belonging to a connection, regardless of the
+ * local address. Used when forgetting a persisted connection.
+ */
+export function clearAc2MessagesByConnection(origin: string, requestId: string) {
+  ac2MessagesStore.setState((state) => ({
+    ...state,
+    messages: state.messages.filter((m) => m.origin !== origin || m.requestId !== requestId),
   }));
 }

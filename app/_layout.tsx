@@ -1,5 +1,8 @@
-import { bootstrap } from '@/lib/bootstrap';
-import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
+// MUST be first: installs `global.crypto` before any `@noble/hashes` import
+// is evaluated. See `lib/runtime/install-crypto.ts`.
+import { bootstrap } from '@/lib/keystore/bootstrap';
+import '@/lib/runtime/install-crypto';
+import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/runtime/polyfill';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
 import { accountsStore } from '@/stores/accounts';
@@ -14,12 +17,10 @@ import { useEventListener } from 'expo';
 import { Stack } from 'expo-router';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { install } from 'react-native-quick-crypto';
 import { registerGlobals } from 'react-native-webrtc';
 
 globalPolyfill();
 registerGlobals();
-install();
 
 const biometricOptions: ReactKeystoreOptions['keystore']['authentication'] = {
   biometrics: true,

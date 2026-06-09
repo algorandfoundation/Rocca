@@ -8,7 +8,7 @@
  * can await the returned value directly instead of relying on setImmediate.
  */
 
-import type { screenshotManager as ScreenshotManagerType } from '../../lib/screenshotManager';
+import type { screenshotManager as ScreenshotManagerType } from '../../lib/runtime/screenshot-manager';
 
 describe('ScreenshotManager', () => {
   let manager: typeof ScreenshotManagerType;
@@ -29,7 +29,7 @@ describe('ScreenshotManager', () => {
 
     ({ screenshotManager: manager } =
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require('../../lib/screenshotManager') as {
+      require('../../lib/runtime/screenshot-manager') as {
         screenshotManager: typeof ScreenshotManagerType;
       });
   });
