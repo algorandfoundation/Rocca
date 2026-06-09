@@ -15,7 +15,8 @@
         "gradleCommand": ":app:clean :app:assembleRelease -x lintVitalRelease -x lintVitalAnalyzeRelease --stacktrace"
       },
       "env": {
-        "APP_ENV": "testing"
+        "APP_ENV": "testing",
+        "GRADLE_OPTS": "-Xmx4096m -XX:MaxMetaspaceSize=1g -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2"
       }
     },
     "production": {

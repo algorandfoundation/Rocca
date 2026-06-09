@@ -82,13 +82,7 @@ module.exports = {
         {
           android: {
             compileSdkVersion: 35,
-            gradleProperties: {
-              'org.gradle.jvmargs':
-                '-Xmx4096m -XX:MaxMetaspaceSize=1g -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8',
-              'org.gradle.daemon': 'false',
-              'org.gradle.parallel': 'false',
-              'org.gradle.workers.max': '2',
-            },
+            buildArchs: ['arm64-v8a'],
           },
         },
       ],
