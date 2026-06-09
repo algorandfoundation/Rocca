@@ -1,5 +1,6 @@
 module.exports = {
   preset: 'jest-expo',
+  resolver: 'react-native-worklets/jest/resolver',
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   testPathIgnorePatterns: [
     '<rootDir>/packages/ac2-sdk/tests/',
@@ -11,6 +12,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^@algorandfoundation/(.*)$': '<rootDir>/node_modules/@algorandfoundation/$1',
+    '^react-native-worklets$': '<rootDir>/node_modules/react-native-worklets/lib/module/mock.js',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 };
