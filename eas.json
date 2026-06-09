@@ -10,6 +10,10 @@
     "testing": {
       "distribution": "internal",
       "channel": "testing",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease -x lintVitalRelease -x lintVitalAnalyzeRelease"
+      },
       "env": {
         "APP_ENV": "testing"
       }
