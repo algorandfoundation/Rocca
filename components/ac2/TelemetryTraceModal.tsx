@@ -1,11 +1,10 @@
 import { BottomSheetBackdrop, BottomSheetFlatList, BottomSheetModal } from '@gorhom/bottom-sheet';
-import { Button } from '../Button';
 import { AppText as Text } from '../Text';
 
 import { AC2Message } from '@algorandfoundation/ac2-sdk/schema';
 import { MaterialIcons } from '@expo/vector-icons';
 import { forwardRef, useCallback, useState } from 'react';
-import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 interface AC2TelemetryTraceModalProps {
@@ -46,13 +45,14 @@ function MessageCard({ message }: { message: AC2Message }) {
         From: {message.from}
       </Text>
       {message.id && <Text style={styles.id}>ID: {message.id.slice(0, 16)}...</Text>}
-      <Button
-        variant="ghost"
-        size="sm"
+      <TouchableOpacity
         onPress={() => setJsonVisible((v) => !v)}
-        label={jsonVisible ? 'Hide JSON' : 'View JSON'}
         style={styles.toggleBtn}
-      />
+        activeOpacity={0.8}
+      >
+        <MaterialIcons name="code" size={14} style={styles.toggleIcon} />
+        <Text style={styles.toggleLabel}>{jsonVisible ? 'Hide JSON' : 'View JSON'}</Text>
+      </TouchableOpacity>
       {jsonVisible && (
         <ScrollView horizontal style={styles.jsonBox} showsHorizontalScrollIndicator={false}>
           <Text style={styles.json}>{JSON.stringify(message, null, 2)}</Text>
@@ -91,20 +91,21 @@ export const AC2TelemetryTraceModal = forwardRef<BottomSheetModal, AC2TelemetryT
           {/** Header */}
           <View style={stylesheet.header}>
             <View style={stylesheet.headerTitleRow}>
-              <MaterialIcons name="shield" size={24} color="black" />
-              <Text variant="h2" bold style={stylesheet.title} color="primary" numberOfLines={1}>
+              <MaterialIcons name="shield" size={20} style={stylesheet.shieldIcon} />
+              <Text style={stylesheet.title} numberOfLines={1}>
                 AC2 Telemetry Trace
               </Text>
             </View>
             <View style={stylesheet.headerButtonRow}>
-              <Button
-                variant="outline"
-                size="sm"
-                label="Export JSON"
+              <TouchableOpacity
                 onPress={() => alert('Not yet implemented!')}
-              />
+                style={stylesheet.exportBtn}
+                activeOpacity={0.8}
+              >
+                <Text style={stylesheet.exportBtnLabel}>Export JSON</Text>
+              </TouchableOpacity>
               <Pressable onPress={() => onDismiss?.()} hitSlop={8} style={stylesheet.closeButton}>
-                <MaterialIcons name="keyboard-arrow-down" size={24} color="black" />
+                <MaterialIcons name="keyboard-arrow-down" size={24} style={stylesheet.closeIcon} />
               </Pressable>
             </View>
           </View>
@@ -131,7 +132,7 @@ AC2TelemetryTraceModal.displayName = 'AC2 TelemetryTraceModal';
 
 const stylesheet = StyleSheet.create((theme) => ({
   shell: {
-    backgroundColor: theme.semantic.bg.surface,
+    backgroundColor: theme.semantic.bg.darkAlt,
   },
   body: {
     flex: 1,
@@ -140,7 +141,7 @@ const stylesheet = StyleSheet.create((theme) => ({
     flex: 1,
   },
   container: {
-    paddingHorizontal: theme.primitives.spacing.base,
+    paddingHorizontal: theme.primitives.spacing.sm,
     paddingVertical: theme.primitives.spacing.md,
     paddingBottom: theme.primitives.spacing.xl,
   },
@@ -148,15 +149,18 @@ const stylesheet = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.primitives.spacing.gap(1),
-    margin: theme.primitives.spacing.gap(2),
+    backgroundColor: theme.semantic.bg.dark,
+    paddingHorizontal: theme.primitives.spacing.sm,
+    paddingVertical: theme.primitives.spacing.md,
   },
   headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.primitives.spacing.sm,
     flexShrink: 1,
-    //paddingRight: theme.primitives.spacing.xl * 4,
+  },
+  shieldIcon: {
+    color: theme.semantic.fg.primary,
   },
   headerButtonRow: {
     flexDirection: 'row',
@@ -167,12 +171,34 @@ const stylesheet = StyleSheet.create((theme) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  closeIcon: {
+    color: theme.semantic.fg.inverse,
+  },
+  exportBtn: {
+    borderWidth: 1,
+    borderColor: theme.primitives.color.border,
+    borderRadius: theme.primitives.radii.sm,
+    paddingVertical: theme.primitives.spacing.xs,
+    paddingHorizontal: theme.primitives.spacing.sm,
+  },
+  exportBtnLabel: {
+    fontSize: theme.primitives.typography.fontSizes.sm,
+    color: theme.semantic.fg.inverse,
+    fontFamily: theme.primitives.typography.fonts.bold,
+  },
   title: {
     flexShrink: 1,
-    color: theme.semantic.fg.highEmphasis,
+    fontSize: theme.primitives.typography.fontSizes.lg,
+    fontFamily: Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }),
+    fontWeight: 'bold',
+    color: theme.semantic.fg.inverse,
   },
   card: {
-    backgroundColor: theme.semantic.bg.chat,
+    backgroundColor: theme.semantic.bg.header,
     borderRadius: theme.primitives.radii.md,
     padding: theme.primitives.spacing.md,
     marginBottom: theme.primitives.spacing.md,
@@ -180,24 +206,62 @@ const stylesheet = StyleSheet.create((theme) => ({
     borderColor: theme.primitives.color.border,
   },
   meta: {
-    fontSize: theme.primitives.typography.fontSizes.sm,
+    fontSize: theme.primitives.typography.fontSizes.md,
     color: theme.semantic.fg.primary,
     marginBottom: theme.primitives.spacing.xs,
-    fontFamily: theme.primitives.typography.fonts.bold,
+    fontFamily: Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }),
+    fontWeight: 'bold',
   },
   detail: {
-    fontSize: theme.primitives.typography.fontSizes.xs,
+    fontSize: theme.primitives.typography.fontSizes.sm,
     color: theme.semantic.fg.mediumEmphasis,
     marginBottom: theme.primitives.spacing.xs,
+    fontFamily: Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }),
   },
   id: {
-    fontSize: theme.primitives.typography.fontSizes.xs,
+    fontSize: theme.primitives.typography.fontSizes.sm,
     color: theme.semantic.fg.success,
     marginBottom: theme.primitives.spacing.sm,
-    fontFamily: theme.primitives.typography.fonts.bold,
+    fontFamily: Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }),
+    fontWeight: 'bold',
   },
   toggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.primitives.spacing.xs,
+    backgroundColor: theme.semantic.bg.dark,
+    borderRadius: theme.primitives.radii.sm,
+    paddingVertical: theme.primitives.spacing.xs,
+    paddingHorizontal: theme.primitives.spacing.sm,
+    alignSelf: 'flex-start',
     marginBottom: theme.primitives.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.primitives.color.border,
+  },
+  toggleIcon: {
+    color: theme.semantic.fg.inverse,
+  },
+  toggleLabel: {
+    fontSize: theme.primitives.typography.fontSizes.xs,
+    color: theme.semantic.fg.inverse,
+    fontFamily: Platform.select({
+      ios: 'Menlo',
+      android: 'monospace',
+      default: 'monospace',
+    }),
+    fontWeight: 'bold',
   },
   jsonBox: {
     backgroundColor: theme.semantic.bg.dark,
