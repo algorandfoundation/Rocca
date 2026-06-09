@@ -12,7 +12,7 @@
       "channel": "testing",
       "android": {
         "buildType": "apk",
-        "gradleCommand": ":app:clean :app:assembleRelease -x lintVitalRelease -x lintVitalAnalyzeRelease --stacktrace --info"
+        "gradleCommand": ":app:clean :app:assembleRelease -x lintVitalRelease -x lintVitalAnalyzeRelease --stacktrace"
       },
       "env": {
         "APP_ENV": "testing"
