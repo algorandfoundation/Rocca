@@ -1,5 +1,6 @@
 import { useEventListener } from 'expo';
 import { Stack } from 'expo-router';
+import { AppState } from 'react-native';
 import { install } from 'react-native-quick-crypto';
 import { keyStore } from '@/stores/keystore';
 import { keyStoreHooks } from '@/stores/before-after';
@@ -62,6 +63,24 @@ setupNavigatorPolyfill();
 export default function RootLayout() {
   React.useEffect(() => {
     bootstrap(biometricOptions).catch((e) => console.error('Bootstrap promise error:', e));
+  }, []);
+
+  React.useEffect(() => {
+    let wasBackgrounded = false;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'background' || state === 'inactive') {
+        wasBackgrounded = true;
+        return;
+      }
+      if (state === 'active' && wasBackgrounded) {
+        wasBackgrounded = false;
+        bootstrap(biometricOptions, false).catch((e) =>
+          console.error('Failed to reload keys after app became active:', e),
+        );
+      }
+    });
+
+    return () => subscription.remove();
   }, []);
 
   useEventListener(ReactNativePasskeyAutofill, 'onPasskeyAdded', (event) => {

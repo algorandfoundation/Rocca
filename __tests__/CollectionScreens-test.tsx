@@ -21,7 +21,14 @@ jest.mock('@/hooks/useProvider', () => ({
   useProvider: () => ({
     identities: [{ did: 'did:key:123' }],
     accounts: [{ address: 'ADDR123', balance: BigInt(100) }],
-    passkeys: [{ id: 'cred123', name: 'Test Passkey', createdAt: new Date().getTime() }],
+    passkeys: [
+      {
+        id: 'cred123',
+        name: 'Test Passkey',
+        createdAt: new Date().getTime(),
+        metadata: { userName: 'test@example.com' },
+      },
+    ],
     sessions: [{ id: 'sess123', origin: 'example.com' }],
     passkey: {
       store: {
@@ -46,7 +53,7 @@ describe('Collection Screens', () => {
   it('renders PasskeysScreen correctly', () => {
     const { getByText } = render(<PasskeysScreen />);
     expect(getByText('Test Passkey')).toBeTruthy();
-    expect(getByText('ID: cred123')).toBeTruthy();
+    expect(getByText('test@example.com')).toBeTruthy();
   });
 
   it('renders IdentitiesScreen correctly', () => {

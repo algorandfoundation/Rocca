@@ -1,6 +1,15 @@
 const { version } = require('./package.json');
 
 const ENV = process.env.APP_ENV || 'debug';
+const PASSKEY_AUTOFILL_SITE = process.env.PASSKEY_AUTOFILL_SITE || 'https://fido.shore-tech.net';
+
+const getAssociatedDomain = (site) => {
+  try {
+    return new URL(site).host;
+  } catch {
+    return site.replace(/^https?:\/\//, '').split('/')[0];
+  }
+};
 
 const getBundleIdentifier = () => {
   switch (ENV) {
@@ -30,6 +39,10 @@ const getAppName = () => {
   }
 };
 
+const PASSKEY_AUTOFILL_LABEL = `${getAppName()} Wallet`;
+
+console.log(`Building ${getAppName()} v${version} for ${ENV}...`);
+
 module.exports = {
   expo: {
     name: getAppName(),
@@ -42,6 +55,13 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: getBundleIdentifier(),
+      associatedDomains: [`webcredentials:${getAssociatedDomain(PASSKEY_AUTOFILL_SITE)}`],
+      infoPlist: {
+        NSFaceIDUsageDescription: 'Rocca uses Face ID to unlock your wallet keys.',
+      },
+      entitlements: {
+        'com.apple.developer.authentication-services.autofill-credential-provider': true,
+      },
     },
     icon: './assets/icon.png',
     splash: {
@@ -90,8 +110,8 @@ module.exports = {
       [
         '@algorandfoundation/react-native-passkey-autofill',
         {
-          site: 'https://fido.shore-tech.net',
-          label: 'Rocca Wallet',
+          site: PASSKEY_AUTOFILL_SITE,
+          label: PASSKEY_AUTOFILL_LABEL,
         },
       ],
     ],
@@ -111,6 +131,11 @@ module.exports = {
         showPasskeys: true,
         showIdentities: true,
         showConnections: true,
+      },
+      passkeyAutofill: {
+        site: PASSKEY_AUTOFILL_SITE,
+        label: PASSKEY_AUTOFILL_LABEL,
+        associatedDomain: getAssociatedDomain(PASSKEY_AUTOFILL_SITE),
       },
       router: {},
       eas: {

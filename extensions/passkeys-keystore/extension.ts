@@ -10,6 +10,7 @@ import type { Store } from '@tanstack/store';
 import { toUrlSafe } from '@/utils/base64';
 import type { PasskeysKeystoreExtension, PasskeysKeystoreExtensionOptions } from './types';
 import type { LogStoreExtension } from '@algorandfoundation/log-store';
+import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 
 /**
  * Extension that bridges the passkey store and keystore.
@@ -40,6 +41,25 @@ export const WithPasskeysKeystore: Extension<PasskeysKeystoreExtension> = (
   provider.passkey.store.hooks.before('remove', async ({ id }) => {
     log?.info(`before remove hook: looking up key for passkey id=${id}`, {}, 'PasskeysKeystore');
     const foundKey = (keyStore.state.keys as Key[]).find((k) => toUrlSafe(k.id) === id);
+
+    const nativeCredentialIds = new Set([id]);
+    if (foundKey?.id) {
+      nativeCredentialIds.add(foundKey.id);
+    }
+
+    for (const credentialId of nativeCredentialIds) {
+      try {
+        log?.info(`deleting native passkey credential ${credentialId}`, {}, 'PasskeysKeystore');
+        await ReactNativePasskeyAutofill.deleteCredential(credentialId);
+      } catch (error) {
+        log?.error(
+          `Failed to delete native passkey credential ${credentialId}: ${error}`,
+          {},
+          'PasskeysKeystore',
+        );
+      }
+    }
+
     if (foundKey) {
       try {
         log?.info(`removing key ${foundKey.id} from keystore`, {}, 'PasskeysKeystore');

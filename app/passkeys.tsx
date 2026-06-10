@@ -5,9 +5,20 @@ import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useProvider } from '@/hooks/useProvider';
 
+function getPasskeyWebsite(passkey: { origin?: string; name: string }) {
+  return passkey.origin || passkey.name;
+}
+
+function getPasskeyUsername(passkey: { metadata?: Record<string, any> }) {
+  return typeof passkey.metadata?.userName === 'string' && passkey.metadata.userName.length > 0
+    ? passkey.metadata.userName
+    : 'Unknown user';
+}
+
 export default function PasskeysScreen() {
   const router = useRouter();
   const { passkeys, passkey: passkeyApi } = useProvider();
+
   const handleDelete = (id: string, name: string) => {
     Alert.alert('Delete Passkey', `Are you sure you want to delete "${name}"?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -49,25 +60,11 @@ export default function PasskeysScreen() {
                   <MaterialIcons name="fingerprint" size={24} color="#10B981" />
                 </View>
                 <View style={styles.details}>
-                  <Text style={styles.passkeyName} numberOfLines={1} ellipsizeMode="middle">
-                    {passkey.name}
+                  <Text style={styles.website} numberOfLines={1} ellipsizeMode="tail">
+                    {getPasskeyWebsite(passkey)}
                   </Text>
-                  {passkey.userHandle && (
-                    <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="middle">
-                      User: {passkey.userHandle}
-                    </Text>
-                  )}
-                  {passkey.origin && (
-                    <Text style={styles.detailText} numberOfLines={1} ellipsizeMode="middle">
-                      Origin: {passkey.origin}
-                    </Text>
-                  )}
-                  <Text style={styles.credentialId} numberOfLines={1} ellipsizeMode="middle">
-                    ID: {passkey.id}
-                  </Text>
-                  <Text style={styles.date}>
-                    Created:{' '}
-                    {passkey.createdAt ? new Date(passkey.createdAt).toLocaleDateString() : 'N/A'}
+                  <Text style={styles.username} numberOfLines={1} ellipsizeMode="middle">
+                    {getPasskeyUsername(passkey)}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -128,25 +125,15 @@ const styles = StyleSheet.create({
   details: {
     flex: 1,
   },
-  passkeyName: {
+  website: {
     fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  detailText: {
-    fontSize: 13,
-    color: '#475569',
-    marginBottom: 2,
-  },
-  credentialId: {
-    fontSize: 13,
+  username: {
+    fontSize: 14,
     color: '#64748B',
-    marginBottom: 2,
-  },
-  date: {
-    fontSize: 12,
-    color: '#94A3B8',
   },
   deleteButton: {
     padding: 8,
