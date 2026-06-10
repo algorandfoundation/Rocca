@@ -1,4 +1,4 @@
-import { fromBase64Url, toBase64URL } from '@algorandfoundation/liquid-client';
+import { fromBase64Url, toBase64URL } from '@algorandfoundation/liquid-client/encoding';
 import { Passkey } from 'react-native-passkey';
 
 function toUint8Array(buf: BufferSource): Uint8Array {
