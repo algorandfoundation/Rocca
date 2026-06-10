@@ -30,10 +30,10 @@
   "dependencies": {
     "@algorandfoundation/accounts-keystore-extension": "^1.0.0-canary.5",
     "@algorandfoundation/accounts-store": "^1.0.0-canary.2",
-    "@algorandfoundation/keystore": "^1.0.0-canary.16",
     "@algorandfoundation/identities-extension": "^1.0.0-canary.1",
     "@algorandfoundation/identities-keystore-extension": "^1.0.0-canary.1",
     "@algorandfoundation/identities-store": "^1.0.0-canary.1",
+    "@algorandfoundation/keystore": "^1.0.0-canary.16",
     "@algorandfoundation/liquid-client": "1.0.0-canary.3",
     "@algorandfoundation/log-store": "^1.0.0-canary.3",
     "@algorandfoundation/react-native-keystore": "^1.0.0-canary.12",
