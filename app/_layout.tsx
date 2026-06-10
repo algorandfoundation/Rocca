@@ -90,15 +90,7 @@ export default function RootLayout() {
       <WalletProvider provider={provider}>
         <BottomSheetModalProvider>
           <PreventScreenshotProvider>
-            <Stack>
-              <Stack.Screen
-                name="terms"
-                options={{
-                  presentation: 'modal',
-                  title: 'Terms & Conditions',
-                }}
-              />
-            </Stack>
+            <Stack />
           </PreventScreenshotProvider>
         </BottomSheetModalProvider>
       </WalletProvider>
