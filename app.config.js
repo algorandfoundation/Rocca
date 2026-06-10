@@ -2,7 +2,6 @@ const { version } = require('./package.json');
 
 const ENV = process.env.APP_ENV || 'debug';
 const PASSKEY_AUTOFILL_SITE = process.env.PASSKEY_AUTOFILL_SITE || 'https://fido.shore-tech.net';
-const PASSKEY_AUTOFILL_LABEL = process.env.PASSKEY_AUTOFILL_LABEL || 'Rocca Wallet';
 
 const getAssociatedDomain = (site) => {
   try {
@@ -39,6 +38,10 @@ const getAppName = () => {
       return 'Rocca Debug';
   }
 };
+
+const PASSKEY_AUTOFILL_LABEL = `${getAppName()} Wallet`;
+
+console.log(`Building ${getAppName()} v${version} for ${ENV}...`);
 
 module.exports = {
   expo: {

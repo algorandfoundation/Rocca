@@ -16,7 +16,6 @@ import { Store } from '@tanstack/store';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 import { keyStore } from '@/stores/keystore';
 import { passkeysStore } from '@/stores/passkeys';
-import { CredentialProviderService } from '@/lib/credentialProvider';
 import { addLog } from '@algorandfoundation/log-store';
 
 import { generateId } from '@algorandfoundation/wallet-provider';
@@ -226,27 +225,14 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
       });
     }
 
-    if (hdRootKeySecret?.privateKey) {
-      logMsg('Setting derived main key material in native side');
-      await ReactNativePasskeyAutofill.setDerivedMainKey(
-        Buffer.from(hdRootKeySecret.privateKey).toString('hex'),
-      ).catch((e: unknown) => {
-        logMsg(`ReactNativePasskeyAutofill.setDerivedMainKey error: ${e}`, 'error');
-      });
-    } else {
-      logMsg('No HD root key material available for native passkey registration', 'error');
-    }
-
-    const isEnabled = await CredentialProviderService.isEnabledCredentialProviderService().catch(
-      (e: unknown) => {
-        logMsg(`CredentialProviderService.isEnabledCredentialProviderService error: ${e}`, 'error');
-        return false;
-      },
-    );
-    logMsg(`CredentialProviderService isEnabled: ${isEnabled}`);
+    const isEnabled = await ReactNativePasskeyAutofill.isProviderActive().catch((e: unknown) => {
+      logMsg(`ReactNativePasskeyAutofill.isProviderActive error: ${e}`, 'error');
+      return false;
+    });
+    logMsg(`PasskeyAutofill provider isActive: ${isEnabled}`);
 
     if (!isEnabled && Platform.OS === 'android') {
-      logMsg('CredentialProviderService is NOT enabled. Showing alert.');
+      logMsg('PasskeyAutofill provider is NOT active. Showing alert.');
       if (showAlert) {
         Alert.alert(
           'Enable Autofill Service',
@@ -256,7 +242,7 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
             {
               text: 'Open Settings',
               onPress: async () => {
-                await CredentialProviderService.showCredentialProviderSettings();
+                await ReactNativePasskeyAutofill.openProviderSettings();
               },
             },
           ],
