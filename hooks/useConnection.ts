@@ -13,18 +13,16 @@ import { decodeAddress } from '@/utils/algorand';
 import { toUrlSafe } from '@/utils/base64';
 import type { KeyData } from '@algorandfoundation/keystore';
 import { encodeAddress } from '@algorandfoundation/keystore';
-import {
-  decodeAssertionRequestOptions,
-  encodeCredential,
-  fromBase64Url,
-  SignalClient,
-  toBase64URL,
-} from '@algorandfoundation/liquid-client';
+import { SignalClient } from '@algorandfoundation/liquid-client';
+import { encoder as liquidAssertionEncoder } from '@algorandfoundation/liquid-client/assertion';
+import { fromBase64Url, toBase64URL } from '@algorandfoundation/liquid-client/encoding';
 import { commit, fetchSecret, getMasterKey } from '@algorandfoundation/react-native-keystore';
 import { useStore } from '@tanstack/react-store';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, NativeModules } from 'react-native';
+
+const { decodeOptions: decodeAssertionRequestOptions, encodeCredential } = liquidAssertionEncoder;
 
 interface UseConnectionResult {
   session: Session | undefined;
@@ -260,7 +258,7 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
               decodedOptions.allowCredentials = [];
             }
             const existingIds = new Set(
-              decodedOptions.allowCredentials.map((c) =>
+              decodedOptions.allowCredentials.map((c: { id: ArrayBuffer | Uint8Array }) =>
                 toBase64URL(new Uint8Array(c.id as ArrayBuffer)),
               ),
             );
