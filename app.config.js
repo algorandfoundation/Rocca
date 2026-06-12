@@ -1,7 +1,69 @@
 const { version } = require('./package.json');
+const { withAndroidManifest, withDangerousMod } = require('expo/config-plugins');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const ENV = process.env.APP_ENV || 'debug';
-const PASSKEY_AUTOFILL_SITE = process.env.PASSKEY_AUTOFILL_SITE || 'https://fido.shore-tech.net';
+
+const TESTING_CLEARTEXT_HOSTS = ['5.161.251.230', 'localhost', '127.0.0.1'];
+
+const getDevCleartextHosts = () => {
+  const raw = process.env.DEV_CLEARTEXT_HOSTS;
+  if (raw === undefined) return TESTING_CLEARTEXT_HOSTS;
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
+
+// Allow clear text hosts on testing distribution
+const withDevCleartextException = (config) => {
+  if (ENV !== 'testing') return config;
+
+  const hosts = getDevCleartextHosts();
+  if (hosts.length === 0) return config;
+
+  const NSC_FILENAME = 'network_security_config';
+  const domains = hosts
+    .map((h) => `        <domain includeSubdomains="false">${h}</domain>`)
+    .join('\n');
+  const NSC_XML = `<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+${domains}
+    </domain-config>
+</network-security-config>
+`;
+
+  config = withDangerousMod(config, [
+    'android',
+    async (cfg) => {
+      const xmlDir = path.join(
+        cfg.modRequest.platformProjectRoot,
+        'app',
+        'src',
+        'main',
+        'res',
+        'xml',
+      );
+      fs.mkdirSync(xmlDir, { recursive: true });
+      fs.writeFileSync(path.join(xmlDir, `${NSC_FILENAME}.xml`), NSC_XML);
+      return cfg;
+    },
+  ]);
+
+  config = withAndroidManifest(config, (cfg) => {
+    const app = cfg.modResults.manifest.application?.[0];
+    if (app) {
+      app.$ = app.$ || {};
+      app.$['android:networkSecurityConfig'] = `@xml/${NSC_FILENAME}`;
+    }
+    return cfg;
+  });
+
+  return config;
+};
+const PASSKEY_AUTOFILL_SITE = process.env.PASSKEY_AUTOFILL_SITE || 'https://debug.liquidauth.com';
 
 const getAssociatedDomain = (site) => {
   try {
@@ -114,6 +176,7 @@ module.exports = {
           label: PASSKEY_AUTOFILL_LABEL,
         },
       ],
+      withDevCleartextException,
     ],
     experiments: {
       typedRoutes: true,
