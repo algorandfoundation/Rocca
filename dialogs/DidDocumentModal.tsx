@@ -4,14 +4,24 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import JSONTree from 'react-native-json-tree';
 import Modal from '../components/Modal';
-import type { DIDDocument } from '@algorandfoundation/identities-store';
+import type { DIDDocument, Identity } from '@algorandfoundation/identities-store';
 import { exportDidDocument, importDidDocument } from '@/utils/did-backup';
 import { useProvider } from '@/hooks/useProvider';
+import { getIdentityAnchor, isAnchorUpToDate } from '@/utils/anchor';
+import { AnchorIdentityModal } from '@/dialogs/AnchorIdentityModal';
 
 interface DidDocumentModalProps {
   visible: boolean;
   onClose: () => void;
   didDocument: DIDDocument | undefined;
+  /**
+   * Owning identity. When provided, the modal surfaces an "Anchor
+   * status" section showing the on-chain snapshot (if any) and
+   * conditionally renders an "Anchor on-chain" CTA — visible only
+   * when the local document differs from the anchored snapshot or
+   * no anchor exists yet.
+   */
+  identity?: Identity;
   onDidDocumentUpdate?: (didDocument: DIDDocument) => void;
 }
 
@@ -19,10 +29,14 @@ export function DidDocumentModal({
   visible,
   onClose,
   didDocument,
+  identity: targetIdentity,
   onDidDocumentUpdate,
 }: DidDocumentModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [anchorOpen, setAnchorOpen] = useState(false);
   const { identity } = useProvider();
+  const anchor = getIdentityAnchor(targetIdentity);
+  const upToDate = isAnchorUpToDate(targetIdentity);
 
   const handleExport = async () => {
     if (!didDocument) {
@@ -120,6 +134,44 @@ export function DidDocumentModal({
             hideRoot={true}
           />
 
+          {targetIdentity && (
+            <View style={styles.anchorSection}>
+              <Text style={styles.anchorTitle}>Anchor status</Text>
+              {anchor ? (
+                <>
+                  <Text style={styles.anchorMeta}>
+                    Anchored {new Date(anchor.anchoredAt).toLocaleString()}
+                  </Text>
+                  {anchor.didAlgo && (
+                    <Text style={styles.anchorMeta} numberOfLines={1} ellipsizeMode="middle">
+                      {anchor.didAlgo}
+                    </Text>
+                  )}
+                  <Text
+                    style={[
+                      styles.anchorStatus,
+                      upToDate ? styles.anchorStatusOk : styles.anchorStatusStale,
+                    ]}
+                  >
+                    {upToDate
+                      ? '✓ Document matches on-chain version'
+                      : '⚠ Local document has diverged from on-chain version'}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.anchorMeta}>Not yet anchored on-chain</Text>
+              )}
+              {!upToDate && (
+                <TouchableOpacity style={styles.anchorCta} onPress={() => setAnchorOpen(true)}>
+                  <MaterialIcons name="anchor" size={20} color="#FFFFFF" />
+                  <Text style={styles.anchorCtaText}>
+                    {anchor ? 'Update on-chain anchor' : 'Anchor on-chain'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
           <View style={styles.actionButtons}>
             <TouchableOpacity
               style={styles.actionButton}
@@ -143,6 +195,11 @@ export function DidDocumentModal({
       ) : (
         <Text style={styles.noDocText}>No DID Document available</Text>
       )}
+      <AnchorIdentityModal
+        visible={anchorOpen}
+        identityAddress={targetIdentity?.address}
+        onClose={() => setAnchorOpen(false)}
+      />
     </Modal>
   );
 }
@@ -180,6 +237,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#1D4ED8',
+  },
+  anchorSection: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  anchorTitle: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  anchorMeta: {
+    fontSize: 13,
+    color: '#475569',
+    marginBottom: 4,
+  },
+  anchorStatus: {
+    marginTop: 6,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  anchorStatusOk: {
+    color: '#059669',
+  },
+  anchorStatusStale: {
+    color: '#B45309',
+  },
+  anchorCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#3B82F6',
+  },
+  anchorCtaText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    marginLeft: 8,
+    fontSize: 14,
   },
 });
 

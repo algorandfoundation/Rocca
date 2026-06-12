@@ -51,6 +51,19 @@ export default function ScanScreen() {
     let { data } = scanningResult;
 
     const lowerData = data.toLowerCase();
+
+    // Support OID4VCI credential offers (`openid-credential-offer://...`).
+    if (lowerData.startsWith('openid-credential-offer://')) {
+      router.replace({ pathname: '/credential-offer', params: { uri: data } });
+      return;
+    }
+
+    // Support OID4VP authorization requests (`openid4vp://...`, `openid-vc://...`).
+    if (lowerData.startsWith('openid4vp://') || lowerData.startsWith('openid-vc://')) {
+      router.replace({ pathname: '/credential-present', params: { uri: data } });
+      return;
+    }
+
     // Support fido: and liquid: deeplinks
     if (lowerData.startsWith('fido:')) {
       try {
@@ -64,7 +77,10 @@ export default function ScanScreen() {
     }
 
     if (!lowerData.startsWith('liquid:')) {
-      Alert.alert('Error', 'Unsupported QR code. Only fido: and liquid: links are supported.');
+      Alert.alert(
+        'Error',
+        'Unsupported QR code. Supported schemes: fido:, liquid:, openid-credential-offer:, openid4vp:.',
+      );
       router.back();
       return;
     }

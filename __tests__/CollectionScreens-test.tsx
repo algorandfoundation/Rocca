@@ -20,6 +20,9 @@ jest.mock('expo-router', () => ({
 jest.mock('@/hooks/useProvider', () => ({
   useProvider: () => ({
     identities: [{ did: 'did:key:123' }],
+    credentials: [],
+    issuanceSessions: [],
+    verificationSessions: [],
     accounts: [{ address: 'ADDR123', balance: BigInt(100) }],
     passkeys: [
       {

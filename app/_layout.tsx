@@ -3,11 +3,12 @@ import { Stack } from 'expo-router';
 import { AppState } from 'react-native';
 import { install } from 'react-native-quick-crypto';
 import { keyStore } from '@/stores/keystore';
-import { keyStoreHooks } from '@/stores/before-after';
+import { keyStoreHooks, credentialHooks } from '@/stores/before-after';
 import { accountsStore } from '@/stores/accounts';
 import { identitiesStore } from '@/stores/identities';
 import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
 import { passkeysStore } from '@/stores/passkeys';
+import { credentialsStore } from '@/stores/credentials';
 import { registerGlobals } from 'react-native-webrtc';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
@@ -49,6 +50,13 @@ const provider = new ReactNativeProvider(
       keystore: {
         autoPopulate: true,
       },
+    },
+    credentials: {
+      store: credentialsStore,
+      hooks: credentialHooks,
+    },
+    intermezzo: {
+      baseUrl: process.env.EXPO_PUBLIC_INTERMEZZO_BASE_URL ?? 'http://localhost:3000',
     },
     keystore: {
       store: keyStore,
