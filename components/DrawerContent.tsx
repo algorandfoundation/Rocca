@@ -47,8 +47,8 @@ export function DrawerContent({ onReset }: DrawerContentProps) {
 const styles = StyleSheet.create((theme) => ({
   drawerContent: {
     flex: 1,
-    backgroundColor: theme.semantic.bg.surface,
-    paddingHorizontal: theme.primitives.spacing.base,
+    backgroundColor: theme.colors.bg.surface,
+    paddingHorizontal: theme.spacing.base,
     justifyContent: 'space-between',
   },
   drawerMenu: {
@@ -57,7 +57,7 @@ const styles = StyleSheet.create((theme) => ({
   drawerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.primitives.spacing.md,
-    paddingVertical: theme.primitives.spacing.md,
+    gap: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
   },
 }));

@@ -17,7 +17,7 @@ export function WarningBanner({ message }: WarningBannerProps) {
 
   return (
     <View style={styles.warningCard}>
-      <MaterialIcons name="info-outline" size={20} color={theme.primitives.color.state.warning} />
+      <MaterialIcons name="info-outline" size={20} color={theme.colors.state.warning} />
       <AppText variant="label" bold style={styles.warningText}>
         {message}
       </AppText>
@@ -31,15 +31,15 @@ const styles = StyleSheet.create((theme) => ({
   warningCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.primitives.spacing.sm,
-    paddingHorizontal: theme.primitives.spacing.sm,
-    paddingVertical: theme.primitives.spacing.sm,
-    backgroundColor: '#fff8e1',
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.palette.yellow[100],
     borderBottomWidth: 1,
-    borderBottomColor: theme.primitives.color.state.warning,
+    borderBottomColor: theme.colors.state.warning,
   },
   warningText: {
-    color: theme.primitives.color.state.warning,
+    color: theme.colors.state.warning,
     flex: 1,
   },
 }));

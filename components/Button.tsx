@@ -47,11 +47,7 @@ export function Button({
     variant === 'pillLight' ||
     variant === 'white';
   const spinnerColor =
-    variant === 'white'
-      ? theme.semantic.fg.onLight
-      : isFilled
-        ? theme.semantic.fg.inverse
-        : colorValue;
+    variant === 'white' ? theme.colors.fg.onLight : isFilled ? theme.colors.fg.inverse : colorValue;
 
   const textColorMap: Record<ButtonVariant, string> = {
     primary: 'inverse',
@@ -68,7 +64,7 @@ export function Button({
       ? { backgroundColor: colorValue }
       : {}),
     ...(variant === 'outline' ? { borderColor: colorValue, backgroundColor: colorValue } : {}),
-    ...(variant === 'white' ? { backgroundColor: theme.semantic.bg.white } : {}),
+    ...(variant === 'white' ? { backgroundColor: theme.colors.bg.white } : {}),
     ...(variant === 'link' || variant === 'ghost' ? { backgroundColor: 'transparent' } : {}),
   };
 
@@ -109,12 +105,12 @@ export function Button({
 
 const getColorValue = (theme: any, colorName: ButtonColor) => {
   const colorMap: Record<ButtonColor, string> = {
-    primary: theme.primitives.color.brand.primary,
-    secondary: theme.primitives.color.brand.soft,
-    success: theme.primitives.color.state.success,
-    error: theme.primitives.color.state.danger,
-    info: theme.primitives.color.brand.primary,
-    warning: theme.primitives.color.state.warning,
+    primary: theme.colors.brand.primary,
+    secondary: theme.colors.brand.soft,
+    success: theme.colors.state.success,
+    error: theme.colors.state.danger,
+    info: theme.colors.brand.primary,
+    warning: theme.colors.state.warning,
   };
   return colorMap[colorName];
 };
@@ -124,37 +120,37 @@ const stylesheet = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.primitives.spacing.sm,
+    gap: theme.spacing.sm,
     variants: {
       variant: {
         primary: {
-          backgroundColor: theme.primitives.color.brand.primary,
-          borderRadius: theme.primitives.radii.md,
-          ...theme.primitives.shadows.primary,
+          backgroundColor: theme.colors.brand.primary,
+          borderRadius: theme.borderRadius.md,
+          ...theme.shadows.primary,
         },
         outline: {
           backgroundColor: 'transparent',
-          borderRadius: theme.primitives.radii.md,
+          borderRadius: theme.borderRadius.md,
           borderWidth: 1,
-          borderColor: theme.semantic.stroke.default,
+          borderColor: theme.colors.border.default,
         },
         ghost: {
           backgroundColor: 'transparent',
-          borderRadius: theme.primitives.radii.md,
+          borderRadius: theme.borderRadius.md,
         },
         pill: {
-          backgroundColor: theme.primitives.color.brand.primary,
-          borderRadius: theme.primitives.radii.full,
-          ...theme.primitives.shadows.md,
+          backgroundColor: theme.colors.brand.primary,
+          borderRadius: theme.borderRadius.full,
+          ...theme.shadows.md,
         },
         pillLight: {
-          backgroundColor: theme.semantic.bg.surface,
-          borderRadius: theme.primitives.radii.full,
-          ...theme.primitives.shadows.md,
+          backgroundColor: theme.colors.bg.surface,
+          borderRadius: theme.borderRadius.full,
+          ...theme.shadows.md,
         },
         white: {
-          backgroundColor: theme.semantic.bg.white,
-          borderRadius: theme.primitives.radii.full,
+          backgroundColor: theme.colors.bg.white,
+          borderRadius: theme.borderRadius.full,
         },
         link: {
           backgroundColor: 'transparent',
@@ -165,16 +161,16 @@ const stylesheet = StyleSheet.create((theme) => ({
       },
       size: {
         sm: {
-          paddingVertical: theme.primitives.spacing.sm,
-          paddingHorizontal: theme.primitives.spacing.md,
+          paddingVertical: theme.spacing.sm,
+          paddingHorizontal: theme.spacing.md,
         },
         md: {
-          paddingVertical: theme.primitives.spacing.md,
-          paddingHorizontal: theme.primitives.spacing.base,
+          paddingVertical: theme.spacing.md,
+          paddingHorizontal: theme.spacing.base,
         },
         lg: {
-          paddingVertical: theme.primitives.spacing.base,
-          paddingHorizontal: theme.primitives.spacing.xl,
+          paddingVertical: theme.spacing.base,
+          paddingHorizontal: theme.spacing.xl,
         },
       },
     },
@@ -190,6 +186,6 @@ const stylesheet = StyleSheet.create((theme) => ({
     opacity: 0.5,
   },
   whiteLabel: {
-    color: theme.semantic.fg.onLight,
+    color: theme.colors.fg.onLight,
   },
 }));

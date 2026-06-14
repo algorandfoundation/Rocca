@@ -1,6 +1,67 @@
 import { StyleSheet } from 'react-native-unistyles';
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
+
+export const palette = {
+  blue: {
+    100: '#e3f2fd',
+    300: '#81c0ff',
+    400: '#4da3f7',
+    500: '#1a73e8',
+    700: '#1557b0',
+    900: '#1c2f4d',
+  },
+  neutral: {
+    0: '#ffffff',
+    50: '#f8f9fa',
+    100: '#f1f3f4',
+    200: '#e8eaed',
+    300: '#dadce0',
+    400: '#9aa0a6',
+    500: '#5f6368',
+    700: '#3c4043',
+    800: '#2d2d2d',
+    850: '#242424',
+    900: '#202124',
+    925: '#1e1e1e',
+    950: '#111111',
+  },
+  green: {
+    400: '#5dba71',
+    500: '#34a853',
+  },
+  red: {
+    400: '#f28b82',
+    500: '#ea4335',
+  },
+  yellow: {
+    100: '#fff8e1',
+    400: '#fdd663',
+    500: '#fbbc05',
+  },
+  black: '#000000',
+} as const;
+
+// ─── Shared Tokens ────────────────────────────────────────────────────────────
+
+const spacing = {
+  gap: (v: number) => v * 8,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  base: 16,
+  lg: 20,
+  xl: 24,
+};
+
+const borderRadius = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  full: 9999,
+} as const;
 
 const typography = {
   fonts: {
@@ -9,7 +70,7 @@ const typography = {
     semiBold: 'PlusJakartaSans-Regular_SemiBold',
     bold: 'PlusJakartaSans-Regular_Bold',
   },
-  fontSizes: {
+  sizes: {
     xs: 9,
     sm: 11,
     md: 13,
@@ -22,57 +83,38 @@ const typography = {
     normal: 1.4,
     relaxed: 1.6,
   },
-  fontWeights: {
+  weights: {
     regular: '400' as const,
     medium: '500' as const,
     semiBold: '600' as const,
     bold: '700' as const,
   },
-};
-
-const spacing = {
-  gap: (v: number) => v * 8,
-  xs: 4,
-  sm: 8,
-  md: 12,
-  base: 16,
-  lg: 20,
-  xl: 24,
-};
-
-const radii = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  full: 9999,
-};
+} as const;
 
 const shadows = {
   sm: {
-    shadowColor: '#000',
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
     elevation: 1,
   },
   md: {
-    shadowColor: '#000',
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 3,
   },
   lg: {
-    shadowColor: '#000',
+    shadowColor: palette.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 6,
   },
   primary: {
-    shadowColor: '#1a73e8',
+    shadowColor: palette.blue[500],
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -80,127 +122,59 @@ const shadows = {
   },
 } as const;
 
-const primitiveFoundation = {
-  typography,
-  spacing,
-  radii,
-  shadows,
-} as const;
-
-type PrimitiveTokens = typeof primitiveFoundation & {
-  color: {
-    brand: {
-      primary: string;
-      hover: string;
-      soft: string;
-    };
-    neutral: {
-      '0': string;
-      '10': string;
-      '20': string;
-      '70': string;
-      '90': string;
-      '100': string;
-    };
-    state: {
-      success: string;
-      danger: string;
-      warning: string;
-    };
-    border: string;
-  };
-};
-
 // ─── Themes ───────────────────────────────────────────────────────────────────
 
-const lightPrimitives: PrimitiveTokens = {
-  ...primitiveFoundation,
-  color: {
-    brand: {
-      primary: '#1a73e8',
-      hover: '#1557b0',
-      soft: '#e3f2fd',
-    },
-    neutral: {
-      '0': '#ffffff',
-      '10': '#f8f9fa',
-      '20': '#f1f3f4',
-      '70': '#5f6368',
-      '90': '#202124',
-      '100': '#111111',
-    },
-    state: {
-      success: '#34a853',
-      danger: '#ea4335',
-      warning: '#fbbc05',
-    },
-    border: '#dadce0',
-  },
-};
-
-const darkPrimitives: PrimitiveTokens = {
-  ...primitiveFoundation,
-  color: {
-    brand: {
-      primary: '#4da3f7',
-      hover: '#81c0ff',
-      soft: '#1c2f4d',
-    },
-    neutral: {
-      '0': '#2d2d2d',
-      '10': '#242424',
-      '20': '#1e1e1e',
-      '70': '#9aa0a6',
-      '90': '#e8eaed',
-      '100': '#111111',
-    },
-    state: {
-      success: '#5dba71',
-      danger: '#f28b82',
-      warning: '#fdd663',
-    },
-    border: '#3c4043',
-  },
-};
-
-const createSemanticTokens = (primitives: PrimitiveTokens) => ({
-  fg: {
-    highEmphasis: primitives.color.neutral['90'],
-    mediumEmphasis: primitives.color.neutral['70'],
-    inverse: primitives.color.neutral['0'],
-    onLight: primitives.color.neutral['100'],
-    primary: primitives.color.brand.primary,
-    success: primitives.color.state.success,
-    danger: primitives.color.state.danger,
-    warning: primitives.color.state.warning,
-  },
-  bg: {
-    app: primitives.color.neutral['20'],
-    surface: primitives.color.neutral['0'],
-    white: '#ffffff',
-    chat: primitives.color.neutral['10'],
-    dark: primitives.color.neutral['100'],
-    darkAlt: primitives.color.neutral['90'],
-    header: primitives.color.neutral['100'],
-    bubbleUser: primitives.color.brand.soft,
-    bubbleBot: primitives.color.neutral['0'],
-  },
-  stroke: {
-    default: primitives.color.border,
-  },
-});
-
-const createTheme = (primitives: PrimitiveTokens) => {
-  const semantic = createSemanticTokens(primitives);
-
+const createColors = (mode: 'light' | 'dark') => {
+  const isLight = mode === 'light';
   return {
-    primitives,
-    semantic,
+    brand: {
+      primary: isLight ? palette.blue[500] : palette.blue[400],
+      hover: isLight ? palette.blue[700] : palette.blue[300],
+      soft: isLight ? palette.blue[100] : palette.blue[900],
+    },
+    fg: {
+      default: isLight ? palette.neutral[900] : palette.neutral[200],
+      muted: isLight ? palette.neutral[500] : palette.neutral[400],
+      inverse: isLight ? palette.neutral[0] : palette.neutral[800],
+      onLight: palette.neutral[950],
+      primary: isLight ? palette.blue[500] : palette.blue[400],
+      success: isLight ? palette.green[500] : palette.green[400],
+      danger: isLight ? palette.red[500] : palette.red[400],
+      warning: isLight ? palette.yellow[500] : palette.yellow[400],
+    },
+    bg: {
+      app: isLight ? palette.neutral[100] : palette.neutral[925],
+      surface: isLight ? palette.neutral[0] : palette.neutral[800],
+      white: palette.neutral[0],
+      chat: isLight ? palette.neutral[50] : palette.neutral[850],
+      dark: palette.neutral[950],
+      darkAlt: isLight ? palette.neutral[900] : palette.neutral[200],
+      header: palette.neutral[950],
+      bubbleUser: isLight ? palette.blue[100] : palette.blue[900],
+      bubbleBot: isLight ? palette.neutral[0] : palette.neutral[800],
+    },
+    border: {
+      default: isLight ? palette.neutral[300] : palette.neutral[700],
+    },
+    state: {
+      success: isLight ? palette.green[500] : palette.green[400],
+      danger: isLight ? palette.red[500] : palette.red[400],
+      warning: isLight ? palette.yellow[500] : palette.yellow[400],
+    },
   };
 };
 
-const lightTheme = createTheme(lightPrimitives);
-const darkTheme = createTheme(darkPrimitives);
+const createTheme = (mode: 'light' | 'dark') => ({
+  palette,
+  colors: createColors(mode),
+  spacing,
+  borderRadius,
+  typography,
+  shadows,
+});
+
+const lightTheme = createTheme('light');
+const darkTheme = createTheme('dark');
 
 const appThemes = {
   light: lightTheme,

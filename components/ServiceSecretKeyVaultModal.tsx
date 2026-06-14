@@ -51,7 +51,7 @@ function SecretKeyRow({ item, onRemove }: { item: Key; onRemove: (id: string) =>
   return (
     <View style={stylesheet.keyRow}>
       <View style={stylesheet.keyRowIcon}>
-        <MaterialIcons name="vpn-key" size={18} color={theme.semantic.fg.primary} />
+        <MaterialIcons name="vpn-key" size={18} color={theme.colors.fg.primary} />
       </View>
       <View style={stylesheet.keyRowInfo}>
         <AppText variant="label" bold>
@@ -70,7 +70,7 @@ function SecretKeyRow({ item, onRemove }: { item: Key; onRemove: (id: string) =>
         <MaterialIcons
           name={revealed !== null ? 'visibility-off' : 'visibility'}
           size={18}
-          color={theme.semantic.fg.mediumEmphasis}
+          color={theme.colors.fg.muted}
         />
       </Pressable>
       <Pressable
@@ -83,7 +83,7 @@ function SecretKeyRow({ item, onRemove }: { item: Key; onRemove: (id: string) =>
         hitSlop={8}
         style={stylesheet.iconButton}
       >
-        <MaterialIcons name="delete-outline" size={20} color={theme.semantic.fg.danger} />
+        <MaterialIcons name="delete-outline" size={20} color={theme.colors.fg.danger} />
       </Pressable>
     </View>
   );
@@ -167,15 +167,11 @@ export const ServiceSecretKeyVaultModal = forwardRef<BottomSheetModal, SecretKey
           {/* Header */}
           <View style={stylesheet.header}>
             <View style={stylesheet.headerLeft}>
-              <MaterialIcons name="key" size={20} color={theme.semantic.fg.primary} />
+              <MaterialIcons name="key" size={20} color={theme.colors.fg.primary} />
               <AppText variant="h3">Secret Key Vault</AppText>
             </View>
             <Pressable onPress={() => onDismiss?.()} hitSlop={8}>
-              <MaterialIcons
-                name="keyboard-arrow-down"
-                size={26}
-                color={theme.semantic.fg.mediumEmphasis}
-              />
+              <MaterialIcons name="keyboard-arrow-down" size={26} color={theme.colors.fg.muted} />
             </Pressable>
           </View>
 
@@ -188,11 +184,7 @@ export const ServiceSecretKeyVaultModal = forwardRef<BottomSheetModal, SecretKey
           >
             {secretKeys.length === 0 ? (
               <View style={stylesheet.emptyState}>
-                <MaterialIcons
-                  name="lock-outline"
-                  size={36}
-                  color={theme.semantic.fg.mediumEmphasis}
-                />
+                <MaterialIcons name="lock-outline" size={36} color={theme.colors.fg.muted} />
                 <AppText variant="caption" color="muted" style={stylesheet.emptyText}>
                   {'No secret keys stored yet.\nAdd a key to use with agent services.'}
                 </AppText>
@@ -223,7 +215,7 @@ export const ServiceSecretKeyVaultModal = forwardRef<BottomSheetModal, SecretKey
                   <BottomSheetTextInput
                     style={stylesheet.input}
                     placeholder="e.g. Stripe, OpenAI"
-                    placeholderTextColor={theme.semantic.fg.mediumEmphasis}
+                    placeholderTextColor={theme.colors.fg.muted}
                     value={serviceName}
                     onChangeText={setServiceName}
                     autoCapitalize="none"
@@ -238,7 +230,7 @@ export const ServiceSecretKeyVaultModal = forwardRef<BottomSheetModal, SecretKey
                     <BottomSheetTextInput
                       style={[stylesheet.input, stylesheet.inputWithEye]}
                       placeholder="sk_live_••••••••"
-                      placeholderTextColor={theme.semantic.fg.mediumEmphasis}
+                      placeholderTextColor={theme.colors.fg.muted}
                       value={keyValue}
                       onChangeText={setKeyValue}
                       secureTextEntry={!keyVisible}
@@ -255,7 +247,7 @@ export const ServiceSecretKeyVaultModal = forwardRef<BottomSheetModal, SecretKey
                       <MaterialIcons
                         name={keyVisible ? 'visibility-off' : 'visibility'}
                         size={18}
-                        color={theme.semantic.fg.mediumEmphasis}
+                        color={theme.colors.fg.muted}
                       />
                     </Pressable>
                   </View>
@@ -288,7 +280,7 @@ export const ServiceSecretKeyVaultModal = forwardRef<BottomSheetModal, SecretKey
                 size="md"
                 color="primary"
                 fullWidth
-                leftIcon={<MaterialIcons name="add" size={16} color={theme.semantic.fg.inverse} />}
+                leftIcon={<MaterialIcons name="add" size={16} color={theme.colors.fg.inverse} />}
               />
             )}
           </View>
@@ -304,7 +296,7 @@ ServiceSecretKeyVaultModal.displayName = 'ServiceSecretKeyVaultModal';
 
 const stylesheet = StyleSheet.create((theme) => ({
   shell: {
-    backgroundColor: theme.semantic.bg.surface,
+    backgroundColor: theme.colors.bg.surface,
   },
   body: {
     flex: 1,
@@ -313,34 +305,34 @@ const stylesheet = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.primitives.spacing.base,
-    paddingVertical: theme.primitives.spacing.md,
+    paddingHorizontal: theme.spacing.base,
+    paddingVertical: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: theme.semantic.stroke.default,
+    borderBottomColor: theme.colors.border.default,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.primitives.spacing.sm,
+    gap: theme.spacing.sm,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: theme.primitives.spacing.base,
-    paddingTop: theme.primitives.spacing.base,
-    paddingBottom: theme.primitives.spacing.md,
+    paddingHorizontal: theme.spacing.base,
+    paddingTop: theme.spacing.base,
+    paddingBottom: theme.spacing.md,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: theme.primitives.spacing.xl,
-    gap: theme.primitives.spacing.sm,
+    paddingVertical: theme.spacing.xl,
+    gap: theme.spacing.sm,
   },
   emptyText: {
     textAlign: 'center',
   },
   section: {
-    gap: theme.primitives.spacing.sm,
+    gap: theme.spacing.sm,
   },
   sectionLabel: {
     letterSpacing: 0.5,
@@ -348,18 +340,18 @@ const stylesheet = StyleSheet.create((theme) => ({
   keyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.semantic.bg.surface,
-    borderRadius: theme.primitives.radii.md,
+    backgroundColor: theme.colors.bg.surface,
+    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: theme.semantic.stroke.default,
-    padding: theme.primitives.spacing.md,
-    gap: theme.primitives.spacing.md,
+    borderColor: theme.colors.border.default,
+    padding: theme.spacing.md,
+    gap: theme.spacing.md,
   },
   keyRowIcon: {
     width: 36,
     height: 36,
-    borderRadius: theme.primitives.radii.sm,
-    backgroundColor: theme.semantic.bg.app,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.bg.app,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -368,49 +360,49 @@ const stylesheet = StyleSheet.create((theme) => ({
     gap: 2,
   },
   iconButton: {
-    padding: theme.primitives.spacing.xs,
+    padding: theme.spacing.xs,
   },
   footer: {
     borderTopWidth: 1,
-    borderTopColor: theme.semantic.stroke.default,
-    paddingHorizontal: theme.primitives.spacing.base,
-    paddingTop: theme.primitives.spacing.md,
-    paddingBottom: theme.primitives.spacing.xl,
-    backgroundColor: theme.semantic.bg.surface,
+    borderTopColor: theme.colors.border.default,
+    paddingHorizontal: theme.spacing.base,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+    backgroundColor: theme.colors.bg.surface,
   },
   form: {
-    gap: theme.primitives.spacing.sm,
+    gap: theme.spacing.sm,
   },
   inputGroup: {
-    gap: theme.primitives.spacing.xs,
+    gap: theme.spacing.xs,
   },
   inputWrapper: {
     position: 'relative',
     justifyContent: 'center',
   },
   input: {
-    backgroundColor: theme.semantic.bg.app,
-    borderRadius: theme.primitives.radii.md,
+    backgroundColor: theme.colors.bg.app,
+    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: theme.semantic.stroke.default,
-    paddingHorizontal: theme.primitives.spacing.md,
-    paddingVertical: theme.primitives.spacing.md,
-    fontSize: theme.primitives.typography.fontSizes.base,
-    color: theme.semantic.fg.highEmphasis,
-    fontFamily: theme.primitives.typography.fonts.regular,
+    borderColor: theme.colors.border.default,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontSize: theme.typography.sizes.base,
+    color: theme.colors.fg.default,
+    fontFamily: theme.typography.fonts.regular,
   },
   inputWithEye: {
-    paddingRight: theme.primitives.spacing.xl + theme.primitives.spacing.md,
+    paddingRight: theme.spacing.xl + theme.spacing.md,
   },
   eyeButton: {
     position: 'absolute',
-    right: theme.primitives.spacing.md,
+    right: theme.spacing.md,
   },
   formActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: theme.primitives.spacing.sm,
-    marginTop: theme.primitives.spacing.xs,
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
   },
   cancelBtn: {
     minWidth: 80,
