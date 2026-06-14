@@ -24,7 +24,7 @@ jest.mock('expo-constants', () => ({
   expoConfig: {
     extra: {
       provider: {
-        name: 'Rocca',
+        name: 'AC2',
         primaryColor: '#3B82F6',
         secondaryColor: '#E1EFFF',
       },
@@ -127,7 +127,7 @@ describe('<OnboardingScreen />', () => {
   it('renders welcome step initially', () => {
     const { getByText } = render(<OnboardingScreen />);
 
-    expect(getByText('Welcome to Rocca')).toBeTruthy();
+    expect(getByText('Welcome to AC2')).toBeTruthy();
     expect(getByText('Create Wallet')).toBeTruthy();
   });
 

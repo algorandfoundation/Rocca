@@ -32,8 +32,8 @@ jobs:
       - name: Test
         run: pnpm test --watch=false
 
-      - name: Test (ac2-sdk)
-        run: pnpm --filter @ac2/ac2-sdk test
+      - name: Test (ac2-open-claw-reference)
+        run: pnpm --filter @ac2/ac2-open-claw-reference test
 
   eas-build-pre-check:
     runs-on: ubuntu-latest

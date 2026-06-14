@@ -11,8 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -27,9 +25,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
       - name: Build APK locally
-        run: pnpm --filter @ac2/controller-app exec eas build --profile testing --platform android --local --non-interactive --output=app-testing.apk
+        run: pnpm exec eas build --profile testing --platform android --local --non-interactive --output=app-testing.apk
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rocca-testing-apk
+          name: ac2-testing-apk
           path: app-testing.apk

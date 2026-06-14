@@ -5,38 +5,38 @@ const ENV = process.env.APP_ENV || 'debug';
 const getBundleIdentifier = () => {
   switch (ENV) {
     case 'development':
-      return 'com.anonymous.rocca.dev';
+      return 'com.anonymous.ac2.dev';
     case 'testing':
-      return 'com.anonymous.rocca.test';
+      return 'com.anonymous.ac2.test';
     case 'production':
-      return 'com.anonymous.rocca';
+      return 'com.anonymous.ac2';
     case 'debug':
     default:
-      return 'com.anonymous.rocca';
+      return 'com.anonymous.ac2';
   }
 };
 
 const getAppName = () => {
   switch (ENV) {
     case 'development':
-      return 'Rocca Dev';
+      return 'AC2 Dev';
     case 'testing':
-      return 'Rocca Test';
+      return 'AC2 Test';
     case 'production':
-      return 'Rocca';
+      return 'AC2';
     case 'debug':
     default:
-      return 'Rocca Debug';
+      return 'AC2 Debug';
   }
 };
 
 module.exports = {
   expo: {
     name: getAppName(),
-    slug: 'rocca',
+    slug: 'ac2',
     version: version,
     orientation: 'portrait',
-    scheme: 'rocca',
+    scheme: 'ac2',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
@@ -91,6 +91,10 @@ module.exports = {
         {
           android: {
             compileSdkVersion: 35,
+            gradleProperties: {
+              'org.gradle.jvmargs':
+                '-Xmx4096m -XX:MaxMetaspaceSize=1g -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8',
+            },
           },
         },
       ],
@@ -98,8 +102,8 @@ module.exports = {
       [
         '@algorandfoundation/react-native-passkey-autofill',
         {
-          site: 'https://fido.shore-tech.net',
-          label: 'Rocca Wallet',
+          site: 'https://debug.liquidauth.com',
+          label: 'AC2-Controller',
         },
       ],
     ],
@@ -109,7 +113,7 @@ module.exports = {
     },
     extra: {
       provider: {
-        name: 'Rocca',
+        name: 'AC2-Controller',
         primaryColor: '#3B82F6',
         secondaryColor: '#E1EFFF',
         accentColor: '#10B981',
@@ -122,7 +126,7 @@ module.exports = {
       },
       router: {},
       eas: {
-        projectId: 'f1e6cb1b-642d-49fa-b276-53b4403f62d6',
+        projectId: '1e66ec3b-f687-4617-a003-8491937c55c2',
       },
     },
     runtimeVersion: {

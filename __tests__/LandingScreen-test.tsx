@@ -16,7 +16,7 @@ jest.mock('expo-constants', () => ({
   expoConfig: {
     extra: {
       provider: {
-        name: 'Rocca',
+        name: 'AC2-Controller',
         primaryColor: '#3B82F6',
         secondaryColor: '#E1EFFF',
         accentColor: '#10B981',

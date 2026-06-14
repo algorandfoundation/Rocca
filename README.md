@@ -1,4 +1,4 @@
-# Rocca Wallet Sample
+# AC2-Controller
 
 This project demonstrates an onboarding flow for a white-label identity solution.
 

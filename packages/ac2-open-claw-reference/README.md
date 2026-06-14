@@ -21,27 +21,33 @@ identity key is **issued by the wallet** during pairing (bootstrap
 `KeyRequest`) and persisted in an OS-keychain-protected keystore — the
 agent never touches the user's account keys or passkeys.
 
-## Getting started in OpenClaw
+## Getting started
 
-This package isn't published. Point OpenClaw at a local checkout
-instead — clone the repo, build the plugin, and install it from its
-directory:
+> **TODO:** publish this package to a registry. Until then, the only
+> supported flow is a live link from this monorepo — see below.
+
+### Prerequisites
+
+- Node.js ≥ 22, pnpm ≥ 10
+- `openclaw` CLI on `PATH`.
+- `openclaw` already setup with an agent
+
+### Link the plugin into OpenClaw
 
 ```bash
 git clone https://github.com/algorandfoundation/ac2-controller.git
-cd ac2-controller/packages/ac2-open-claw-reference
-pnpm install --ignore-workspace   # install the plugin's own node_modules, decoupled from the monorepo
-pnpm run build
+cd ac2-controller
+pnpm install                                          # once, at the repo root
 
-# from anywhere OpenClaw is installed:
-openclaw plugins install file:/absolute/path/to/ac2-controller/packages/ac2-open-claw-reference
-openclaw plugins enable ac2-open-claw-reference
-openclaw ac2 setup            # wires channel + tools into openclaw.json
+cd packages/ac2-open-claw-reference
+pnpm dev:link                                         # rebuild natives → bundle → register → enable
+openclaw ac2 setup                                    # wire channel + tools into openclaw.json
 openclaw gateway restart
 ```
 
-Alternatively, register it directly in `openclaw.json` under
-`plugins.entries`:
+### Configuration
+
+Once linked, `openclaw.json` will contain an entry like:
 
 ```json5
 {
@@ -56,11 +62,13 @@ Alternatively, register it directly in `openclaw.json` under
 }
 ```
 
-then `openclaw ac2 setup && openclaw gateway restart`.
-`AC2_LIQUID_AUTH_SERVER` overrides the server at runtime.
+`AC2_LIQUID_AUTH_SERVER` overrides `liquidAuthServer` at runtime.
 
-Then, in a conversation: enable the `ac2` channel, scan the QR, and the
-model can call `ac2_capabilities` followed by `ac2_sign`. See
+### Using it
+
+In a conversation, enable the `ac2` channel, scan the QR with your AC2
+Controller / wallet, then the model can call `ac2_capabilities`
+followed by `ac2_sign`. See
 [DISCOVERY §3.2](https://github.com/algorandfoundation/ac2-sdk) for the
 request/response shapes.
 
