@@ -1,6 +1,9 @@
 import { AppText } from '@/components/Text';
 import { useProvider } from '@/hooks/useProvider';
+import { identitiesStore } from '@/stores/identities';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useStore } from '@tanstack/react-store';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { Alert, Pressable, View } from 'react-native';
@@ -24,6 +27,8 @@ export const MenuDrawer = forwardRef<MenuDrawerHandle, { children: React.ReactNo
     const drawerRef = useRef<DrawerLayoutMethods>(null);
     const router = useRouter();
     const { key, account, identity, passkey } = useProvider();
+    const identities = useStore(identitiesStore, (state) => state.identities);
+    const activeIdentity = identities.length > 0 ? identities[0] : null;
 
     useImperativeHandle(ref, () => ({
       openDrawer: () => drawerRef.current?.openDrawer(),
@@ -36,6 +41,27 @@ export const MenuDrawer = forwardRef<MenuDrawerHandle, { children: React.ReactNo
         drawerWidth={280}
         renderNavigationView={() => (
           <SafeAreaView style={styles.panel} edges={['top', 'bottom', 'left']}>
+            {activeIdentity && (
+              <View style={styles.didCard}>
+                <AppText variant="label" style={styles.cardLabel}>
+                  Controller DID
+                </AppText>
+                <View style={styles.didRow}>
+                  <AppText style={styles.didText} numberOfLines={1} ellipsizeMode="middle">
+                    {activeIdentity.did || 'No identity found'}
+                  </AppText>
+                  <Pressable
+                    style={styles.copyButton}
+                    onPress={async () => {
+                      await Clipboard.setStringAsync(activeIdentity.did || '');
+                      Alert.alert('Copied', 'DID copied to clipboard');
+                    }}
+                  >
+                    <MaterialIcons name="content-copy" size={16} color="#5f6368" />
+                  </Pressable>
+                </View>
+              </View>
+            )}
             <View style={styles.menu}>
               <Pressable
                 style={styles.menuItem}
@@ -81,6 +107,34 @@ const styles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.bg.surface,
     paddingHorizontal: theme.spacing.base,
     justifyContent: 'space-between',
+  },
+  didCard: {
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    backgroundColor: theme.colors.bg.surface,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border.default,
+  },
+  cardLabel: {
+    fontSize: 12,
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.fg.muted,
+  },
+  didRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  didText: {
+    flex: 1,
+    fontSize: 12,
+    color: theme.colors.fg.default,
+    fontFamily: 'monospace',
+  },
+  copyButton: {
+    padding: theme.spacing.xs,
   },
   menu: {
     flex: 1,
