@@ -1,6 +1,8 @@
 import Logo from '@/components/Logo';
 import { useProvider } from '@/hooks/useProvider';
 import { logsStore } from '@/stores/logs';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useStore } from '@tanstack/react-store';
 import Constants from 'expo-constants';
 import { useFonts } from 'expo-font';
@@ -14,6 +16,8 @@ export default function Index() {
     'PlusJakartaSans-SemiBold': require('../assets/fonts/PlusJakartaSans-VariableFont_wght.ttf'),
     'PlusJakartaSans-Bold': require('../assets/fonts/PlusJakartaSans-VariableFont_wght.ttf'),
     'PlusJakartaSans-Italic': require('../assets/fonts/PlusJakartaSans-Italic-VariableFont_wght.ttf'),
+    ...MaterialIcons.font,
+    ...FontAwesome6.font,
   });
   const { keys, status } = useProvider();
   const logs = useStore(logsStore, (state) => state.logs);
