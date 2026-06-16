@@ -16,6 +16,12 @@ import { bootstrap } from '@/lib/keystore/bootstrap';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import React from 'react';
 import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 globalPolyfill();
 registerGlobals();
@@ -84,10 +90,14 @@ export default function RootLayout() {
   });
 
   return (
-    <PreventScreenshotProvider>
+    <GestureHandlerRootView>
       <WalletProvider provider={provider}>
-        <Stack />
+        <BottomSheetModalProvider>
+          <PreventScreenshotProvider>
+            <Stack />
+          </PreventScreenshotProvider>
+        </BottomSheetModalProvider>
       </WalletProvider>
-    </PreventScreenshotProvider>
+    </GestureHandlerRootView>
   );
 }

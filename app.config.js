@@ -66,12 +66,21 @@ module.exports = {
     plugins: [
       'expo-router',
       [
+        'expo-font',
+        {
+          fonts: [
+            './assets/fonts/PlusJakartaSans-VariableFont_wght.ttf',
+            './assets/fonts/PlusJakartaSans-Italic-VariableFont_wght.ttf',
+          ],
+        },
+      ],
+      [
         'expo-splash-screen',
         {
-          image: './assets/images/splash-icon.png',
-          imageWidth: 200,
+          image: './assets/splash-icon.png',
+          imageWidth: 578,
           resizeMode: 'contain',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#1a73e8',
           dark: {
             backgroundColor: '#000000',
           },
@@ -81,7 +90,7 @@ module.exports = {
         'expo-build-properties',
         {
           android: {
-            compileSdkVersion: 35,
+            compileSdkVersion: 36,
             gradleProperties: {
               'org.gradle.jvmargs':
                 '-Xmx4096m -XX:MaxMetaspaceSize=1g -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8',
