@@ -10,13 +10,14 @@ import {
   updateSessionStatus,
 } from '@/stores/sessions';
 import { decodeAddress } from '@/utils/algorand';
+import { encodeAddress } from '@/utils/address';
+import { biometricOptions } from '@/lib/auth-options';
 import { toUrlSafe } from '@/utils/base64';
-import type { KeyData } from '@algorandfoundation/keystore';
-import { encodeAddress } from '@algorandfoundation/keystore';
+import type { KeyData } from '@algorandfoundation/keystore-core';
 import { SignalClient } from '@algorandfoundation/liquid-client';
 import { encoder as liquidAssertionEncoder } from '@algorandfoundation/liquid-client/assertion';
 import { fromBase64Url, toBase64URL } from '@algorandfoundation/liquid-client/encoding';
-import { commit, fetchSecret, getMasterKey } from '@algorandfoundation/react-native-keystore';
+import { commit, fetchSecret, readMasterKey } from '@algorandfoundation/react-native-keystore';
 import { useStore } from '@tanstack/react-store';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -378,10 +379,13 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
           if (matchedKey) {
             try {
-              const masterKey = await getMasterKey();
+              // Same policy the engine runs with, so this direct read reuses the
+              // app's unlock window (and prompt wording) instead of prompting
+              // again mid-assertion.
+              const masterKey = await readMasterKey(biometricOptions);
               const keyData = await fetchSecret<KeyData>({
                 keyId: matchedKey.id,
-                options: { masterKey },
+                options: { ...biometricOptions, masterKey },
               });
               if (keyData) {
                 keyData.metadata = { ...keyData.metadata, registered: true };
@@ -500,10 +504,10 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
           if (matchedKey) {
             try {
-              const masterKey = await getMasterKey();
+              const masterKey = await readMasterKey(biometricOptions);
               const keyData = await fetchSecret<KeyData>({
                 keyId: matchedKey.id,
-                options: { masterKey },
+                options: { ...biometricOptions, masterKey },
               });
               if (keyData) {
                 keyData.metadata = { ...keyData.metadata, registered: true };

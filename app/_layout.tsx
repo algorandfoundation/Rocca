@@ -1,7 +1,7 @@
 import { useEventListener } from 'expo';
 import { Stack } from 'expo-router';
 import { AppState } from 'react-native';
-import { install } from 'react-native-quick-crypto';
+import { install, subtle } from 'react-native-quick-crypto';
 import { keyStore } from '@/stores/keystore';
 import { keyStoreHooks, credentialHooks } from '@/stores/before-after';
 import { accountsStore } from '@/stores/accounts';
@@ -15,18 +15,15 @@ import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey
 import { bootstrap } from '@/lib/bootstrap';
 import { PreventScreenshotProvider } from '@/providers/PreventScreenshotProvider';
 import React from 'react';
-import { ReactKeystoreOptions } from '@algorandfoundation/react-native-keystore';
+import { biometricOptions } from '@/lib/auth-options';
 
 globalPolyfill();
 registerGlobals();
 install();
 
-const biometricOptions: ReactKeystoreOptions['keystore']['authentication'] = {
-  biometrics: true,
-  prompt: 'Authenticate to access your wallet',
-};
-
-const provider = new ReactNativeProvider(
+// Exported so `lib/bootstrap.ts` can await `provider.key.store.ready` on the
+// same engine instance the app renders with.
+export const provider = new ReactNativeProvider(
   {
     id: 'react-native-wallet',
     name: 'React Native Wallet',
@@ -61,6 +58,12 @@ const provider = new ReactNativeProvider(
     keystore: {
       store: keyStore,
       hooks: keyStoreHooks,
+      // React Native has no reliable global `crypto.subtle`, so the host
+      // Subtle must be supplied explicitly. `react-native-quick-crypto`'s
+      // `subtle` backs the engine's AES-256-GCM at-rest sealing (without it,
+      // sealing a new seed throws "Cannot read property 'importKey' of
+      // undefined").
+      subtle: subtle as unknown as SubtleCrypto,
       authentication: biometricOptions,
     },
   },

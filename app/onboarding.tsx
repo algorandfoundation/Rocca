@@ -23,6 +23,7 @@ import * as bip39 from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider';
 import { mnemonicToSeed } from '@scure/bip39';
 import { bootstrap } from '@/lib/bootstrap';
+import { generateDomainMainKey } from '@/lib/passkey-root';
 import { PreventScreenshot } from '@/components/PreventScreenshot';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -445,6 +446,11 @@ export default function OnboardingScreen() {
                                     parentKeyId: seedId,
                                   },
                                 });
+
+                                // Generate the deterministic-P256 main key: the
+                                // root every passkey derives from, separate from
+                                // the account root above.
+                                await generateDomainMainKey(key.store, seedId);
 
                                 // Generate Ed25519 Account Key
                                 const accountParams = {

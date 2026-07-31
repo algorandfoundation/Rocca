@@ -20,6 +20,7 @@ import { accountsStore } from '@/stores/accounts';
 import { passkeysStore } from '@/stores/passkeys';
 import { PreventScreenshot } from '@/components/PreventScreenshot';
 import { bootstrap } from '@/lib/bootstrap';
+import { generateDomainMainKey } from '@/lib/passkey-root';
 import { importDidDocument } from '@/utils/did-backup';
 
 // Extract provider configuration from expo-constants
@@ -111,6 +112,12 @@ export default function ImportWalletScreen() {
           parentKeyId: seedId,
         },
       });
+
+      // Generate the deterministic-P256 main key: the root every passkey
+      // derives from, separate from the account root above. Restoring from a
+      // backup does not bring one, so it is generated either way.
+      console.log('Generating passkey main key...');
+      await generateDomainMainKey(key.store, seedId);
 
       if (backupDoc) {
         // Restore derived keys from backup

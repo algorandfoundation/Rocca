@@ -10,7 +10,7 @@ import {
 import type { Identity } from '@algorandfoundation/identities-store';
 import { WithIdentities } from '@algorandfoundation/identities-extension';
 import { Passkey, PasskeyStoreExtension, WithPasskeyStore } from '@/extensions/passkeys';
-import type { KeyStoreAPI, Key } from '@algorandfoundation/keystore';
+import type { KeyStoreAPI, Key } from '@algorandfoundation/keystore-core';
 import { type LogMessage, WithLogStore, type LogStoreApi } from '@algorandfoundation/log-store';
 import type { keyStoreHooks } from '@/stores/before-after';
 import {
@@ -63,7 +63,21 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
   credential!: IntermezzoCredentialsExtension['credential'];
   // The generic Keystore Interface
   key!: {
-    store: KeyStoreAPI & { clear: () => Promise<void>; hooks: typeof keyStoreHooks };
+    store: KeyStoreAPI & {
+      clear: () => Promise<void>;
+      hooks: typeof keyStoreHooks;
+      /**
+       * Resolves once the engine has loaded its persisted metadata records,
+       * adopting any record still in the legacy flat layout on the way.
+       */
+      ready: Promise<void>;
+      /**
+       * Re-reads the persisted records into the reactive store. Needed because
+       * the Android credential provider writes into the same storage from its
+       * own process, which this one cannot observe.
+       */
+      reload: () => Promise<void>;
+    };
   };
   log!: LogStoreApi;
 }

@@ -75,7 +75,7 @@ jest.mock('@scure/bip39', () => ({
 
 // Mock react-native-passkey-autofill
 jest.mock('@algorandfoundation/react-native-passkey-autofill', () => ({
-  setHdRootKeyId: jest.fn().mockResolvedValue(undefined),
+  setMainKeyId: jest.fn().mockResolvedValue(undefined),
   setMasterKey: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -216,9 +216,19 @@ describe('<OnboardingScreen />', () => {
     // Seed import + HD key derivation chain runs
     await waitFor(() => {
       expect(mockKeyStore.import).toHaveBeenCalledTimes(1);
-      // hd-root-key -> ed25519 account -> ed25519 identity
-      expect(mockKeyStore.generate).toHaveBeenCalledTimes(3);
+      // hd-root-key -> dp256 main key -> ed25519 account -> ed25519 identity
+      expect(mockKeyStore.generate).toHaveBeenCalledTimes(4);
     });
+
+    // Passkeys derive from the deterministic-P256 main key, which hangs off the
+    // seed directly — not off the account root the ed25519 keys use.
+    expect(mockKeyStore.generate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'hd-root-key',
+        algorithm: 'P256',
+        params: expect.objectContaining({ parentKeyId: 'seed-id' }),
+      }),
+    );
 
     // Finally the app navigates to /landing, which is what renders the app
     await waitFor(() => {
