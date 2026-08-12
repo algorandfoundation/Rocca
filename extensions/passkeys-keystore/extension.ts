@@ -3,7 +3,7 @@ import type {
   KeyStoreExtension,
   KeyStoreState,
   XHDDomainP256KeyData,
-} from '@algorandfoundation/keystore';
+} from '@algorandfoundation/react-native-keystore';
 import type { Passkey, PasskeyStoreExtension } from '@/extensions/passkeys';
 import type { Extension } from '@algorandfoundation/wallet-provider';
 import type { Store } from '@tanstack/store';

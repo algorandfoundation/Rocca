@@ -1,38 +1,55 @@
 import { Alert, Platform } from 'react-native';
 import {
   AuthenticationOptions,
-  fetchSecret,
-  getMasterKey,
+  createMasterKey,
+  MasterKeyNotFoundError,
+  METADATA_PREFIX,
+  readMasterKey,
   storage,
 } from '@algorandfoundation/react-native-keystore';
-import {
-  initializeKeyStore,
-  Key,
-  KeyData,
-  KeyStoreState,
-  setStatus,
-} from '@algorandfoundation/keystore';
-import { Store } from '@tanstack/store';
+import type { Key } from '@algorandfoundation/react-native-keystore';
 import ReactNativePasskeyAutofill from '@algorandfoundation/react-native-passkey-autofill';
 import { keyStore } from '@/stores/keystore';
+import {
+  DOMAIN_MAIN_KEY_SCHEME,
+  ensureDomainMainKey,
+  findDomainMainKey,
+  isSeed,
+} from '@/lib/passkey-root';
 import { passkeysStore } from '@/stores/passkeys';
 import { addLog } from '@algorandfoundation/log-store';
 
 import { generateId } from '@algorandfoundation/wallet-provider';
 import { logsStore } from '@/stores/logs';
-import { toUrlSafe } from '@/utils/base64';
+import { mergeNativePasskeys, type NativeStoredCredential } from '@/lib/native-passkeys';
 
-type NativeStoredCredential = {
-  credentialId: string;
-  relyingPartyIdentifier: string;
-  userName: string;
-  userHandle: string;
-  publicKey?: string;
-  createdAt?: number;
-};
+/**
+ * Reverses the keystore driver's `serializeKey`, restoring `Uint8Array`
+ * fields serialized as `{ $u8: <base64> }`.
+ */
+function deserializeKey(data: string): Key {
+  return JSON.parse(data, (_k, value) => {
+    if (value && typeof value === 'object' && typeof value.$u8 === 'string') {
+      return new Uint8Array(Buffer.from(value.$u8, 'base64'));
+    }
+    return value;
+  });
+}
 
-function base64ToBytes(value: string): Uint8Array {
-  return new Uint8Array(Buffer.from(value, 'base64'));
+/**
+ * Re-reads the plaintext `k/<id>` metadata records straight from the keystore
+ * MMKV. The engine hydrates the reactive store from these same records during
+ * `ready`, but only once — the Android credential provider writes into the
+ * same MMKV from its own process, so records it added while this app was
+ * running are invisible until re-read. Bootstrap re-runs after autofill
+ * events, which is exactly when that matters. Metadata only: no material is
+ * decrypted and no biometric prompt is raised.
+ */
+function readPersistedKeys(): Key[] {
+  return storage
+    .getAllKeys()
+    .filter((k) => k.startsWith(METADATA_PREFIX))
+    .map((k) => deserializeKey(storage.getString(k)!));
 }
 
 async function syncNativeStoredPasskeys(logMsg: (message: string, level?: string) => void) {
@@ -56,38 +73,10 @@ async function syncNativeStoredPasskeys(logMsg: (message: string, level?: string
     return;
   }
 
-  passkeysStore.setState((state) => {
-    const nativePasskeys = credentials.map((credential) => {
-      const id = toUrlSafe(credential.credentialId);
-      const createdAt =
-        credential.createdAt && credential.createdAt < 10_000_000_000
-          ? credential.createdAt * 1000
-          : credential.createdAt;
-
-      return {
-        id,
-        name: credential.relyingPartyIdentifier,
-        userHandle: credential.userHandle,
-        origin: credential.relyingPartyIdentifier,
-        publicKey: credential.publicKey ? base64ToBytes(credential.publicKey) : new Uint8Array(),
-        algorithm: 'P256',
-        createdAt,
-        metadata: {
-          keyId: credential.credentialId,
-          nativeCredential: true,
-          registered: true,
-          userName: credential.userName,
-        },
-      };
-    });
-
-    const nativeIds = new Set(nativePasskeys.map((passkey) => passkey.id));
-    const retained = state.passkeys.filter((passkey) => !nativeIds.has(passkey.id));
-    return {
-      ...state,
-      passkeys: [...nativePasskeys, ...retained],
-    };
-  });
+  passkeysStore.setState((state) => ({
+    ...state,
+    passkeys: mergeNativePasskeys(state.passkeys, credentials),
+  }));
 }
 
 let activeBootstrap: Promise<void> | null = null;
@@ -112,33 +101,45 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
   };
 
   try {
-    setStatus({
-      store: keyStore as unknown as Store<KeyStoreState>,
-      status: 'loading',
+    keyStore.setState((state) => ({ ...state, status: 'loading' }));
+
+    logMsg('Waiting for keystore to hydrate...');
+    // The engine hydrates the reactive `keyStore` from its own persisted
+    // metadata records — after the provider's migration run has settled — so
+    // the app no longer reconstructs it by hand (the old flat-record
+    // `fetchSecret` walk would decrypt every key and no longer matches the
+    // split `k/<id>` + `m/<id>` layout anyway).
+    // Imported lazily: the root layout owns the provider singleton and imports
+    // this module, so a static import would close a cycle. By the time
+    // bootstrap runs, the layout has been evaluated.
+    const { provider } = await import('@/app/_layout');
+    await provider.key.store.ready;
+    const keys = readPersistedKeys();
+    keyStore.setState((state) => ({ ...state, keys }));
+    logMsg(`Found ${keys.length} keys in storage`);
+
+    // Fetch the master key from the OS Keychain for this bootstrap pass. The
+    // app does not keep a module-level JS cache; it only uses this local value
+    // to hand the native passkey autofill module what it needs. `readMasterKey`
+    // never creates one; fall back to `createMasterKey` only when storage is
+    // genuinely empty — otherwise a missing/unreadable master key is an unlock
+    // failure, not a signal to rotate.
+    logMsg(keys.length === 0 ? 'Creating master key if missing...' : 'Reading master key...');
+    const masterKey = await readMasterKey(options).catch((e: unknown) => {
+      if (!(e instanceof MasterKeyNotFoundError) || storage.getAllKeys().length > 0) throw e;
+      return createMasterKey(options);
     });
-
-    const keyIds = storage.getAllKeys();
-    logMsg(`Found ${keyIds.length} keys in storage`);
-
-    if (keyIds.length === 0) {
-      logMsg('No keys found in MMKV, but ensuring master key is ready');
-    }
-
-    logMsg('Fetching master key...');
-    const masterKey = await getMasterKey(options);
     logMsg('Master key retrieved');
 
     logMsg('Setting master key in native side...');
-    await ReactNativePasskeyAutofill.setMasterKey(masterKey.toString('hex')).catch((e) => {
+    // Raw bytes, not hex: the native bridge takes a byte array so the secret is
+    // never materialised as a non-zeroable JS string. A `Buffer` already is a
+    // `Uint8Array`, so this hands over the same memory.
+    await ReactNativePasskeyAutofill.setMasterKey(masterKey).catch((e) => {
       logMsg(`ReactNativePasskeyAutofill.setMasterKey error: ${e}`, 'error');
     });
 
-    if (keyIds.length === 0) {
-      initializeKeyStore({
-        store: keyStore as unknown as Store<KeyStoreState>,
-        keys: [],
-      });
-
+    if (keys.length === 0) {
       // Even if no keys, we should still configure intent actions
       await ReactNativePasskeyAutofill.configureIntentActions(
         'co.algorand.passkeyautofill.GET_PASSKEY',
@@ -150,34 +151,11 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
       await syncNativeStoredPasskeys(logMsg);
 
       logMsg('No keys found, setting keystore status to idle');
-      setStatus({
-        store: keyStore as unknown as Store<KeyStoreState>,
-        status: 'idle',
-      });
+      keyStore.setState((state) => ({ ...state, status: 'idle' }));
 
       return;
     }
 
-    const secrets = await Promise.all(
-      keyIds.map(async (keyId) => {
-        try {
-          // Pass a copy because fetchSecret clears the buffer in its finally block
-          return await fetchSecret<KeyData>({
-            keyId,
-            options: { ...options, masterKey: Buffer.from(masterKey) },
-          });
-        } catch (e) {
-          logMsg(`fetchSecret failed for key ${keyId}: ${e}`, 'error');
-          return null;
-        }
-      }),
-    );
-
-    const keys = secrets
-      .filter((k) => k !== null)
-      .map(({ privateKey: _privateKey, seed: _seed, ...rest }: any) => rest) as Key[];
-
-    logMsg(`Found ${keys.length} keys in storage`);
     keys.forEach((k) => {
       const pkType =
         k.publicKey instanceof Uint8Array
@@ -196,32 +174,38 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
       }
     });
 
-    // Log P256 key details for recovery diagnostics
-    const p256Secrets = secrets.filter(
-      (s) => s !== null && (s.type === 'hd-derived-p256' || s.type === 'xhd-derived-p256'),
-    );
-    p256Secrets.forEach((s) => {
-      const pkType = s!.privateKey instanceof Uint8Array ? 'Uint8Array' : typeof s!.privateKey;
-      logMsg(`  P256 key ${s!.id}: privateKey type=${pkType}, hasPublicKey=${!!s!.publicKey}`);
-    });
+    // Passkeys derive from the deterministic-P256 main key, not from the account
+    // root. Wallets created before that distinction existed have no main key, so
+    // derive one here — the master key is already unlocked at this point, and
+    // bootstrap also runs on resume, so the back-fill happens once and sticks.
+    let mainKeyId = findDomainMainKey(keys)?.id;
+    if (!mainKeyId) {
+      mainKeyId = await ensureDomainMainKey(provider.key.store, keys).catch((e: unknown) => {
+        logMsg(`Failed to derive the passkey main key: ${e}`, 'error');
+        return undefined;
+      });
+      if (mainKeyId) {
+        logMsg(`Derived passkey main key (${DOMAIN_MAIN_KEY_SCHEME}): ${mainKeyId}`);
+      }
+    }
 
-    initializeKeyStore({
-      store: keyStore as unknown as Store<KeyStoreState>,
-      keys,
-    });
+    // Only fall back to the account root for a wallet with no seed to derive a
+    // main key from; credentials already issued against it keep working, because
+    // each one records the scheme it was derived with.
+    const parentKey = mainKeyId
+      ? { id: mainKeyId, scheme: DOMAIN_MAIN_KEY_SCHEME }
+      : (() => {
+          const legacy =
+            keys.find((k) => k.type === 'hd-root-key') ||
+            keys.find((k) => k.type === 'xhd-root-key') ||
+            keys.find(isSeed);
+          return legacy ? { id: legacy.id, scheme: 'bip32-ed25519' } : undefined;
+        })();
 
-    const hdRootKeySecret = secrets.find(
-      (s) => s !== null && (s.type === 'hd-root-key' || s.type === 'xhd-root-key'),
-    );
-    const hdRootKey =
-      keys.find((k) => k.type === 'hd-root-key') ||
-      keys.find((k) => k.type === 'xhd-root-key') ||
-      keys.find((k) => k.type === 'hd-seed');
-
-    if (hdRootKey) {
-      logMsg(`Setting HD root key ID in native side: ${hdRootKey.id}`);
-      await ReactNativePasskeyAutofill.setHdRootKeyId(hdRootKey.id).catch((e: unknown) => {
-        logMsg(`ReactNativePasskeyAutofill.setHdRootKeyId error: ${e}`, 'error');
+    if (parentKey) {
+      logMsg(`Setting passkey parent key in native side: ${parentKey.id} (${parentKey.scheme})`);
+      await ReactNativePasskeyAutofill.setMainKeyId(parentKey.id).catch((e: unknown) => {
+        logMsg(`ReactNativePasskeyAutofill.setMainKeyId error: ${e}`, 'error');
       });
     }
 
@@ -261,23 +245,14 @@ async function runBootstrap(options?: AuthenticationOptions, showAlert = true) {
 
     if (keys.length > 0) {
       logMsg('Setting keystore status to ready');
-      setStatus({
-        store: keyStore as unknown as Store<KeyStoreState>,
-        status: 'ready',
-      });
+      keyStore.setState((state) => ({ ...state, status: 'ready' }));
     } else {
       logMsg('No keys found, setting keystore status to idle');
-      setStatus({
-        store: keyStore as unknown as Store<KeyStoreState>,
-        status: 'idle',
-      });
+      keyStore.setState((state) => ({ ...state, status: 'idle' }));
     }
   } catch (e) {
     logMsg(`Bootstrap failed: ${e}`, 'error');
-    setStatus({
-      store: keyStore as unknown as Store<KeyStoreState>,
-      status: 'error',
-    });
+    keyStore.setState((state) => ({ ...state, status: 'error' }));
   }
 }
 

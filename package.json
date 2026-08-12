@@ -28,17 +28,17 @@
     "export": "expo export"
   },
   "dependencies": {
-    "@algorandfoundation/accounts-keystore-extension": "^1.0.0-canary.5",
-    "@algorandfoundation/accounts-store": "^1.0.0-canary.2",
+    "@algorandfoundation/accounts-keystore-extension": "1.0.0-canary.9",
+    "@algorandfoundation/accounts-store": "1.0.0-canary.2",
     "@algorandfoundation/algokit-utils": "^10.0.0-beta.2",
-    "@algorandfoundation/identities-extension": "^1.0.0-canary.1",
-    "@algorandfoundation/identities-keystore-extension": "^1.0.0-canary.1",
-    "@algorandfoundation/identities-store": "^1.0.0-canary.1",
-    "@algorandfoundation/keystore": "^1.0.0-canary.16",
+    "@algorandfoundation/identities-extension": "1.0.0-canary.4",
+    "@algorandfoundation/identities-keystore-extension": "1.0.0-canary.4",
+    "@algorandfoundation/identities-store": "1.0.0-canary.1",
     "@algorandfoundation/liquid-client": "^1.0.0-canary.9",
-    "@algorandfoundation/log-store": "^1.0.0-canary.3",
-    "@algorandfoundation/react-native-keystore": "^1.0.0-canary.12",
-    "@algorandfoundation/react-native-passkey-autofill": "1.0.0-canary.21",
+    "@algorandfoundation/log-store": "1.0.0-canary.3",
+    "@algorandfoundation/provider-migrations": "1.0.0-canary.1",
+    "@algorandfoundation/react-native-keystore": "1.0.0-canary.18",
+    "@algorandfoundation/react-native-passkey-autofill": "1.0.0-canary.24",
     "@config-plugins/react-native-webrtc": "^13.0.0",
     "@expo/vector-icons": "^15.0.3",
     "@noble/hashes": "^1.8.0",
@@ -106,7 +106,10 @@
     "typescript": "~5.8.3"
   },
   "overrides": {
+    "@algorandfoundation/accounts-store": "$@algorandfoundation/accounts-store",
+    "@algorandfoundation/log-store": "$@algorandfoundation/log-store",
     "@algorandfoundation/react-native-keystore": {
+      ".": "$@algorandfoundation/react-native-keystore",
       "react-native-mmkv": "$react-native-mmkv",
       "react-native-quick-crypto": "$react-native-quick-crypto"
     },

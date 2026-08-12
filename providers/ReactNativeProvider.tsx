@@ -1,6 +1,7 @@
 import { createContext, type ReactNode } from 'react';
 import { Provider } from '@algorandfoundation/wallet-provider';
 
+import { WithMigrations, type MigrationsApi } from '@algorandfoundation/provider-migrations';
 import { WithKeyStore } from '@algorandfoundation/react-native-keystore';
 import {
   Account,
@@ -10,7 +11,7 @@ import {
 import type { Identity } from '@algorandfoundation/identities-store';
 import { WithIdentities } from '@algorandfoundation/identities-extension';
 import { Passkey, PasskeyStoreExtension, WithPasskeyStore } from '@/extensions/passkeys';
-import type { KeyStoreAPI, Key } from '@algorandfoundation/keystore';
+import type { KeyStoreAPI, Key } from '@algorandfoundation/react-native-keystore';
 import { type LogMessage, WithLogStore, type LogStoreApi } from '@algorandfoundation/log-store';
 import type { keyStoreHooks } from '@/stores/before-after';
 import {
@@ -35,6 +36,10 @@ import {
 
 export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXTENSIONS> {
   static EXTENSIONS = [
+    // Must stay first: later extensions (the keystore) register their
+    // migration revisions during their own registration, which silently
+    // no-ops unless WithMigrations has installed the registry already.
+    WithMigrations,
     WithLogStore,
     WithKeyStore,
     WithAccountStore,
@@ -47,6 +52,8 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithIntermezzoIdentities,
   ] as const;
 
+  /** Data migration registry and run control */
+  migrations!: MigrationsApi;
   keys!: Key[];
   accounts!: Account[];
   identities!: Identity[];
@@ -63,7 +70,15 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
   credential!: IntermezzoCredentialsExtension['credential'];
   // The generic Keystore Interface
   key!: {
-    store: KeyStoreAPI & { clear: () => Promise<void>; hooks: typeof keyStoreHooks };
+    store: KeyStoreAPI & {
+      clear: () => Promise<void>;
+      hooks: typeof keyStoreHooks;
+      /**
+       * Resolves once the engine has run pending data migrations and loaded
+       * its persisted metadata records into the reactive store.
+       */
+      ready: Promise<void>;
+    };
   };
   log!: LogStoreApi;
 }

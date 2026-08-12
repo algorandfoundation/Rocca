@@ -20,6 +20,8 @@ import { accountsStore } from '@/stores/accounts';
 import { passkeysStore } from '@/stores/passkeys';
 import { PreventScreenshot } from '@/components/PreventScreenshot';
 import { bootstrap } from '@/lib/bootstrap';
+import { importSeed } from '@/lib/passkey-root';
+import { ADDRESS_CONTEXT, deriveContextKey, IDENTITY_CONTEXT } from '@/lib/hd-keys';
 import { importDidDocument } from '@/utils/did-backup';
 
 // Extract provider configuration from expo-constants
@@ -89,16 +91,7 @@ export default function ImportWalletScreen() {
 
       // Import to the keystore
       console.log('Importing seed phrase...');
-      const seedId = await key.store.import(
-        {
-          type: 'hd-seed',
-          algorithm: 'raw',
-          extractable: true,
-          keyUsages: ['deriveKey', 'deriveBits'],
-          privateKey: await mnemonicToSeed(phrase),
-        },
-        'bytes',
-      );
+      const seedId = await importSeed(key.store, await mnemonicToSeed(phrase));
 
       // Generate HD Root Key
       console.log('Generating HD Root Key...');
@@ -120,41 +113,11 @@ export default function ImportWalletScreen() {
       } else {
         // Default generation if no backup
         console.log('Generating default keys...');
-        // Generate Ed25519 Account Key
-        const accountParams = {
-          parentKeyId: rootKeyId,
-          context: 0,
-          account: 0,
-          index: 0,
-          derivation: 9,
-        };
-        await key.store.generate({
-          type: 'hd-derived-ed25519',
-          algorithm: 'EdDSA',
-          extractable: true,
-          keyUsages: ['sign', 'verify'],
-          params: {
-            ...accountParams,
-          },
-        });
+        // Derive Ed25519 Account Key
+        await deriveContextKey(key.store, rootKeyId, { context: ADDRESS_CONTEXT });
 
-        // Generate Ed25519 Identity Key
-        const identityParams = {
-          parentKeyId: rootKeyId,
-          context: 1,
-          account: 0,
-          index: 0,
-          derivation: 9,
-        };
-        await key.store.generate({
-          type: 'hd-derived-ed25519',
-          algorithm: 'EdDSA',
-          extractable: true,
-          keyUsages: ['sign', 'verify'],
-          params: {
-            ...identityParams,
-          },
-        });
+        // Derive Ed25519 Identity Key
+        await deriveContextKey(key.store, rootKeyId, { context: IDENTITY_CONTEXT });
         console.log('Default key generation complete.');
       }
 

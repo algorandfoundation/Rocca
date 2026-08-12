@@ -63,6 +63,39 @@ export function getCredentials({ store }: { store: Store<CredentialStoreState> }
 }
 
 /**
+ * Generic query over the held credentials, matching Universal Wallet 2020's
+ * `query` interface. Each query object may carry an `example` (QueryByExample)
+ * whose `type` narrows the result; queries without a recognized shape match
+ * everything. The union of all query results is returned, de-duplicated by id.
+ */
+export function queryCredentials({
+  store,
+  queries,
+}: {
+  store: Store<CredentialStoreState>;
+  queries: any[];
+}): Credential[] {
+  const credentials = store.state.credentials;
+  if (!Array.isArray(queries) || queries.length === 0) return credentials;
+
+  const matched = new Map<string, Credential>();
+  for (const query of queries) {
+    const exampleTypes: string[] | undefined = (() => {
+      const type = query?.credentialQuery?.example?.type ?? query?.example?.type;
+      if (typeof type === 'string') return [type];
+      return Array.isArray(type) ? type : undefined;
+    })();
+
+    for (const credential of credentials) {
+      if (!exampleTypes || exampleTypes.every((t) => credential.type.includes(t))) {
+        matched.set(credential.id, credential);
+      }
+    }
+  }
+  return [...matched.values()];
+}
+
+/**
  * Upserts an issuance session mirror.
  */
 export function upsertIssuanceSession({
