@@ -12,7 +12,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useProvider } from '@/hooks/useProvider';
-import type { Credential, IssuanceSession, VerificationSession } from '@/extensions/credentials';
+import type {
+  Credential,
+  IssuanceSession,
+  VerificationSession,
+} from '@algorandfoundation/credentials';
 
 function formatDate(value?: number | string): string {
   if (!value) return 'N/A';

@@ -8,8 +8,7 @@ import {
   AccountStoreExtension,
   WithAccountStore,
 } from '@algorandfoundation/accounts-store';
-import type { Identity } from '@algorandfoundation/identities-store';
-import { WithIdentities } from '@algorandfoundation/identities-extension';
+import { WithIdentities, type Identity } from '@algorandfoundation/identities';
 import { Passkey, PasskeyStoreExtension, WithPasskeyStore } from '@/extensions/passkeys';
 import type { KeyStoreAPI, Key } from '@algorandfoundation/react-native-keystore';
 import { type LogMessage, WithLogStore, type LogStoreApi } from '@algorandfoundation/log-store';
@@ -20,19 +19,19 @@ import {
 } from '@algorandfoundation/accounts-keystore-extension';
 import { WithPasskeysKeystore } from '@/extensions/passkeys-keystore';
 import {
-  WithCredentialStore,
+  WithCredentials,
   type Credential,
   type IssuanceSession,
   type VerificationSession,
-} from '@/extensions/credentials';
+} from '@algorandfoundation/credentials';
 import {
   WithIntermezzoCredentials,
   type IntermezzoCredentialsExtension,
-} from '@/extensions/intermezzo-credentials';
+} from '@algorandfoundation/credentials-intermezzo-extension';
 import {
   WithIntermezzoIdentities,
   type IntermezzoIdentitiesExtension,
-} from '@/extensions/intermezzo-identities';
+} from '@algorandfoundation/identities-intermezzo-extension';
 
 export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXTENSIONS> {
   static EXTENSIONS = [
@@ -47,7 +46,7 @@ export class ReactNativeProvider extends Provider<typeof ReactNativeProvider.EXT
     WithAccountsKeystore,
     WithPasskeysKeystore,
     WithIdentities,
-    WithCredentialStore,
+    WithCredentials,
     WithIntermezzoCredentials,
     WithIntermezzoIdentities,
   ] as const;

@@ -1,4 +1,4 @@
-import type { Identity, DIDDocument } from '@algorandfoundation/identities-store';
+import type { Identity, DIDDocument } from '@algorandfoundation/identities';
 
 /**
  * Anchor metadata recorded by

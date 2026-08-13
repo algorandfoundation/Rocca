@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useProvider } from '@/hooks/useProvider';
-import type { Credential } from '@/extensions/credentials';
+import type { Credential } from '@algorandfoundation/credentials';
 
 /**
  * Confirmation screen for an OID4VP presentation request (`openid4vp://...`).

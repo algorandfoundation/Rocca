@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import type { DIDDocument } from '@algorandfoundation/identities-store';
+import type { DIDDocument } from '@algorandfoundation/identities';
 
 export interface BackupFile {
   uri: string;

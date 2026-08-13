@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import JSONTree from 'react-native-json-tree';
 import Modal from '../components/Modal';
-import type { DIDDocument, Identity } from '@algorandfoundation/identities-store';
+import type { DIDDocument, Identity } from '@algorandfoundation/identities';
 import { exportDidDocument, importDidDocument } from '@/utils/did-backup';
 import { useProvider } from '@/hooks/useProvider';
 import { getIdentityAnchor, isAnchorUpToDate } from '@/utils/anchor';

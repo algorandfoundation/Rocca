@@ -1,5 +1,5 @@
 import { Store } from '@tanstack/react-store';
-import type { IdentityStoreState } from '@algorandfoundation/identities-store';
+import type { IdentityStoreState } from '@algorandfoundation/identities';
 import { localStorage } from './mmkv-local';
 
 /**

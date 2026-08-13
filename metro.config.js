@@ -3,6 +3,23 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
+// The @algorandfoundation credentials/intermezzo packages are consumed via
+// local `file:` links (npm symlinks them into node_modules) while they are
+// verified end-to-end before publishing. Metro follows the symlinks to their
+// real paths in the sibling repos, so those repos must be watched and their
+// node_modules trees must be resolvable.
+const workspaceRoot = path.resolve(__dirname, '..');
+config.watchFolders = [
+  ...(config.watchFolders ?? []),
+  path.join(workspaceRoot, 'wallet-provider-extensions'),
+  path.join(workspaceRoot, 'intermezzo-client-js'),
+];
+config.resolver.nodeModulesPaths = [
+  ...(config.resolver.nodeModulesPaths ?? []),
+  path.join(__dirname, 'node_modules'),
+  path.join(workspaceRoot, 'wallet-provider-extensions', 'node_modules'),
+];
+
 const qrCodeStylingStub = path.resolve(__dirname, 'lib/qr-code-styling.stub.js');
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {

@@ -8,7 +8,7 @@ import { accountsStore } from '@/stores/accounts';
 import { identitiesStore } from '@/stores/identities';
 import { ReactNativeProvider, WalletProvider } from '@/providers/ReactNativeProvider';
 import { passkeysStore } from '@/stores/passkeys';
-import { credentialsStore } from '@/stores/credentials';
+import { credentialsStore, credentialsDriver, CREDENTIALS_KEY } from '@/stores/credentials';
 import { migrationsLedger } from '@/stores/migrations';
 import { registerGlobals } from 'react-native-webrtc';
 import { globalPolyfill, setupNavigatorPolyfill } from '@/lib/polyfill';
@@ -54,6 +54,10 @@ export const provider = new ReactNativeProvider(
     credentials: {
       store: credentialsStore,
       hooks: credentialHooks,
+      // The engine persists the durable `credentials` slice through this
+      // MMKV adapter (hydration + snapshots); sessions stay ephemeral.
+      driver: credentialsDriver,
+      storageKey: CREDENTIALS_KEY,
     },
     intermezzo: {
       baseUrl: process.env.EXPO_PUBLIC_INTERMEZZO_BASE_URL ?? 'http://localhost:3000',

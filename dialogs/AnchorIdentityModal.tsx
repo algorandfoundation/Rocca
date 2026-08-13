@@ -14,7 +14,7 @@ type Stage = 'idle' | 'running' | 'done' | 'error';
 
 /**
  * Drives the "anchor this identity on-chain via intermezzo" upgrade
- * path. Wraps {@link import('@/extensions/intermezzo-identities').IntermezzoIdentitiesApi.anchorIdentity}
+ * path. Wraps {@link import('@algorandfoundation/identities-intermezzo-extension').IntermezzoIdentitiesApi.anchorIdentity}
  * with a tiny UI so the user can:
  *
  *   1. Confirm which identity they're anchoring.
