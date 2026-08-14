@@ -1,4 +1,4 @@
-import type { KeyStoreExtension, KeyStoreOptions } from '@algorandfoundation/keystore';
+import type { KeyStoreExtension, KeyStoreOptions } from '@algorandfoundation/react-native-keystore';
 import type { PasskeyStoreExtension, PasskeyStoreOptions } from '@/extensions/passkeys';
 import type { ExtensionOptions } from '@algorandfoundation/wallet-provider';
 

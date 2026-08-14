@@ -9,20 +9,43 @@ import {
   updateSessionActivity,
   updateSessionStatus,
 } from '@/stores/sessions';
-import { decodeAddress } from '@/utils/algorand';
+import { matchesOrigin } from '@/lib/passkey-origin';
+import { decodeAddress, encodeAddress } from '@/utils/algorand';
 import { toUrlSafe } from '@/utils/base64';
-import type { KeyData } from '@algorandfoundation/keystore';
-import { encodeAddress } from '@algorandfoundation/keystore';
+import type { Key } from '@algorandfoundation/react-native-keystore';
 import { SignalClient } from '@algorandfoundation/liquid-client';
 import { encoder as liquidAssertionEncoder } from '@algorandfoundation/liquid-client/assertion';
 import { fromBase64Url, toBase64URL } from '@algorandfoundation/liquid-client/encoding';
-import { commit, fetchSecret, getMasterKey } from '@algorandfoundation/react-native-keystore';
+import { METADATA_PREFIX, serializeKey, storage } from '@algorandfoundation/react-native-keystore';
 import { useStore } from '@tanstack/react-store';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, NativeModules } from 'react-native';
 
 const { decodeOptions: decodeAssertionRequestOptions, encodeCredential } = liquidAssertionEncoder;
+
+/**
+ * Persist a key's metadata and reflect it in the reactive key store.
+ *
+ * Under the split record layout, metadata lives in its own plaintext `k/<id>`
+ * record, separate from the sealed `m/<id>` material — so a metadata-only
+ * update never touches the master key and never raises a biometric prompt
+ * (the old flat layout forced a full decrypt/re-encrypt of the record).
+ */
+function persistKeyMetadata(key: Key): void {
+  // Strip any material before writing: `k/<id>` records are plaintext and
+  // must only ever carry UI-safe metadata.
+  const { privateKey, seed, ...keyState } = key as any;
+  void privateKey;
+  void seed;
+  storage.set(`${METADATA_PREFIX}${keyState.id}`, serializeKey(keyState));
+  // Reflect the metadata change in the reactive store, de-duplicating by id
+  // so we don't append a stale copy.
+  keyStore.setState((state) => ({
+    ...state,
+    keys: [{ ...keyState }, ...state.keys.filter((k) => k.id !== keyState.id)],
+  }));
+}
 
 interface UseConnectionResult {
   session: Session | undefined;
@@ -211,19 +234,12 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
         console.log('Initial session status:', sessionCheck.ok);
 
         const currentPasskeys = await passkey.store.getPasskeys();
-        const relevantPasskeys = currentPasskeys.filter((p) => {
-          const storedOrigin = p.metadata?.origin;
-          if (!storedOrigin) return false;
-          try {
-            const storedHost = storedOrigin.includes('://')
-              ? new URL(storedOrigin).host
-              : storedOrigin;
-            const currentHost = origin.includes('://') ? new URL(origin).host : origin;
-            return storedHost === currentHost;
-          } catch {
-            return storedOrigin === origin;
-          }
-        });
+        // Matched through `lib/passkey-origin.ts`: a passkey synced from the
+        // native provider records its relying party at the top level, so a
+        // `metadata.origin`-only check discarded every one of them and sent the
+        // flow down the attestation branch — asking to create a passkey that
+        // already existed, over and over.
+        const relevantPasskeys = currentPasskeys.filter((p) => matchesOrigin(p, origin));
 
         if (relevantPasskeys.length > 0) {
           const firstPasskey = relevantPasskeys[0];
@@ -378,15 +394,13 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
           if (matchedKey) {
             try {
-              const masterKey = await getMasterKey();
-              const keyData = await fetchSecret<KeyData>({
-                keyId: matchedKey.id,
-                options: { masterKey },
+              // Metadata-only update: the split record layout keeps metadata in
+              // its own plaintext `k/<id>` record, so no master-key read (and no
+              // biometric prompt) is needed to mark the key registered.
+              persistKeyMetadata({
+                ...matchedKey,
+                metadata: { ...matchedKey.metadata, registered: true },
               });
-              if (keyData) {
-                keyData.metadata = { ...keyData.metadata, registered: true };
-                await commit({ store: keyStore as any, keyData });
-              }
             } catch (error) {
               console.error('Failed to update key metadata after assertion:', error);
             }
@@ -500,15 +514,13 @@ export function useConnection(origin: string, requestId: string): UseConnectionR
 
           if (matchedKey) {
             try {
-              const masterKey = await getMasterKey();
-              const keyData = await fetchSecret<KeyData>({
-                keyId: matchedKey.id,
-                options: { masterKey },
+              // Metadata-only update: the split record layout keeps metadata in
+              // its own plaintext `k/<id>` record, so no master-key read (and no
+              // biometric prompt) is needed to mark the key registered.
+              persistKeyMetadata({
+                ...matchedKey,
+                metadata: { ...matchedKey.metadata, registered: true },
               });
-              if (keyData) {
-                keyData.metadata = { ...keyData.metadata, registered: true };
-                await commit({ store: keyStore as any, keyData });
-              }
             } catch (error) {
               console.error('Failed to update key metadata after attestation:', error);
             }

@@ -23,6 +23,8 @@ import * as bip39 from '@scure/bip39';
 import { useProvider } from '@/hooks/useProvider';
 import { mnemonicToSeed } from '@scure/bip39';
 import { bootstrap } from '@/lib/bootstrap';
+import { importSeed } from '@/lib/passkey-root';
+import { ADDRESS_CONTEXT, deriveContextKey, IDENTITY_CONTEXT } from '@/lib/hd-keys';
 import { PreventScreenshot } from '@/components/PreventScreenshot';
 import * as DocumentPicker from 'expo-document-picker';
 
@@ -424,15 +426,9 @@ export default function OnboardingScreen() {
                                 await passkey.store.clear();
 
                                 // Import to the keystore
-                                const seedId = await key.store.import(
-                                  {
-                                    type: 'hd-seed',
-                                    algorithm: 'raw',
-                                    extractable: true,
-                                    keyUsages: ['deriveKey', 'deriveBits'],
-                                    privateKey: await mnemonicToSeed(recoveryPhrase.join(' ')),
-                                  },
-                                  'bytes',
+                                const seedId = await importSeed(
+                                  key.store,
+                                  await mnemonicToSeed(recoveryPhrase.join(' ')),
                                 );
 
                                 // Generate HD Root Key
@@ -446,40 +442,14 @@ export default function OnboardingScreen() {
                                   },
                                 });
 
-                                // Generate Ed25519 Account Key
-                                const accountParams = {
-                                  parentKeyId: rootKeyId,
-                                  context: 0,
-                                  account: 0,
-                                  index: 0,
-                                  derivation: 9,
-                                };
-                                await key.store.generate({
-                                  type: 'hd-derived-ed25519',
-                                  algorithm: 'EdDSA',
-                                  extractable: true,
-                                  keyUsages: ['sign', 'verify'],
-                                  params: {
-                                    ...accountParams,
-                                  },
+                                // Derive Ed25519 Account Key
+                                await deriveContextKey(key.store, rootKeyId, {
+                                  context: ADDRESS_CONTEXT,
                                 });
 
-                                // Generate Ed25519 Identity Key
-                                const identityParams = {
-                                  parentKeyId: rootKeyId,
-                                  context: 1,
-                                  account: 0,
-                                  index: 0,
-                                  derivation: 9,
-                                };
-                                await key.store.generate({
-                                  type: 'hd-derived-ed25519',
-                                  algorithm: 'EdDSA',
-                                  extractable: true,
-                                  keyUsages: ['sign', 'verify'],
-                                  params: {
-                                    ...identityParams,
-                                  },
+                                // Derive Ed25519 Identity Key
+                                await deriveContextKey(key.store, rootKeyId, {
+                                  context: IDENTITY_CONTEXT,
                                 });
 
                                 // Bootstrap to ensure native side is updated with new master key and keys

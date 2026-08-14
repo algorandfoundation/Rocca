@@ -39,6 +39,7 @@ const mockKeyStore = {
   clear: jest.fn().mockResolvedValue(undefined),
   import: jest.fn().mockResolvedValue('seed-id'),
   generate: jest.fn().mockImplementation(async ({ type }: { type: string }) => `${type}-id`),
+  deriveFromSeed: jest.fn().mockImplementation(async (_id: string, path: string) => path),
 };
 const mockAccountStore = { clear: jest.fn().mockResolvedValue(undefined) };
 const mockIdentityStore = { clear: jest.fn().mockResolvedValue(undefined) };
@@ -119,6 +120,7 @@ describe('<OnboardingScreen />', () => {
     mockKeyStore.clear.mockResolvedValue(undefined);
     mockKeyStore.import.mockResolvedValue('seed-id');
     mockKeyStore.generate.mockImplementation(async ({ type }: { type: string }) => `${type}-id`);
+    mockKeyStore.deriveFromSeed.mockImplementation(async (_id: string, path: string) => path);
     mockAccountStore.clear.mockResolvedValue(undefined);
     mockIdentityStore.clear.mockResolvedValue(undefined);
     mockPasskeyStore.clear.mockResolvedValue(undefined);
@@ -216,9 +218,29 @@ describe('<OnboardingScreen />', () => {
     // Seed import + HD key derivation chain runs
     await waitFor(() => {
       expect(mockKeyStore.import).toHaveBeenCalledTimes(1);
-      // hd-root-key -> ed25519 account -> ed25519 identity
-      expect(mockKeyStore.generate).toHaveBeenCalledTimes(3);
+      // The root is the only key that is minted; the account and identity keys
+      // are children of it and must go through `deriveFromSeed` — `generate`
+      // would hand `EdDSA` to the host WebCrypto, which cannot generate it.
+      expect(mockKeyStore.generate).toHaveBeenCalledTimes(1);
+      expect(mockKeyStore.generate).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'hd-root-key' }),
+      );
+      expect(mockKeyStore.deriveFromSeed).toHaveBeenCalledTimes(2);
     });
+
+    // The account and identity keys land in their usual BIP44 slots
+    expect(mockKeyStore.deriveFromSeed).toHaveBeenNthCalledWith(
+      1,
+      'hd-root-key-id',
+      "m/44'/283'/0'/0/0",
+      expect.objectContaining({ metadata: expect.objectContaining({ context: 0 }) }),
+    );
+    expect(mockKeyStore.deriveFromSeed).toHaveBeenNthCalledWith(
+      2,
+      'hd-root-key-id',
+      "m/44'/0'/0'/0/0",
+      expect.objectContaining({ metadata: expect.objectContaining({ context: 1 }) }),
+    );
 
     // Finally the app navigates to /landing, which is what renders the app
     await waitFor(() => {

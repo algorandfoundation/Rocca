@@ -27,3 +27,14 @@ export function decodeAddress(address: string): { publicKey: Uint8Array } {
 
   return { publicKey: new Uint8Array(publicKey) };
 }
+
+/**
+ * Encodes a 32-byte public key into an Algorand address string
+ * (base32 of public key + 4-byte SHA-512/256 checksum, no padding).
+ * @param publicKey - The 32-byte public key.
+ * @returns The 58-character Algorand address.
+ */
+export function encodeAddress(publicKey: Uint8Array): string {
+  const checksum = sha512_256(publicKey).slice(-4);
+  return base32nopad.encode(new Uint8Array([...publicKey, ...checksum])).toUpperCase();
+}
