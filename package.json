@@ -38,7 +38,7 @@
     "@algorandfoundation/log-store": "1.0.0-canary.3",
     "@algorandfoundation/provider-migrations": "1.0.0-canary.1",
     "@algorandfoundation/react-native-keystore": "1.0.0-canary.18",
-    "@algorandfoundation/react-native-passkey-autofill": "1.0.0-canary.24",
+    "@algorandfoundation/react-native-passkey-autofill": "1.0.0-canary.26",
     "@config-plugins/react-native-webrtc": "^13.0.0",
     "@expo/vector-icons": "^15.0.3",
     "@noble/hashes": "^1.8.0",
